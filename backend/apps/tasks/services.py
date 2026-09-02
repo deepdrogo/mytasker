@@ -1,3 +1,6 @@
+# MyTasker — task service layer.
+# Written and maintained by drogoz · https://github.com/deepdrogo/mytasker
+
 """Task domain service. All task mutations funnel through here."""
 
 from __future__ import annotations

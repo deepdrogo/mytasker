@@ -1,3 +1,6 @@
+/* MyTasker design tokens.
+   Hand-tuned by drogoz · https://github.com/deepdrogo/mytasker */
+
 /*
  * MyTasker design tokens - monochrome with depth.
  * Hue is never used for state; instead: contrast, layered gradients, light rims, glow and weight.

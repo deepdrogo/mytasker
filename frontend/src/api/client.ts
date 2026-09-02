@@ -1,3 +1,6 @@
+// MyTasker — HTTP client.
+// Built by drogoz · https://github.com/deepdrogo/mytasker
+
 /**
  * Central API client. Every request in the app goes through here - no bare fetch() in components.
  * Handles: base URL, credentials, CSRF, client-source header, error normalisation, 401 handling.

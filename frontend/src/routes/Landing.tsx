@@ -1,3 +1,6 @@
+// MyTasker — public landing page.
+// Built by drogoz · https://github.com/deepdrogo/mytasker
+
 import { A, Navigate } from '@solidjs/router';
 import {
   ArrowRight,
@@ -6,6 +9,7 @@ import {
   Bot,
   Check,
   FolderKanban,
+  Github,
   Heart,
   ListChecks,
   Repeat,
@@ -26,6 +30,8 @@ interface Feature {
   title: string;
   text: string;
 }
+
+const GITHUB_URL = 'https://github.com/deepdrogo/mytasker';
 
 const FEATURES: Feature[] = [
   { icon: Sun, title: 'Today', text: 'One screen with everything due, overdue and planned for the day.' },
@@ -122,6 +128,10 @@ function LandingView(): JSX.Element {
           <A href="/donate">Support</A>
         </nav>
         <div class={styles.navActions}>
+          <a href={GITHUB_URL} class={styles.githubBtn} target="_blank" rel="noreferrer" aria-label="MyTasker on GitHub">
+            <Github size={15} stroke-width={2} />
+            <span>Open source</span>
+          </a>
           <A href="/auth/login" class={styles.ghostBtn}>
             Log in
           </A>
@@ -164,6 +174,11 @@ function LandingView(): JSX.Element {
             </li>
             <li>
               <Check size={13} stroke-width={2.6} /> Works on any device
+            </li>
+            <li>
+              <a href={GITHUB_URL} class={styles.proofLink} target="_blank" rel="noreferrer">
+                <Github size={13} stroke-width={2.4} /> Open source on GitHub
+              </a>
             </li>
           </ul>
         </section>
@@ -271,6 +286,10 @@ function LandingView(): JSX.Element {
             @{botUsername()}
           </a>
           <A href="/donate">Support hosting</A>
+          <a href={GITHUB_URL} target="_blank" rel="noreferrer" class={styles.footGithub}>
+            <Github size={13} stroke-width={2.2} />
+            GitHub
+          </a>
         </span>
       </footer>
     </div>

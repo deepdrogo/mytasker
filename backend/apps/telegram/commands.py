@@ -1,3 +1,6 @@
+# MyTasker — Telegram command handlers.
+# Written and maintained by drogoz · https://github.com/deepdrogo/mytasker
+
 """
 Telegram command + callback handlers. Every handler receives an authenticated MyTasker user
 (resolved from chat_id) and returns (text, reply_markup). Free text that is not a command is routed

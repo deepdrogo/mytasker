@@ -1,3 +1,6 @@
+# MyTasker — log redaction. Tokens and keys never hit disk.
+# Written and maintained by drogoz · https://github.com/deepdrogo/mytasker
+
 import logging
 import re
 

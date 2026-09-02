@@ -1,3 +1,6 @@
+# MyTasker — auth, /me and public config.
+# Written and maintained by drogoz · https://github.com/deepdrogo/mytasker
+
 from __future__ import annotations
 
 from django.conf import settings

@@ -1,3 +1,6 @@
+// MyTasker — logo mark and wordmark. One path, every size.
+// Built by drogoz · https://github.com/deepdrogo/mytasker
+
 import type { JSX } from 'solid-js';
 import { Show, splitProps } from 'solid-js';
 import styles from './Logo.module.css';

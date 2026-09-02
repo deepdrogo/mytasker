@@ -1,3 +1,6 @@
+// MyTasker — Vite config.
+// Built by drogoz · https://github.com/deepdrogo/mytasker
+
 import { resolve } from 'node:path';
 import solid from 'vite-plugin-solid';
 import { defineConfig } from 'vitest/config';

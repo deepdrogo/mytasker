@@ -1,4 +1,4 @@
-import { ArrowUp, Sparkles } from 'lucide-solid';
+import { ArrowUp, CalendarClock, CheckCheck, CirclePlus, ClockAlert, Sparkles, Sun, Timer } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For, Show, createEffect, createSignal, onMount } from 'solid-js';
 import { ApiError } from '~/api/client';
@@ -20,13 +20,21 @@ export interface ChatMessage {
   error?: boolean;
 }
 
-const SUGGESTIONS = [
-  'What should I focus on today?',
-  'Add "Review invoices" for tomorrow 10:00, business',
-  'Complete everything I finished about the website',
-  'Start a business timer',
-  'Plan my day',
+interface Suggestion {
+  icon: () => JSX.Element;
+  text: string;
+}
+
+const SUGGESTIONS: Suggestion[] = [
+  { icon: () => <Sun size={15} />, text: 'What should I focus on today?' },
+  { icon: () => <ClockAlert size={15} />, text: 'What is overdue right now?' },
+  { icon: () => <CirclePlus size={15} />, text: 'Add "Review invoices" for tomorrow 10:00, business' },
+  { icon: () => <CheckCheck size={15} />, text: 'Complete everything I finished about the website' },
+  { icon: () => <Timer size={15} />, text: 'Start a business timer' },
+  { icon: () => <CalendarClock size={15} />, text: 'Plan my day' },
 ];
+
+const MAX_INPUT_HEIGHT = 200;
 
 let nextId = 1;
 
@@ -38,10 +46,22 @@ export function AIChat(props: { prefill?: string; compact?: boolean; autofocus?:
   let textarea: HTMLTextAreaElement | undefined;
   let scroller: HTMLDivElement | undefined;
 
+  /** Empty canvas: the composer is centred until the first turn exists. */
+  const blank = () => messages().length === 0 && !busy();
+
+  const autoSize = () => {
+    if (!textarea) return;
+    textarea.style.height = 'auto';
+    textarea.style.height = `${Math.min(textarea.scrollHeight, MAX_INPUT_HEIGHT)}px`;
+  };
+
   createEffect(() => {
     if (props.prefill) {
       setInput(props.prefill);
-      queueMicrotask(() => textarea?.focus());
+      queueMicrotask(() => {
+        textarea?.focus();
+        autoSize();
+      });
     }
   });
 
@@ -61,6 +81,7 @@ export function AIChat(props: { prefill?: string; compact?: boolean; autofocus?:
     const trimmed = text.trim();
     if (!trimmed || busy()) return;
     setInput('');
+    queueMicrotask(autoSize);
     setMessages((list) => [...list, { id: nextId++, role: 'user', text: trimmed }]);
     setBusy(true);
     scrollToEnd();
@@ -117,58 +138,54 @@ export function AIChat(props: { prefill?: string; compact?: boolean; autofocus?:
   };
 
   return (
-    <div class={cx(styles.chat, props.compact && styles.compact)}>
+    <div class={cx(styles.chat, props.compact && styles.compact, blank() && styles.blank)}>
       <div class={styles.scroll} ref={scroller}>
-        <Show when={messages().length === 0}>
-          <div class={styles.intro}>
-            <Sparkles size={18} />
-            <p class={styles.introText}>
-              Tell me what to do in plain language. I can add, complete, reschedule and find tasks, start timers, create
-              projects, and plan your day. Anything destructive is shown for confirmation first.
-            </p>
-            <div class={styles.suggestions}>
-              <For each={SUGGESTIONS}>
-                {(s) => (
-                  <button type="button" class={styles.suggestion} onClick={() => void send(s)}>
-                    {s}
-                  </button>
-                )}
-              </For>
-            </div>
-          </div>
-        </Show>
-        <For each={messages()}>
-          {(m) => (
-            <div class={cx(styles.message, m.role === 'user' && styles.user, m.role === 'assistant' && styles.assistant, m.error && styles.error)}>
-              <div class={styles.bubble}>
-                <Show when={m.text}>
-                  <p class={styles.text}>{m.text}</p>
-                </Show>
-                <Show when={m.toolCalls?.length}>
-                  <ToolTrace calls={m.toolCalls ?? []} />
-                </Show>
-                <Show when={m.pending && m.pendingActionId}>
-                  <AIActionPreview
-                    pending={m.pending as AIPending}
-                    busy={confirming() === m.pendingActionId}
-                    onConfirm={() => void confirm(m)}
-                    onReject={() => void reject(m)}
-                  />
-                </Show>
+        <div class={styles.thread}>
+          <For each={messages()}>
+            {(m) => (
+              <div class={cx(styles.message, m.role === 'user' && styles.user, m.role === 'assistant' && styles.assistant, m.error && styles.error)}>
+                <div class={styles.bubble}>
+                  <Show when={m.text}>
+                    <p class={styles.text}>{m.text}</p>
+                  </Show>
+                  <Show when={m.toolCalls?.length}>
+                    <ToolTrace calls={m.toolCalls ?? []} />
+                  </Show>
+                  <Show when={m.pending && m.pendingActionId}>
+                    <AIActionPreview
+                      pending={m.pending as AIPending}
+                      busy={confirming() === m.pendingActionId}
+                      onConfirm={() => void confirm(m)}
+                      onReject={() => void reject(m)}
+                    />
+                  </Show>
+                </div>
+              </div>
+            )}
+          </For>
+          <Show when={busy()}>
+            <div class={`${styles.message} ${styles.assistant}`}>
+              <div class={`${styles.bubble} ${styles.thinking}`} aria-live="polite">
+                <span class={styles.dot} />
+                <span class={styles.dot} />
+                <span class={styles.dot} />
               </div>
             </div>
-          )}
-        </For>
-        <Show when={busy()}>
-          <div class={`${styles.message} ${styles.assistant}`}>
-            <div class={`${styles.bubble} ${styles.thinking}`} aria-live="polite">
-              <span class={styles.dot} />
-              <span class={styles.dot} />
-              <span class={styles.dot} />
-            </div>
-          </div>
-        </Show>
+          </Show>
+        </div>
       </div>
+
+      <Show when={blank()}>
+        <div class={styles.hero}>
+          <span class={styles.heroIcon} aria-hidden="true">
+            <Sparkles size={18} />
+          </span>
+          <h2 class={styles.heroTitle}>What can I do for you?</h2>
+          <p class={styles.heroText}>
+            Add, complete, reschedule and find tasks, start timers, create projects or plan the day — in plain language.
+          </p>
+        </div>
+      </Show>
 
       <form
         class={styles.composer}
@@ -177,21 +194,50 @@ export function AIChat(props: { prefill?: string; compact?: boolean; autofocus?:
           void send();
         }}
       >
-        <textarea
-          ref={textarea}
-          class={styles.input}
-          rows={1}
-          placeholder="Ask or instruct… (Enter to send, Shift+Enter for newline)"
-          value={input()}
-          onInput={(e) => setInput(e.currentTarget.value)}
-          onKeyDown={onKey}
-          disabled={busy()}
-          aria-label="AI command"
-        />
-        <Button type="submit" variant="primary" size="sm" disabled={!input().trim() || busy()} title="Send">
-          <ArrowUp size={14} />
-        </Button>
+        <div class={styles.field}>
+          <textarea
+            ref={textarea}
+            class={styles.input}
+            rows={1}
+            placeholder="Ask or instruct…"
+            value={input()}
+            onInput={(e) => {
+              setInput(e.currentTarget.value);
+              autoSize();
+            }}
+            onKeyDown={onKey}
+            disabled={busy()}
+            aria-label="AI command"
+          />
+          <Button
+            type="submit"
+            variant="primary"
+            size="icon-sm"
+            class={styles.sendBtn}
+            disabled={!input().trim() || busy()}
+            title="Send"
+            aria-label="Send"
+          >
+            <ArrowUp size={15} />
+          </Button>
+        </div>
+        <p class={styles.hint}>
+          <kbd>Enter</kbd> to send · <kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line · destructive actions ask first
+        </p>
       </form>
+
+      <Show when={blank()}>
+        <div class={styles.suggestions}>
+          <For each={SUGGESTIONS}>
+            {(s) => (
+              <button type="button" class={styles.suggestion} onClick={() => void send(s.text)}>
+                <span class={styles.suggestionIcon}>{s.icon()}</span>
+                <span class={styles.suggestionText}>{s.text}</span>
+              </button>
+            )}
+          </For>
+        </div>
+      </Show>
     </div>
   );
 }

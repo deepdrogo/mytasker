@@ -1,3 +1,6 @@
+# MyTasker — AI access policy: staff only.
+# Written and maintained by drogoz · https://github.com/deepdrogo/mytasker
+
 """
 Who may use the AI assistant.
 

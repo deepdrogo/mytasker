@@ -1,3 +1,6 @@
+// MyTasker — app shell: dock + floating canvas.
+// Built by drogoz · https://github.com/deepdrogo/mytasker
+
 import type { JSX } from 'solid-js';
 import { Show, Suspense } from 'solid-js';
 import { CommandPalette } from '~/features/command/CommandPalette';

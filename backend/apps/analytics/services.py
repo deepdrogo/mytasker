@@ -1,3 +1,6 @@
+# MyTasker — analytics and daily rollups.
+# Written and maintained by drogoz · https://github.com/deepdrogo/mytasker
+
 """
 Analytics: live "today" snapshot + DailySummary rollups.
 

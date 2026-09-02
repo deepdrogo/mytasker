@@ -1,3 +1,6 @@
+// MyTasker — root component and providers.
+// Built by drogoz · https://github.com/deepdrogo/mytasker
+
 import { Router } from '@solidjs/router';
 import type { JSX } from 'solid-js';
 import { createResource, Show } from 'solid-js';

@@ -1,3 +1,6 @@
+# MyTasker — LLM provider adapter (admin-only feature).
+# Written and maintained by drogoz · https://github.com/deepdrogo/mytasker
+
 """
 LLM provider abstraction. The rest of the AI layer only sees `LLMProvider`; Anthropic specifics
 live here so the model/vendor can be swapped (or faked in tests) without touching tools/services.

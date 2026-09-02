@@ -1,3 +1,6 @@
+// MyTasker — route table. Landing is public, everything else lives behind ProtectedLayout.
+// Built by drogoz · https://github.com/deepdrogo/mytasker
+
 import { Navigate, type RouteDefinition } from '@solidjs/router';
 import { lazy } from 'solid-js';
 import { AuthLayout } from '~/layouts/AuthLayout';

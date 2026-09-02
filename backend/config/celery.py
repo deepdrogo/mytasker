@@ -1,3 +1,6 @@
+# MyTasker — Celery app, beat schedule and worker logging.
+# Written and maintained by drogoz · https://github.com/deepdrogo/mytasker
+
 import logging.config
 import os
 

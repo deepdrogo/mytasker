@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+# MyTasker — Django entry point.
+# Written and maintained by drogoz · https://github.com/deepdrogo/mytasker
+
 import os
 import sys
 

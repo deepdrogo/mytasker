@@ -1,3 +1,14 @@
+[project]
+name = "mytasker"
+version = "1.0.0"
+description = "One control center for life, business and time."
+authors = [{ name = "drogoz" }]
+requires-python = ">=3.12"
+
+[project.urls]
+Repository = "https://github.com/deepdrogo/mytasker"
+Homepage = "https://mytasker.io"
+
 [tool.ruff]
 line-length = 118
 target-version = "py312"

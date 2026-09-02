@@ -115,6 +115,53 @@
   gap: var(--s-4);
 }
 
+.githubBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  height: 34px;
+  padding: 0 var(--s-5);
+  border-radius: var(--r-full);
+  border: 1px solid var(--c-border);
+  background: var(--g-glass);
+  box-shadow: var(--rim-top);
+  color: var(--c-text-dim);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  transition:
+    color var(--t-fast),
+    border-color var(--t-fast),
+    background var(--t-fast),
+    transform var(--t-fast);
+}
+
+.githubBtn:hover {
+  color: var(--c-text);
+  border-color: var(--c-border-strong);
+  background: var(--g-glass-hover);
+  transform: translateY(-1px);
+}
+
+.proofLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  color: var(--c-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--c-border-strong);
+}
+
+.proofLink:hover {
+  text-decoration-color: var(--c-text);
+}
+
+.footGithub {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
 .ghostBtn,
 .solidBtn {
   display: inline-flex;
@@ -859,5 +906,16 @@
   }
   .cardMain {
     width: 100%;
+  }
+}
+
+@media (max-width: 599px) {
+  .githubBtn {
+    width: 34px;
+    padding: 0;
+    justify-content: center;
+  }
+  .githubBtn span {
+    display: none;
   }
 }

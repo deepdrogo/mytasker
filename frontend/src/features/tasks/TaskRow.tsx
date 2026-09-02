@@ -1,3 +1,6 @@
+// MyTasker — a single task row.
+// Built by drogoz · https://github.com/deepdrogo/mytasker
+
 import { A } from '@solidjs/router';
 import {
   Briefcase,

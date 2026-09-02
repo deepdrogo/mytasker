@@ -1,3 +1,6 @@
+# MyTasker — settings shared by dev / test / prod.
+# Written and maintained by drogoz · https://github.com/deepdrogo/mytasker
+
 """
 Base Django settings for MyTasker.io.
 

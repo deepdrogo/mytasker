@@ -1,3 +1,6 @@
+// MyTasker — session store.
+// Built by drogoz · https://github.com/deepdrogo/mytasker
+
 import { createSignal } from 'solid-js';
 import { api, ApiError, ensureCsrf, onUnauthorized } from '~/api/client';
 import { clearCache } from '~/hooks/createQuery';

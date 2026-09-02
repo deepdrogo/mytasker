@@ -1,3 +1,6 @@
+// MyTasker — the Today screen. The whole day, one page, no scrolling on desktop.
+// Built by drogoz · https://github.com/deepdrogo/mytasker
+
 import { A } from '@solidjs/router';
 import { Check, Circle, Flame, Moon, Play, Square, Undo2 } from 'lucide-solid';
 import type { JSX } from 'solid-js';

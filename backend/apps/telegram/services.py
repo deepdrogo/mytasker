@@ -1,3 +1,6 @@
+# MyTasker — Telegram linking and delivery.
+# Written and maintained by drogoz · https://github.com/deepdrogo/mytasker
+
 """Telegram linking + idempotent outbound delivery."""
 
 from __future__ import annotations

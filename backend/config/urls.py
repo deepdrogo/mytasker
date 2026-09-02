@@ -1,3 +1,6 @@
+# MyTasker — URL map. Everything under /api/v1/.
+# Written and maintained by drogoz · https://github.com/deepdrogo/mytasker
+
 from django.contrib import admin
 from django.urls import include, path
 

@@ -1,3 +1,6 @@
+# MyTasker — ASGI entry (HTTP + WebSockets).
+# Written and maintained by drogoz · https://github.com/deepdrogo/mytasker
+
 import os
 
 from django.core.asgi import get_asgi_application

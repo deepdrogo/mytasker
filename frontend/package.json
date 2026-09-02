@@ -2,6 +2,11 @@
   "name": "mytasker-frontend",
   "version": "1.0.0",
   "private": true,
+  "author": "drogoz",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/deepdrogo/mytasker"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

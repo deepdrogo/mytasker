@@ -1,3 +1,6 @@
+// MyTasker — ⌘K command palette.
+// Built by drogoz · https://github.com/deepdrogo/mytasker
+
 import { useNavigate } from '@solidjs/router';
 import {
   ArrowRight,
