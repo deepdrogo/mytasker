@@ -4,18 +4,25 @@
   justify-content: center;
   gap: var(--s-3);
   border: 1px solid transparent;
-  border-radius: var(--r-sm);
+  border-radius: var(--r-md);
   font-size: var(--fs-md);
-  font-weight: var(--fw-medium);
+  font-weight: var(--fw-semibold);
   line-height: 1;
+  letter-spacing: -0.005em;
   white-space: nowrap;
   transition:
     background var(--t-fast),
     border-color var(--t-fast),
     color var(--t-fast),
-    opacity var(--t-fast);
+    opacity var(--t-fast),
+    transform var(--t-fast),
+    box-shadow var(--t-fast);
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
 }
 
 .btn svg {
@@ -26,25 +33,35 @@
 
 /* Variants */
 .primary {
-  background: var(--c-invert-bg);
+  background: var(--g-primary);
   color: var(--c-invert-text);
-  border-color: var(--c-invert-bg);
+  border-color: rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 6px 18px rgba(255, 255, 255, 0.14),
+    0 1px 3px rgba(0, 0, 0, 0.5);
 }
 .primary:hover:not(:disabled) {
-  opacity: 0.88;
-}
-.primary:active:not(:disabled) {
-  opacity: 0.78;
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 10px 28px rgba(255, 255, 255, 0.24),
+    0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .secondary {
-  background: var(--c-surface-2);
+  background: var(--g-glass);
   color: var(--c-text);
-  border-color: var(--c-border);
+  border-color: var(--c-border-strong);
+  box-shadow: var(--rim-top);
 }
 .secondary:hover:not(:disabled) {
-  background: var(--c-surface-3);
-  border-color: var(--c-border-strong);
+  background: var(--g-glass-hover);
+  border-color: rgba(255, 255, 255, 0.26);
+  transform: translateY(-1px);
+  box-shadow:
+    var(--rim-top),
+    0 6px 18px rgba(0, 0, 0, 0.4);
 }
 
 .ghost {
@@ -53,60 +70,69 @@
 }
 .ghost:hover:not(:disabled) {
   background: var(--c-hover);
+  border-color: var(--c-border);
   color: var(--c-text);
 }
 
-/* Destructive: signalled by a strong border and uppercase weight, never by hue. */
+/* Destructive: signalled by a dashed rim and inverted hover, never by hue. */
 .danger {
   background: transparent;
-  color: var(--c-text);
+  color: var(--c-text-dim);
   border-color: var(--c-border-strong);
   border-style: dashed;
 }
 .danger:hover:not(:disabled) {
-  background: var(--c-surface-3);
+  background: var(--c-invert-bg);
+  color: var(--c-invert-text);
   border-style: solid;
+  border-color: var(--c-invert-bg);
 }
 
 .link {
   background: transparent;
   color: var(--c-text-dim);
   padding: 0;
+  height: auto;
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--c-border-strong);
 }
 .link:hover:not(:disabled) {
   color: var(--c-text);
+  text-decoration-color: var(--c-text);
 }
 
 /* Sizes */
 .size-sm {
-  height: 26px;
-  padding: 0 var(--s-4);
+  height: 30px;
+  padding: 0 var(--s-5);
   font-size: var(--fs-sm);
+  border-radius: var(--r-sm);
 }
 .size-md {
-  height: 32px;
-  padding: 0 var(--s-5);
+  height: 36px;
+  padding: 0 var(--s-6);
 }
 .size-lg {
-  height: 40px;
-  padding: 0 var(--s-6);
+  height: 44px;
+  padding: 0 var(--s-7);
   font-size: var(--fs-base);
+  border-radius: var(--r-lg);
 }
 .size-icon {
-  height: 32px;
-  width: 32px;
+  height: 36px;
+  width: 36px;
   padding: 0;
 }
 .size-icon-sm {
-  height: 24px;
-  width: 24px;
+  height: 28px;
+  width: 28px;
   padding: 0;
+  border-radius: var(--r-sm);
 }
 .size-icon-sm svg {
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
 }
 
 .block {
@@ -123,9 +149,9 @@
   position: absolute;
   inset: 0;
   margin: auto;
-  width: 12px;
-  height: 12px;
-  border: 1.5px solid currentColor;
+  width: 13px;
+  height: 13px;
+  border: 1.75px solid currentColor;
   border-top-color: transparent;
   border-radius: 50%;
   animation: spin 620ms linear infinite;
@@ -144,10 +170,10 @@
 
 @media (max-width: 899px) {
   .size-md {
-    height: 36px;
+    height: 40px;
   }
   .size-icon {
-    height: 36px;
-    width: 36px;
+    height: 40px;
+    width: 40px;
   }
 }

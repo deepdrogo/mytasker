@@ -199,3 +199,89 @@ def test_notification_fan_out_for_team_and_guest(client_for, user, other_user, f
     )
     member.post("/api/v1/comments/", {"body": "hi", "task_id": task["id"]}, format="json")
     assert not Notification.objects.filter(user=user, event_name="comment.created").exists()
+
+
+# --- Isolation: a linked chat only ever exposes its own account, never anyone else's ---------------------------
+
+
+def _webhook(client, update, settings):
+    settings.TELEGRAM_WEBHOOK_SECRET = "s3cret"
+    return client.post(
+        "/api/v1/telegram/webhook/", update, format="json", HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN="s3cret"
+    )
+
+
+def test_stranger_chat_sees_nothing(linked, fake_client, user, stranger, settings):
+    """An unlinked chat gets a 'not linked' hint; a stranger's linked chat only sees the stranger's tasks."""
+    Task.objects.create(owner=user, created_by=user, title="Admin secret", kind="business")
+    TelegramConnection.objects.create(
+        user=stranger, chat_id=999, telegram_user_id=9, linked_at=timezone.now(), is_active=True
+    )
+
+    from rest_framework.test import APIClient
+
+    unlinked = {
+        "update_id": 501,
+        "message": {"message_id": 1, "chat": {"id": 123456, "type": "private"}, "from": {"id": 5}, "text": "/today"},
+    }
+    res = _webhook(APIClient(), unlinked, settings)
+    assert res.status_code == 200
+    assert "isn't linked" in fake_client.sent[-1]["text"]
+    assert "Admin secret" not in fake_client.sent[-1]["text"]
+
+    from apps.telegram.commands import handle_text
+
+    reply, _ = handle_text(stranger, "/today")
+    assert "Admin secret" not in reply
+    reply, _ = handle_text(stranger, "/list secret")
+    assert "Admin secret" not in reply
+
+
+def test_group_chats_are_refused(auth_client, user, fake_client, settings):
+    """Linking or commanding from a group/supergroup never succeeds - the account stays 1:1 only."""
+    settings.TELEGRAM_BOT_USERNAME = "MyTaskerBot"
+    token = auth_client.post("/api/v1/telegram/link/").data["token"]
+    update = {
+        "update_id": 601,
+        "message": {
+            "message_id": 1,
+            "chat": {"id": -100123, "type": "supergroup"},
+            "from": {"id": 42},
+            "text": f"/start {token}",
+        },
+    }
+    assert _webhook(auth_client, update, settings).status_code == 200
+    assert not TelegramConnection.objects.get(user=user).is_linked
+    assert "private chat" in fake_client.sent[-1]["text"]
+
+    # Same token still works in a private chat afterwards.
+    update["update_id"] = 602
+    update["message"]["chat"] = {"id": 4242, "type": "private"}
+    assert _webhook(auth_client, update, settings).status_code == 200
+    assert TelegramConnection.objects.get(user=user).is_linked
+
+
+def test_other_telegram_user_in_linked_chat_is_ignored(linked, fake_client, user, settings):
+    """If a chat was linked by Telegram user 42, messages claiming to be from user 43 are not honoured."""
+    TelegramConnection.objects.filter(user=user).update(telegram_user_id=42)
+    from rest_framework.test import APIClient
+
+    Task.objects.create(owner=user, created_by=user, title="Only mine", kind="personal")
+    bad = {
+        "update_id": 701,
+        "message": {"message_id": 1, "chat": {"id": 555, "type": "private"}, "from": {"id": 43}, "text": "/today"},
+    }
+    assert _webhook(APIClient(), bad, settings).status_code == 200
+    assert "Only mine" not in fake_client.sent[-1]["text"]
+
+    good = {
+        "update_id": 702,
+        "message": {
+            "message_id": 2,
+            "chat": {"id": 555, "type": "private"},
+            "from": {"id": 42},
+            "text": "/list mine",
+        },
+    }
+    assert _webhook(APIClient(), good, settings).status_code == 200
+    assert "Only mine" in fake_client.sent[-1]["text"]

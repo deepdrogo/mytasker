@@ -45,7 +45,10 @@ export default function Login(): JSX.Element {
 
   return (
     <form class={styles.form} onSubmit={submit} novalidate>
-      <h1 class={styles.heading}>Sign in</h1>
+      <div class={styles.head}>
+        <h1 class={styles.heading}>Welcome back</h1>
+        <p class={styles.sub}>Sign in to pick up where you left off.</p>
+      </div>
 
       {error() && <ErrorNote message={error()} />}
 

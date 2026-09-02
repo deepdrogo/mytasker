@@ -1,6 +1,7 @@
 .list {
+  padding: var(--s-3);
   border: 1px solid var(--c-border);
-  border-radius: var(--r-md);
-  background: var(--c-bg);
-  overflow: hidden;
+  border-radius: var(--r-xl);
+  background: var(--g-surface);
+  box-shadow: var(--shadow-card);
 }

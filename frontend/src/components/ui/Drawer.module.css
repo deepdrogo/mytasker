@@ -2,8 +2,11 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-drawer);
-  background: rgba(0, 0, 0, 0.66);
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex;
+  padding: var(--canvas-gap);
   animation: fade var(--t-base);
 }
 
@@ -14,9 +17,11 @@
   width: var(--drawer-w);
   max-width: 100%;
   height: 100%;
-  background: var(--c-surface);
-  border-left: 1px solid var(--c-border);
+  background: var(--g-surface);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--r-xl);
   box-shadow: var(--shadow-lg);
+  overflow: hidden;
 }
 
 .right {
@@ -26,8 +31,6 @@
 
 .left {
   margin-right: auto;
-  border-left: none;
-  border-right: 1px solid var(--c-border);
   animation: slideRight var(--t-base);
 }
 
@@ -37,28 +40,31 @@
   justify-content: space-between;
   gap: var(--s-4);
   height: var(--topbar-h);
-  padding: 0 var(--s-5);
+  padding: 0 var(--s-6);
   border-bottom: 1px solid var(--c-border);
   flex: none;
 }
 
 .title {
-  font-size: var(--fs-md);
-  font-weight: var(--fw-semibold);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.02em;
 }
 
 .close {
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   display: grid;
   place-items: center;
   border-radius: var(--r-sm);
+  border: 1px solid transparent;
   color: var(--c-text-dim);
   transition: all var(--t-fast);
 }
 
 .close:hover {
-  background: var(--c-hover);
+  background: var(--g-glass-hover);
+  border-color: var(--c-border);
   color: var(--c-text);
 }
 
@@ -67,7 +73,7 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: var(--s-5);
+  padding: var(--s-6);
 }
 
 .footer {
@@ -78,7 +84,7 @@
   gap: var(--s-4);
   padding: var(--s-5);
   border-top: 1px solid var(--c-border);
-  background: var(--c-bg);
+  background: rgba(0, 0, 0, 0.25);
 }
 
 @keyframes fade {
@@ -89,7 +95,8 @@
 
 @keyframes slideLeft {
   from {
-    transform: translateX(100%);
+    opacity: 0;
+    transform: translateX(24px);
   }
 }
 
@@ -102,14 +109,15 @@
 @media (max-width: 899px) {
   .backdrop {
     align-items: flex-end;
+    padding: 0;
   }
   .panel {
     width: 100%;
     height: auto;
     max-height: 92vh;
     border: none;
-    border-top: 1px solid var(--c-border);
-    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    border-top: 1px solid var(--c-border-strong);
+    border-radius: var(--r-2xl) var(--r-2xl) 0 0;
     margin: 0;
     animation: slideUp var(--t-slow);
   }

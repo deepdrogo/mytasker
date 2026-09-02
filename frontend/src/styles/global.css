@@ -26,6 +26,28 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior-y: none;
+  font-feature-settings: 'cv11', 'ss01';
+}
+
+/* Ambient depth behind every screen: two soft glows + a faint grid fading out from the top-left. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 600px at 8% -10%, rgba(255, 255, 255, 0.075), transparent 60%),
+    radial-gradient(700px 500px at 100% 110%, rgba(255, 255, 255, 0.045), transparent 60%),
+    linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
+  background-size:
+    auto,
+    auto,
+    56px 56px,
+    56px 56px;
+  mask-image: radial-gradient(ellipse 90% 80% at 30% 20%, #000 20%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 80% at 30% 20%, #000 20%, transparent 100%);
 }
 
 h1,
@@ -37,10 +59,12 @@ h6 {
   margin: 0;
   font-weight: var(--fw-semibold);
   line-height: var(--lh-tight);
+  letter-spacing: -0.015em;
 }
 
 h1 {
   font-size: var(--fs-xl);
+  letter-spacing: -0.025em;
 }
 h2 {
   font-size: var(--fs-lg);
@@ -103,9 +127,24 @@ kbd {
 }
 
 :focus-visible {
-  outline: 1px solid var(--c-focus);
-  outline-offset: 1px;
+  outline: 1.5px solid var(--c-focus);
+  outline-offset: 2px;
   border-radius: var(--r-xs);
+}
+
+/* Shared "volumetric" surface utilities - use for cards/panels anywhere. */
+.mt-card {
+  background: var(--g-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.mt-glass {
+  background: var(--g-glass);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  box-shadow: var(--rim-top);
 }
 
 ::selection {

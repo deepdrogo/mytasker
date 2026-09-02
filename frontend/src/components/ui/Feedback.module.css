@@ -5,8 +5,8 @@
 }
 
 .skeleton {
-  border-radius: var(--r-sm);
-  background: linear-gradient(90deg, var(--c-surface) 25%, var(--c-surface-2) 50%, var(--c-surface) 75%);
+  border-radius: var(--r-md);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.3s ease-in-out infinite;
 }
@@ -36,9 +36,16 @@
 }
 
 .emptyIcon {
-  color: var(--c-text-faint);
+  color: var(--c-text-dim);
   display: grid;
   place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: var(--s-2);
+  border-radius: var(--r-lg);
+  background: var(--g-glass);
+  border: 1px solid var(--c-border);
+  box-shadow: var(--shadow-card);
 }
 
 .emptyIcon svg {
@@ -47,14 +54,16 @@
 }
 
 .emptyTitle {
-  font-size: var(--fs-md);
-  color: var(--c-text-dim);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text);
 }
 
 .emptyHint {
   font-size: var(--fs-sm);
-  color: var(--c-text-faint);
-  max-width: 320px;
+  color: var(--c-text-dim);
+  max-width: 340px;
+  line-height: 1.5;
 }
 
 .emptyAction {
@@ -69,7 +78,8 @@
   gap: var(--s-5);
   padding: var(--s-4) var(--s-5);
   border: 1px dashed var(--c-border-strong);
-  border-radius: var(--r-sm);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.02);
   font-size: var(--fs-sm);
   color: var(--c-text-dim);
 }
@@ -92,19 +102,23 @@
   display: flex;
   align-items: center;
   gap: var(--s-5);
-  padding: var(--s-4) var(--s-5);
-  background: var(--c-surface-2);
+  padding: var(--s-5) var(--s-6);
+  background: linear-gradient(180deg, rgba(34, 34, 34, 0.92), rgba(14, 14, 14, 0.94));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--c-border-strong);
-  border-radius: var(--r-md);
-  box-shadow: var(--shadow-md);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
   font-size: var(--fs-md);
-  animation: toastIn var(--t-base);
+  font-weight: var(--fw-medium);
+  animation: toastIn var(--t-slow);
 }
 
 .toastStrong {
-  background: var(--c-invert-bg);
+  background: var(--g-primary);
   color: var(--c-invert-text);
-  border-color: var(--c-invert-bg);
+  border-color: #fff;
+  box-shadow: var(--glow), 0 10px 30px rgba(0, 0, 0, 0.6);
 }
 
 .toastMessage {
@@ -124,7 +138,7 @@
 @keyframes toastIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(12px) scale(0.98);
   }
 }
 

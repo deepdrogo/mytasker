@@ -1,28 +1,37 @@
 .row {
+  position: relative;
   display: flex;
   align-items: flex-start;
-  gap: var(--s-4);
-  padding: var(--s-4) var(--s-4);
-  border-bottom: 1px solid var(--c-border);
+  gap: var(--s-5);
+  padding: var(--s-5) var(--s-6);
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
   cursor: pointer;
-  transition: background var(--t-fast);
+  transition:
+    background var(--t-fast),
+    border-color var(--t-fast),
+    box-shadow var(--t-fast);
   min-width: 0;
 }
 
-.row:hover {
-  background: var(--c-surface);
+.row + .row {
+  margin-top: 2px;
 }
 
-.row:last-child {
-  border-bottom: none;
+.row:hover {
+  background: var(--g-glass);
+  border-color: var(--c-border);
+  box-shadow: var(--rim-top);
 }
 
 .compact {
-  padding: var(--s-3) var(--s-4);
+  padding: var(--s-4) var(--s-5);
 }
 
 .selected {
-  background: var(--c-surface-2);
+  background: var(--g-glass-active);
+  border-color: var(--c-rim);
+  box-shadow: var(--rim-top-strong);
 }
 
 .done {
@@ -39,14 +48,18 @@
   flex: none;
   display: grid;
   place-items: center;
-  width: 17px;
-  height: 17px;
+  width: 19px;
+  height: 19px;
   margin-top: 1px;
-  border: 1px solid var(--c-border-strong);
-  border-radius: var(--r-xs);
-  background: transparent;
+  border: 1.5px solid var(--c-border-strong);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.02);
   color: var(--c-text);
-  transition: all var(--t-fast);
+  transition:
+    border-color var(--t-fast),
+    background var(--t-fast),
+    box-shadow var(--t-fast),
+    transform var(--t-fast);
 }
 
 .checkbox {
@@ -55,14 +68,20 @@
 
 .checkbox:hover:not(:disabled),
 .selectBox:hover {
-  border-color: var(--c-text);
-  background: var(--c-surface-3);
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.06);
+}
+
+.checkbox:active:not(:disabled) {
+  transform: scale(0.9);
 }
 
 .done .checkbox {
-  background: var(--c-invert-bg);
-  border-color: var(--c-invert-bg);
+  background: var(--g-primary);
+  border-color: #fff;
   color: var(--c-invert-text);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
 }
 
 .main {
@@ -70,7 +89,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .titleLine {
@@ -81,7 +100,9 @@
 }
 
 .title {
-  font-size: var(--fs-md);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+  letter-spacing: -0.005em;
   line-height: 1.35;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -102,7 +123,7 @@
 }
 
 .overdueLabel {
-  font-weight: var(--fw-medium);
+  font-weight: var(--fw-semibold);
 }
 
 .projectLink {
@@ -131,35 +152,46 @@
   align-items: center;
   gap: var(--s-2);
   opacity: 0;
-  transition: opacity var(--t-fast);
+  transform: translateX(4px);
+  transition:
+    opacity var(--t-fast),
+    transform var(--t-fast);
 }
 
 .row:hover .actions,
 .row:focus-within .actions {
   opacity: 1;
+  transform: none;
 }
 
 .iconAction {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
   border-radius: var(--r-sm);
   color: var(--c-text-dim);
-  transition: all var(--t-fast);
+  border: 1px solid transparent;
+  transition:
+    background var(--t-fast),
+    color var(--t-fast),
+    border-color var(--t-fast);
 }
 
 .iconAction:hover {
-  background: var(--c-surface-3);
+  background: var(--g-glass-active);
+  border-color: var(--c-border);
   color: var(--c-text);
 }
 
 .runningPill {
   font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
   color: var(--c-text);
   border: 1px solid var(--c-border-strong);
+  background: rgba(255, 255, 255, 0.06);
   border-radius: var(--r-full);
-  padding: 1px var(--s-3);
+  padding: 2px var(--s-4);
   opacity: 1;
   animation: blink 2s ease-in-out infinite;
 }
@@ -172,20 +204,21 @@
 
 @media (max-width: 899px) {
   .row {
-    padding: var(--s-5) var(--s-4);
+    padding: var(--s-5) var(--s-5);
     gap: var(--s-5);
   }
   .actions {
     opacity: 1;
+    transform: none;
   }
   .iconAction {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
   }
   .selectBox,
   .checkbox {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
   }
   .title {
     font-size: var(--fs-base);

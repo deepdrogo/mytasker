@@ -6,7 +6,7 @@ import styles from './Logo.module.css';
  * MyTasker mark: an "M" whose last stroke resolves into a checkmark - one continuous line.
  * Geometry lives in a 64x64 box; all sizes scale from it so the favicon and the hero share one shape.
  */
-const MARK_PATH = 'M15 47V19L31 37L52 14';
+const MARK_PATH = 'M14 48V18L31 37L53 13';
 
 interface LogoMarkProps extends JSX.SvgSVGAttributes<SVGSVGElement> {
   size?: number;
@@ -34,30 +34,37 @@ export function LogoMark(props: LogoMarkProps): JSX.Element {
       <Show when={variant() === 'tile'}>
         <defs>
           <linearGradient id={`${id}-plate`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#2a2a2a" />
-            <stop offset="1" stop-color="#050505" />
+            <stop offset="0" stop-color="#3a3a3a" />
+            <stop offset="0.55" stop-color="#141414" />
+            <stop offset="1" stop-color="#060606" />
           </linearGradient>
           <linearGradient id={`${id}-rim`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#ffffff" stop-opacity="0.38" />
-            <stop offset="1" stop-color="#ffffff" stop-opacity="0.06" />
+            <stop offset="0" stop-color="#ffffff" stop-opacity="0.6" />
+            <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.14" />
+            <stop offset="1" stop-color="#ffffff" stop-opacity="0.05" />
           </linearGradient>
           <linearGradient id={`${id}-ink`} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stop-color="#ffffff" />
-            <stop offset="1" stop-color="#c9c9c9" />
+            <stop offset="1" stop-color="#bdbdbd" />
           </linearGradient>
+          <radialGradient id={`${id}-sheen`} cx="0.3" cy="0" r="0.9">
+            <stop offset="0" stop-color="#ffffff" stop-opacity="0.16" />
+            <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
+          </radialGradient>
         </defs>
-        <rect x="1" y="1" width="62" height="62" rx="16" fill={`url(#${id}-plate)`} />
-        <rect x="1.5" y="1.5" width="61" height="61" rx="15.5" stroke={`url(#${id}-rim)`} stroke-width="1" />
+        <rect x="1" y="1" width="62" height="62" rx="17" fill={`url(#${id}-plate)`} />
+        <rect x="1" y="1" width="62" height="62" rx="17" fill={`url(#${id}-sheen)`} />
+        <rect x="1.5" y="1.5" width="61" height="61" rx="16.5" stroke={`url(#${id}-rim)`} stroke-width="1.2" />
         <path
           d={MARK_PATH}
           stroke={`url(#${id}-ink)`}
-          stroke-width="7.5"
+          stroke-width="8.5"
           stroke-linecap="round"
           stroke-linejoin="round"
         />
       </Show>
       <Show when={variant() === 'glyph'}>
-        <path d={MARK_PATH} stroke="currentColor" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round" />
+        <path d={MARK_PATH} stroke="currentColor" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round" />
       </Show>
     </svg>
   );

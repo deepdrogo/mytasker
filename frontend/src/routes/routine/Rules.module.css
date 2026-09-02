@@ -49,7 +49,8 @@
   padding: var(--s-2) var(--s-3) var(--s-2) 0;
   border: 1px solid var(--c-border);
   border-radius: var(--r-md);
-  background: var(--c-surface);
+  background: var(--g-surface);
+  box-shadow: var(--shadow-card);
 }
 
 .disabled {

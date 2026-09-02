@@ -6,7 +6,8 @@
   padding: 0 var(--s-2) 0 var(--s-3);
   border: 1px solid var(--c-border-strong);
   border-radius: var(--r-full);
-  background: var(--c-surface-2);
+  background: var(--g-surface);
+  box-shadow: var(--shadow-card);
   font-size: var(--fs-xs);
   color: var(--c-text);
   max-width: 260px;

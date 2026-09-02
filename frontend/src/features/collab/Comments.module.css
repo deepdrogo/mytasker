@@ -15,7 +15,8 @@
   padding: var(--s-3) var(--s-4);
   border: 1px solid var(--c-border);
   border-radius: var(--r-md);
-  background: var(--c-surface);
+  background: var(--g-surface);
+  box-shadow: var(--shadow-card);
 }
 
 .head {

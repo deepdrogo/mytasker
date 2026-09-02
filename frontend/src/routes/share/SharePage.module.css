@@ -67,7 +67,8 @@
   padding: var(--s-6);
   border: 1px solid var(--c-border);
   border-radius: var(--r-lg);
-  background: var(--c-surface);
+  background: var(--g-surface);
+  box-shadow: var(--shadow-card);
   max-width: 420px;
 }
 

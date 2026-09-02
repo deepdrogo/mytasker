@@ -56,6 +56,11 @@ def _handle_message(message: dict, commands) -> None:
     if chat_id is None or not text:
         return
     sender = message.get("from") or {}
+    if not services.is_private_chat(chat):
+        # Never link or act inside groups/channels: other members could read/mutate the owner's data.
+        if text.startswith("/start") or text.startswith("/"):
+            _reply_raw(chat_id, f"MyTasker only works in a private chat. Open @{_bot_username()} directly.")
+        return
 
     if text.startswith("/start"):
         parts = text.split(maxsplit=1)
@@ -77,7 +82,7 @@ def _handle_message(message: dict, commands) -> None:
             _register_commands()
             return
 
-    user = services.user_for_chat(chat_id)
+    user = services.user_for_chat(chat_id, sender_id=sender.get("id"))
     if user is None:
         _reply_raw(
             chat_id,
@@ -91,9 +96,15 @@ def _handle_message(message: dict, commands) -> None:
 
 def _handle_callback(callback: dict, commands) -> None:
     message = callback.get("message") or {}
-    chat_id = (message.get("chat") or {}).get("id")
+    chat = message.get("chat") or {}
+    chat_id = chat.get("id")
     callback_id = callback.get("id")
-    user = services.user_for_chat(chat_id) if chat_id is not None else None
+    sender_id = (callback.get("from") or {}).get("id")
+    user = (
+        services.user_for_chat(chat_id, sender_id=sender_id)
+        if chat_id is not None and services.is_private_chat(chat)
+        else None
+    )
     if user is None:
         if callback_id:
             _safe(lambda: client.answer_callback_query(callback_id, "Not linked."))
@@ -109,6 +120,12 @@ def _handle_callback(callback: dict, commands) -> None:
             if "message is not modified" in str(exc):
                 return
     services.send_now(user, text, reply_markup=markup, key=f"cb:{chat_id}:{callback_id}")
+
+
+def _bot_username() -> str:
+    from django.conf import settings
+
+    return settings.TELEGRAM_BOT_USERNAME.lstrip("@") or "the bot"
 
 
 def _reply_raw(chat_id: int, text: str) -> None:

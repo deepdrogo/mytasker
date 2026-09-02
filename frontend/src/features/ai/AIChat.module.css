@@ -138,7 +138,8 @@
   min-height: 38px;
   max-height: 160px;
   padding: var(--s-4) var(--s-5);
-  background: var(--c-surface);
+  background: var(--g-surface);
+  box-shadow: var(--shadow-card);
   border: 1px solid var(--c-border);
   border-radius: var(--r-md);
   color: var(--c-text);

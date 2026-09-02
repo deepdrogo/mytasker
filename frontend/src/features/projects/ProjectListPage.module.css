@@ -1,13 +1,19 @@
 .toolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
   gap: var(--s-3);
   align-items: center;
 }
 
 .toolbar > :first-child {
-  flex: 1 1 200px;
-  max-width: 320px;
+  flex: 1 1 240px;
+  max-width: 340px;
+}
+
+.toolbar > :not(:first-child) {
+  flex: 0 0 auto;
+  width: 180px;
 }
 
 .grid {

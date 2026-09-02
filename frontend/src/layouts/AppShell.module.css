@@ -1,9 +1,11 @@
+/* Dock + canvas: a transparent sidebar "dock" on the left and the app rendered on a floating panel. */
+
 .shell {
   display: flex;
   height: 100dvh;
   width: 100%;
   overflow: hidden;
-  background: var(--c-bg);
+  background: transparent;
 }
 
 .main {
@@ -12,6 +14,15 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  margin: var(--canvas-gap) var(--canvas-gap) var(--canvas-gap) 0;
+  border-radius: var(--r-xl);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012) 30%, rgba(255, 255, 255, 0.008));
+  border: 1px solid var(--c-border);
+  box-shadow:
+    var(--rim-top),
+    0 24px 60px rgba(0, 0, 0, 0.55);
+  position: relative;
+  isolation: isolate;
 }
 
 .content {
@@ -23,25 +34,28 @@
 }
 
 .loading {
-  padding: var(--s-6);
+  padding: var(--s-8);
 }
 
 .mobileSidebar {
   position: fixed;
   inset: 0;
   z-index: var(--z-drawer);
-  background: rgba(0, 0, 0, 0.66);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: flex;
   animation: fade var(--t-base);
 }
 
 .mobileSidebarPanel {
-  width: 250px;
-  max-width: 84%;
+  width: 288px;
+  max-width: 86%;
   height: 100%;
-  background: var(--c-surface);
-  border-right: 1px solid var(--c-border);
-  animation: slideIn var(--t-base);
+  background: var(--g-surface);
+  border-right: 1px solid var(--c-border-strong);
+  box-shadow: var(--shadow-lg);
+  animation: slideIn var(--t-slow);
   display: flex;
 }
 
@@ -58,7 +72,14 @@
 }
 
 @media (max-width: 899px) {
+  .main {
+    margin: 0;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+  }
   .content {
-    padding-bottom: calc(var(--bottomnav-h) + env(safe-area-inset-bottom));
+    padding-bottom: calc(var(--bottomnav-h) + 24px + env(safe-area-inset-bottom));
   }
 }

@@ -1,7 +1,7 @@
 /*
- * MyTasker design tokens - strict monochrome.
- * The ONLY allowed colors: #000000 #0D0D0D #1A1A1A #262626 #404040 #808080 #FFFFFF
- * State is expressed through contrast, borders, opacity, weight and icons - never hue.
+ * MyTasker design tokens - monochrome with depth.
+ * Hue is never used for state; instead: contrast, layered gradients, light rims, glow and weight.
+ * Base greys: #000000 #0D0D0D #1A1A1A #262626 #404040 #808080 #FFFFFF (+ white/black alpha for glass).
  */
 
 :root {
@@ -11,27 +11,41 @@
   --c-surface-2: #1a1a1a;
   --c-surface-3: #262626;
 
+  /* Glass & gradient surfaces (the "volumetric" language shared with the landing) */
+  --g-surface: linear-gradient(180deg, #161616 0%, #0b0b0b 100%);
+  --g-surface-raised: linear-gradient(180deg, #1d1d1d 0%, #0f0f0f 100%);
+  --g-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015));
+  --g-glass-hover: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
+  --g-glass-active: linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.05));
+  --g-primary: linear-gradient(180deg, #ffffff 0%, #e4e4e4 100%);
+  --g-ink: linear-gradient(90deg, #808080, #ffffff);
+
   /* Lines */
-  --c-border: #262626;
-  --c-border-strong: #404040;
+  --c-border: rgba(255, 255, 255, 0.08);
+  --c-border-strong: rgba(255, 255, 255, 0.18);
+  --c-border-solid: #262626;
+  --c-rim: rgba(255, 255, 255, 0.1);
 
   /* Text */
   --c-text: #ffffff;
-  --c-text-dim: #808080;
-  --c-text-faint: #404040;
+  --c-text-dim: #8a8a8a;
+  --c-text-faint: #4a4a4a;
 
   /* Interactive */
-  --c-hover: #1a1a1a;
-  --c-active: #262626;
-  --c-focus: #ffffff;
+  --c-hover: rgba(255, 255, 255, 0.05);
+  --c-active: rgba(255, 255, 255, 0.09);
+  --c-focus: rgba(255, 255, 255, 0.7);
   --c-invert-bg: #ffffff;
   --c-invert-text: #000000;
+  --ring: 0 0 0 3px rgba(255, 255, 255, 0.09);
 
   /* Radii */
-  --r-xs: 3px;
-  --r-sm: 5px;
-  --r-md: 7px;
-  --r-lg: 10px;
+  --r-xs: 6px;
+  --r-sm: 8px;
+  --r-md: 11px;
+  --r-lg: 14px;
+  --r-xl: 18px;
+  --r-2xl: 24px;
   --r-full: 999px;
 
   /* Spacing scale */
@@ -48,36 +62,44 @@
 
   /* Typography */
   --font-sans:
-    ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
-  --fs-xs: 11px;
-  --fs-sm: 12px;
-  --fs-md: 13px;
-  --fs-base: 14px;
-  --fs-lg: 16px;
-  --fs-xl: 19px;
-  --fs-2xl: 24px;
-  --lh-tight: 1.25;
+    'Inter Variable', 'Inter', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  --fs-xs: 11.5px;
+  --fs-sm: 12.5px;
+  --fs-md: 13.5px;
+  --fs-base: 14.5px;
+  --fs-lg: 17px;
+  --fs-xl: 22px;
+  --fs-2xl: 28px;
+  --lh-tight: 1.2;
   --lh-normal: 1.5;
   --fw-normal: 400;
   --fw-medium: 500;
   --fw-semibold: 600;
+  --fw-bold: 700;
 
   /* Layout */
-  --sidebar-w: 216px;
-  --topbar-h: 48px;
-  --bottomnav-h: 56px;
-  --panel-w: 380px;
+  --sidebar-w: 248px;
+  --topbar-h: 60px;
+  --bottomnav-h: 64px;
+  --panel-w: 420px;
+  --canvas-gap: 10px;
 
   /* Motion */
-  --t-fast: 90ms ease-out;
-  --t-base: 140ms ease-out;
-  --t-slow: 220ms ease-out;
+  --t-fast: 110ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  --t-base: 170ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  --t-slow: 260ms cubic-bezier(0.2, 0.7, 0.2, 1);
 
-  /* Elevation - neutral only, no tint */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.6);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.7);
-  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.8);
+  /* Elevation - layered neutral shadows + top light rim */
+  --rim-top: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --rim-top-strong: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  --shadow-sm: var(--rim-top), 0 1px 2px rgba(0, 0, 0, 0.6);
+  --shadow-md: var(--rim-top), 0 10px 28px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.5);
+  --shadow-lg: var(--rim-top-strong), 0 30px 70px rgba(0, 0, 0, 0.8), 0 10px 24px rgba(0, 0, 0, 0.6);
+  --shadow-card: var(--rim-top), 0 12px 30px rgba(0, 0, 0, 0.45);
+  --glow: 0 8px 28px rgba(255, 255, 255, 0.14);
+  --glow-strong: 0 14px 40px rgba(255, 255, 255, 0.24);
 
   --z-sticky: 20;
   --z-drawer: 60;

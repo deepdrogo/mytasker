@@ -8,6 +8,7 @@
   font-size: var(--fs-sm);
   color: var(--c-text-dim);
   font-weight: var(--fw-medium);
+  letter-spacing: 0.01em;
 }
 
 .req {
@@ -23,7 +24,7 @@
 .error {
   font-size: var(--fs-xs);
   color: var(--c-text);
-  border-left: 2px solid var(--c-border-strong);
+  border-left: 2px solid #fff;
   padding-left: var(--s-3);
 }
 
@@ -31,48 +32,57 @@
 .select,
 .textarea {
   width: 100%;
-  background: var(--c-surface);
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--c-border);
-  border-radius: var(--r-sm);
+  border-radius: var(--r-md);
   color: var(--c-text);
-  padding: 0 var(--s-4);
+  padding: 0 var(--s-5);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
   transition:
     border-color var(--t-fast),
-    background var(--t-fast);
+    background var(--t-fast),
+    box-shadow var(--t-fast);
 }
 
 .input:hover,
 .select:hover,
 .textarea:hover {
   border-color: var(--c-border-strong);
+  background: rgba(255, 255, 255, 0.045);
 }
 
 .input:focus,
 .select:focus,
 .textarea:focus {
-  border-color: var(--c-text-dim);
-  background: var(--c-surface-2);
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.05);
   outline: none;
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.5),
+    var(--ring);
 }
 
 .sm {
-  height: 26px;
+  height: 30px;
   font-size: var(--fs-sm);
+  border-radius: var(--r-sm);
+  padding: 0 var(--s-4);
 }
 
 .md {
-  height: 32px;
+  height: 36px;
   font-size: var(--fs-md);
 }
 
 .lg {
-  height: 38px;
+  height: 44px;
   font-size: var(--fs-base);
+  border-radius: var(--r-lg);
 }
 
 .textarea {
-  min-height: 84px;
-  padding: var(--s-4);
+  min-height: 96px;
+  padding: var(--s-4) var(--s-5);
   font-size: var(--fs-md);
   line-height: var(--lh-normal);
   resize: vertical;
@@ -89,18 +99,18 @@
 }
 
 .invalid {
-  border-color: var(--c-text-dim);
+  border-color: rgba(255, 255, 255, 0.5);
   border-style: dashed;
 }
 
 .select {
   appearance: none;
-  padding-right: var(--s-7);
+  padding-right: var(--s-9);
   background-image: linear-gradient(45deg, transparent 50%, var(--c-text-dim) 50%),
     linear-gradient(135deg, var(--c-text-dim) 50%, transparent 50%);
   background-position:
-    calc(100% - 14px) 50%,
-    calc(100% - 9px) 50%;
+    calc(100% - 16px) 50%,
+    calc(100% - 11px) 50%;
   background-size:
     5px 5px,
     5px 5px;
@@ -108,7 +118,7 @@
 }
 
 .select option {
-  background: var(--c-surface-2);
+  background: #161616;
   color: var(--c-text);
 }
 
@@ -123,43 +133,47 @@
 
 .checkbox {
   appearance: none;
-  width: 15px;
-  height: 15px;
+  width: 17px;
+  height: 17px;
   flex: none;
   border: 1px solid var(--c-border-strong);
-  border-radius: var(--r-xs);
-  background: var(--c-surface);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.03);
   display: grid;
   place-content: center;
   cursor: pointer;
-  transition: all var(--t-fast);
+  transition:
+    background var(--t-fast),
+    border-color var(--t-fast),
+    box-shadow var(--t-fast);
 }
 
 .checkbox:hover {
-  border-color: var(--c-text-dim);
+  border-color: rgba(255, 255, 255, 0.45);
 }
 
 .checkbox:checked {
-  background: var(--c-invert-bg);
-  border-color: var(--c-invert-bg);
+  background: var(--g-primary);
+  border-color: #fff;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.25);
 }
 
 .checkbox:checked::after {
   content: '';
   width: 8px;
   height: 4px;
-  border-left: 1.6px solid var(--c-invert-text);
-  border-bottom: 1.6px solid var(--c-invert-text);
+  border-left: 2px solid var(--c-invert-text);
+  border-bottom: 2px solid var(--c-invert-text);
   transform: rotate(-45deg) translate(1px, -1px);
 }
 
 @media (max-width: 899px) {
   .md {
-    height: 38px;
+    height: 40px;
     font-size: var(--fs-base);
   }
   .checkbox {
-    width: 17px;
-    height: 17px;
+    width: 19px;
+    height: 19px;
   }
 }

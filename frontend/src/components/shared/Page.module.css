@@ -7,8 +7,8 @@
 
 .header {
   flex: none;
+  background: transparent;
   border-bottom: 1px solid var(--c-border);
-  background: var(--c-bg);
 }
 
 .headRow {
@@ -16,8 +16,8 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--s-5);
-  padding: var(--s-5) var(--s-6);
-  min-height: 44px;
+  padding: var(--s-7) var(--s-8) var(--s-6);
+  min-height: 56px;
 }
 
 .titleBlock {
@@ -25,14 +25,15 @@
 }
 
 .title {
-  font-size: var(--fs-lg);
-  font-weight: var(--fw-semibold);
-  letter-spacing: -0.01em;
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
 }
 
 .subtitle {
-  margin-top: 1px;
-  font-size: var(--fs-sm);
+  margin-top: var(--s-2);
+  font-size: var(--fs-md);
   color: var(--c-text-dim);
 }
 
@@ -43,13 +44,20 @@
   flex: none;
 }
 
+/* Tabs render as a segmented glass control */
 .tabs {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: var(--s-2);
-  padding: 0 var(--s-6);
+  gap: 2px;
+  margin: 0 var(--s-8) var(--s-5);
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
   overflow-x: auto;
   scrollbar-width: none;
+  width: max-content;
+  max-width: calc(100% - 2 * var(--s-8));
 }
 
 .tabs::-webkit-scrollbar {
@@ -60,13 +68,17 @@
   display: inline-flex;
   align-items: center;
   gap: var(--s-3);
-  padding: var(--s-3) var(--s-4);
-  margin-bottom: -1px;
-  border-bottom: 1.5px solid transparent;
-  font-size: var(--fs-md);
+  height: 30px;
+  padding: 0 var(--s-5);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
   color: var(--c-text-dim);
   white-space: nowrap;
-  transition: all var(--t-fast);
+  transition:
+    color var(--t-fast),
+    background var(--t-fast),
+    box-shadow var(--t-fast);
 }
 
 .tab:hover {
@@ -75,22 +87,30 @@
 
 .tabActive {
   color: var(--c-text);
-  border-bottom-color: var(--c-text);
-  font-weight: var(--fw-medium);
+  background: var(--g-glass-active);
+  box-shadow:
+    var(--rim-top-strong),
+    0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .tabCount {
   font-size: var(--fs-xs);
   color: var(--c-text-faint);
   font-variant-numeric: tabular-nums;
+  padding: 1px 6px;
+  border-radius: var(--r-full);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tabActive .tabCount {
+  color: var(--c-text-dim);
 }
 
 .toolbar {
   display: flex;
   align-items: center;
   gap: var(--s-3);
-  padding: var(--s-4) var(--s-6);
-  border-top: 1px solid var(--c-border);
+  padding: 0 var(--s-8) var(--s-5);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -99,12 +119,17 @@
   display: none;
 }
 
+.toolbar > :only-child {
+  flex: 1;
+  min-width: 0;
+}
+
 .body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: var(--s-5) var(--s-6) var(--s-9);
+  padding: var(--s-7) var(--s-8) var(--s-10);
 }
 
 .bodyStatic {
@@ -116,11 +141,11 @@
 }
 
 .section + .section {
-  margin-top: var(--s-8);
+  margin-top: var(--s-9);
 }
 
 .sectionDense + .sectionDense {
-  margin-top: var(--s-6);
+  margin-top: var(--s-7);
 }
 
 .sectionHead {
@@ -128,15 +153,15 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--s-4);
-  margin-bottom: var(--s-4);
+  margin-bottom: var(--s-5);
 }
 
 .sectionTitle {
-  font-size: var(--fs-xs);
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--c-text-faint);
-  font-weight: var(--fw-medium);
+  letter-spacing: 0.12em;
+  color: var(--c-text-dim);
+  font-weight: var(--fw-semibold);
 }
 
 .sectionAction {
@@ -146,25 +171,31 @@
 }
 
 .card {
-  background: var(--c-surface);
+  background: var(--g-surface);
   border: 1px solid var(--c-border);
-  border-radius: var(--r-md);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
 }
 
 .cardPadded {
-  padding: var(--s-5);
+  padding: var(--s-6);
 }
 
 @media (max-width: 899px) {
   .headRow {
-    padding: var(--s-4) var(--s-5);
+    padding: var(--s-6) var(--s-5) var(--s-5);
   }
-  .tabs,
+  .title {
+    font-size: 20px;
+  }
+  .tabs {
+    margin: 0 var(--s-5) var(--s-4);
+    max-width: calc(100% - 2 * var(--s-5));
+  }
   .toolbar {
-    padding-left: var(--s-5);
-    padding-right: var(--s-5);
+    padding: 0 var(--s-5) var(--s-4);
   }
   .body {
-    padding: var(--s-4) var(--s-5) var(--s-9);
+    padding: var(--s-5) var(--s-5) var(--s-10);
   }
 }

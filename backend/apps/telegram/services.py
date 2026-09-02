@@ -95,9 +95,21 @@ def unlink(user) -> None:
     )
 
 
-def user_for_chat(chat_id: int):
+def is_private_chat(chat: dict | None) -> bool:
+    """The bot only ever acts on behalf of an account inside a 1:1 chat. Groups/channels are refused, so a
+    linked account can never be driven by other members of a group the owner happens to be in."""
+    chat_type = (chat or {}).get("type")
+    return chat_type in (None, "private")
+
+
+def user_for_chat(chat_id: int, *, sender_id: int | None = None):
     connection = TelegramConnection.objects.filter(chat_id=chat_id, is_active=True).select_related("user").first()
     if connection is None or not connection.is_linked:
+        return None
+    # Defence in depth: once we know which Telegram user linked this chat, only that user may issue commands.
+    if sender_id is not None and connection.telegram_user_id and connection.telegram_user_id != sender_id:
+        return None
+    if not connection.user.is_active:
         return None
     TelegramConnection.objects.filter(pk=connection.pk).update(last_interaction_at=timezone.now())
     return connection.user

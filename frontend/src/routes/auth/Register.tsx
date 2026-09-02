@@ -51,7 +51,10 @@ export default function Register(): JSX.Element {
 
   return (
     <form class={styles.form} onSubmit={submit} novalidate>
-      <h1 class={styles.heading}>Create account</h1>
+      <div class={styles.head}>
+        <h1 class={styles.heading}>Create your account</h1>
+        <p class={styles.sub}>Free forever. Takes under a minute.</p>
+      </div>
 
       {error() && <ErrorNote message={error()} />}
 

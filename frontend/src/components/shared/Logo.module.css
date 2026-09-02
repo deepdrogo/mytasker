@@ -1,28 +1,36 @@
 .mark {
   display: block;
   flex: none;
-  border-radius: 25%;
+  border-radius: 27%;
   box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.6),
-    0 0 0 0.5px rgba(255, 255, 255, 0.04);
+    0 2px 6px rgba(0, 0, 0, 0.7),
+    0 0 18px rgba(255, 255, 255, 0.08);
 }
 
 .logo {
   display: inline-flex;
   align-items: center;
-  gap: calc(var(--logo-size, 24px) * 0.38);
+  gap: calc(var(--logo-size, 24px) * 0.4);
   line-height: 1;
   white-space: nowrap;
 }
 
+/* Wordmark: geometric display face, tight tracking, two tones read as one word. */
 .word {
-  font-size: calc(var(--logo-size, 24px) * 0.66);
+  font-family: 'Sora', var(--font-sans);
+  font-size: calc(var(--logo-size, 24px) * 0.68);
   font-weight: 700;
-  letter-spacing: -0.035em;
-  color: var(--c-text);
+  letter-spacing: -0.045em;
+  background: linear-gradient(180deg, #ffffff 0%, #d2d2d2 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  padding-right: 0.06em;
 }
 
 .wordAccent {
-  font-weight: 500;
-  color: var(--c-text-dim);
+  font-weight: 600;
+  background: linear-gradient(180deg, #a8a8a8 0%, #6e6e6e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
 }
