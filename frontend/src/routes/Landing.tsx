@@ -32,6 +32,7 @@ interface Feature {
 }
 
 const GITHUB_URL = 'https://github.com/deepdrogo/mytasker';
+const AUTHOR_TELEGRAM = 'https://t.me/drogoz';
 
 const FEATURES: Feature[] = [
   { icon: Sun, title: 'Today', text: 'One screen with everything due, overdue and planned for the day.' },
@@ -125,7 +126,7 @@ function LandingView(): JSX.Element {
           <a href={botUrl()} target="_blank" rel="noreferrer">
             Telegram
           </a>
-          <A href="/donate">Support</A>
+          <A href="/support">Support</A>
         </nav>
         <div class={styles.navActions}>
           <a href={GITHUB_URL} class={styles.githubBtn} target="_blank" rel="noreferrer" aria-label="MyTasker on GitHub">
@@ -146,7 +147,10 @@ function LandingView(): JSX.Element {
         <section class={styles.copy}>
           <div class={styles.badge}>
             <span class={styles.pulse} aria-hidden="true" />
-            Always free <span class={styles.badgeSep}>·</span> by <strong>drogoz</strong>
+            Always free <span class={styles.badgeSep}>·</span> by{' '}
+            <a href={AUTHOR_TELEGRAM} target="_blank" rel="noreferrer" class={styles.badgeAuthor}>
+              drogoz
+            </a>
           </div>
           <h1 class={styles.h1}>
             One control center for <em>life</em>, <em>business</em> and <em>time</em>.
@@ -277,7 +281,11 @@ function LandingView(): JSX.Element {
         <span class={styles.footFree}>
           <LogoMark size={14} variant="glyph" class={styles.footGlyph} />
           <Heart size={12} stroke-width={2.4} />
-          Always free by <strong>drogoz</strong> - no premium tier, no trials, no paywalls.
+          Always free by{' '}
+          <a href={AUTHOR_TELEGRAM} target="_blank" rel="noreferrer" class={styles.footAuthor}>
+            drogoz
+          </a>{' '}
+          - no premium tier, no trials, no paywalls.
         </span>
         <span class={styles.footLinks}>
           <A href="/auth/login">Log in</A>
@@ -285,7 +293,11 @@ function LandingView(): JSX.Element {
           <a href={botUrl()} target="_blank" rel="noreferrer">
             @{botUsername()}
           </a>
-          <A href="/donate">Support hosting</A>
+          <a href={AUTHOR_TELEGRAM} target="_blank" rel="noreferrer" class={styles.footGithub}>
+            <Send size={12} stroke-width={2.2} />
+            Author: @drogoz
+          </a>
+          <A href="/support">Support hosting</A>
           <a href={GITHUB_URL} target="_blank" rel="noreferrer" class={styles.footGithub}>
             <Github size={13} stroke-width={2.2} />
             GitHub

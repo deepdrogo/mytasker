@@ -156,6 +156,21 @@
   text-decoration-color: var(--c-text);
 }
 
+.badgeAuthor,
+.footAuthor {
+  color: var(--c-text);
+  font-weight: var(--fw-bold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--c-border-strong);
+  transition: text-decoration-color var(--t-fast);
+}
+
+.badgeAuthor:hover,
+.footAuthor:hover {
+  text-decoration-color: var(--c-text);
+}
+
 .footGithub {
   display: inline-flex;
   align-items: center;

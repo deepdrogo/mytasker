@@ -328,6 +328,9 @@ def update_idea(actor: Actor, idea_id: int, **fields) -> Idea:
             changed.append(key)
     if changed:
         idea.save(update_fields=[*changed, "updated_at"])
+        from apps.translations.services import request_translation
+
+        request_translation("idea", idea.pk)
     return idea
 
 

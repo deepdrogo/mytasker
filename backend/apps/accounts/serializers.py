@@ -168,7 +168,15 @@ class VerifyEmailSerializer(serializers.Serializer):
     token = serializers.CharField(max_length=200)
 
 
+def _validate_locale(value: str) -> str:
+    from django.conf import settings
+
+    if value not in settings.SUPPORTED_LANGUAGES:
+        raise serializers.ValidationError("Unsupported language.")
+    return value
+
+
 class ProfileUpdateSerializer(serializers.Serializer):
     full_name = serializers.CharField(max_length=120, required=False, allow_blank=True)
     timezone = serializers.CharField(max_length=64, required=False, validators=[_validate_timezone])
-    locale = serializers.CharField(max_length=10, required=False)
+    locale = serializers.CharField(max_length=10, required=False, validators=[_validate_locale])

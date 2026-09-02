@@ -9,6 +9,7 @@
   <img alt="SolidJS" src="https://img.shields.io/badge/SolidJS-1.9-white?style=for-the-badge&logo=solid&logoColor=white&labelColor=000">
   <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-16-white?style=for-the-badge&logo=postgresql&logoColor=white&labelColor=000">
   <img alt="Telegram" src="https://img.shields.io/badge/Telegram-bot-white?style=for-the-badge&logo=telegram&logoColor=white&labelColor=000">
+  <a href="https://t.me/drogoz"><img alt="Author on Telegram" src="https://img.shields.io/badge/author-%40drogoz-white?style=for-the-badge&logo=telegram&logoColor=white&labelColor=000"></a>
 </p>
 
 <p align="center">
@@ -24,7 +25,8 @@
   <a href="#-architecture">Architecture</a> ·
   <a href="#-getting-started">Getting started</a> ·
   <a href="#-deployment">Deployment</a> ·
-  <a href="#-security--privacy">Security</a>
+  <a href="#-security--privacy">Security</a> ·
+  <a href="#-author--support">Author & support</a>
 </p>
 
 ---
@@ -275,6 +277,27 @@ Production settings live in `config/settings/prod.py`; `.env` is read by `django
 - Public share links are unguessable and revocable.
 - No analytics, no trackers, no third-party fonts or scripts.
 
+## ✦ Author & support
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>👤 Author</h3>
+      <p>MyTasker is designed, built and hosted by <b>drogoz</b> - a one-person project, kept free forever.</p>
+      <p>Questions, ideas, bugs, or just want to say hi?</p>
+      <p><a href="https://t.me/drogoz"><img alt="Telegram @drogoz" src="https://img.shields.io/badge/Telegram-%40drogoz-white?style=for-the-badge&logo=telegram&logoColor=white&labelColor=000"></a></p>
+      <p><sub>Also live on the site: <a href="https://mytasker.io/support">mytasker.io/support</a></sub></p>
+    </td>
+    <td width="50%" valign="top">
+      <h3>₿ Support hosting</h3>
+      <p>Donations are optional and never unlock anything - there is nothing to unlock. If MyTasker saves you time, you can chip in for servers and coffee.</p>
+      <p><b>Bitcoin</b> (Bitcoin network, native SegWit):</p>
+      <pre><code>bc1qts0wedujmzrthge9fqpc29ufezpyq87hz3wwe7</code></pre>
+      <p><sub>Send only BTC on the Bitcoin network to this address.</sub></p>
+    </td>
+  </tr>
+</table>
+
 ## ✦ Roadmap
 
 - [ ] Natural-language recurrence ("every 2nd Tuesday")
@@ -296,5 +319,5 @@ Issues and pull requests are welcome. Keep the rules of the house:
 
 <p align="center">
   <img src="docs/assets/logo.png" width="40" alt=""><br>
-  <sub>Always free · by <b>drogoz</b> · <a href="https://mytasker.io">mytasker.io</a> · <a href="https://t.me/mytaskerproductiondrogoz_bot">@mytaskerproductiondrogoz_bot</a></sub>
+  <sub>Always free · by <a href="https://t.me/drogoz"><b>drogoz</b></a> · <a href="https://mytasker.io">mytasker.io</a> · bot <a href="https://t.me/mytaskerproductiondrogoz_bot">@mytaskerproductiondrogoz_bot</a> · <a href="https://github.com/deepdrogo/mytasker">GitHub</a></sub>
 </p>

@@ -21,6 +21,7 @@ api_v1 = [
     path("", include("apps.ai.urls")),
     path("", include("apps.analytics.urls")),
     path("", include("apps.donations.urls")),
+    path("", include("apps.translations.urls")),
     path("", include("common.search_urls")),
 ]
 

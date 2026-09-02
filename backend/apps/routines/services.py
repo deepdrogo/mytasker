@@ -8,6 +8,7 @@ from django.utils import timezone
 from apps.routines.models import Routine, RoutineCompletion, RoutineItem, Rule
 from common.exceptions import NotFound, ValidationFailed
 from common.tz import now_for, today_for
+from apps.translations.services import request_translation
 
 ITEM_FIELDS = {
     "name",
@@ -65,7 +66,9 @@ def create_item(user, kind: str, **fields) -> RoutineItem:
         data["order"] = (last or 0) + 1
     if kind == Routine.Kind.BUSINESS:
         data.setdefault("counts_as_business", True)
-    return RoutineItem.objects.create(routine=routine, **data)
+    item = RoutineItem.objects.create(routine=routine, **data)
+    request_translation("routine_item", item.pk)
+    return item
 
 
 @transaction.atomic
@@ -84,6 +87,8 @@ def update_item(user, item_id: int, **fields) -> RoutineItem:
             changed.append(key)
     if changed:
         item.save(update_fields=[*changed, "updated_at"])
+        if {"name", "description"} & set(changed):
+            request_translation("routine_item", item.pk)
     return item
 
 
@@ -144,7 +149,9 @@ def create_rule(user, **fields) -> Rule:
     if "order" not in data:
         last = Rule.objects.filter(owner=user).order_by("-order").values_list("order", flat=True).first()
         data["order"] = (last or 0) + 1
-    return Rule.objects.create(owner=user, **data)
+    rule = Rule.objects.create(owner=user, **data)
+    request_translation("rule", rule.pk)
+    return rule
 
 
 @transaction.atomic
@@ -159,6 +166,8 @@ def update_rule(user, rule_id: int, **fields) -> Rule:
             changed.append(key)
     if changed:
         rule.save(update_fields=[*changed, "updated_at"])
+        if {"text", "description"} & set(changed):
+            request_translation("rule", rule.pk)
     return rule
 
 

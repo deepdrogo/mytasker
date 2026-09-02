@@ -26,6 +26,8 @@ env = environ.Env(
     ANTHROPIC_API_KEY=(str, ""),
     ANTHROPIC_MODEL=(str, "claude-sonnet-4-5"),
     ANTHROPIC_TIMEOUT_SECONDS=(int, 45),
+    TRANSLATION_MODEL=(str, ""),
+    TRANSLATIONS_ENABLED=(bool, True),
     TELEGRAM_BOT_TOKEN=(str, ""),
     TELEGRAM_BOT_USERNAME=(str, ""),
     TELEGRAM_WEBHOOK_SECRET=(str, ""),
@@ -77,6 +79,7 @@ INSTALLED_APPS = [
     "apps.audit",
     "apps.donations",
     "apps.realtime",
+    "apps.translations",
 ]
 
 MIDDLEWARE = [
@@ -164,6 +167,7 @@ CELERY_TASK_ROUTES = {
     "apps.telegram.tasks.*": {"queue": "notify"},
     "apps.notifications.tasks.*": {"queue": "notify"},
     "apps.analytics.tasks.*": {"queue": "default"},
+    "apps.translations.tasks.*": {"queue": "default"},
 }
 # Static schedule; DatabaseScheduler picks these up on first run and they can be tuned in admin afterwards.
 CELERY_BEAT_SCHEDULE = {
@@ -239,6 +243,7 @@ REST_FRAMEWORK = {
         "ai_command": "30/min",
         "ai_heavy": "20/min",
         "search": "120/min",
+        "translations": "120/min",
     },
     "DATETIME_FORMAT": "iso-8601",
     "UNAUTHENTICATED_USER": "django.contrib.auth.models.AnonymousUser",
@@ -253,6 +258,8 @@ LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
+# UI languages offered to users and the targets of background content translation.
+SUPPORTED_LANGUAGES = ["ka", "en"]
 
 # ---------------------------------------------------------------------------
 # Static / media
@@ -278,6 +285,9 @@ DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL")
 ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY")
 ANTHROPIC_MODEL = env("ANTHROPIC_MODEL")
 ANTHROPIC_TIMEOUT_SECONDS = env("ANTHROPIC_TIMEOUT_SECONDS")
+# Optional cheaper/faster model for background translations; falls back to ANTHROPIC_MODEL.
+TRANSLATION_MODEL = env("TRANSLATION_MODEL")
+TRANSLATIONS_ENABLED = env("TRANSLATIONS_ENABLED")
 TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN")
 TELEGRAM_BOT_USERNAME = env("TELEGRAM_BOT_USERNAME")
 TELEGRAM_WEBHOOK_SECRET = env("TELEGRAM_WEBHOOK_SECRET")

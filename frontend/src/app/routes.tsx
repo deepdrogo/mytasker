@@ -34,11 +34,14 @@ const ResetPassword = lazy(() => import('~/routes/auth/ResetPassword'));
 const VerifyEmail = lazy(() => import('~/routes/auth/VerifyEmail'));
 const SharePage = lazy(() => import('~/routes/share/SharePage'));
 const Landing = lazy(() => import('~/routes/Landing'));
+const Support = lazy(() => import('~/routes/Support'));
 const NotFound = lazy(() => import('~/routes/NotFound'));
 
 export const routes: RouteDefinition[] = [
   // Public landing; signed-in users are bounced straight to /today inside the component.
   { path: '/', component: Landing },
+  // Public: donation addresses + author contact, reachable from the landing without an account.
+  { path: '/support', component: Support },
   {
     path: '/',
     component: ProtectedLayout,
