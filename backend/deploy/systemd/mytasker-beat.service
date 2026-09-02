@@ -1,0 +1,31 @@
+[Unit]
+Description=MyTasker Celery beat (reminders, summaries, rollups)
+After=network.target postgresql.service redis-server.service mytasker-worker.service
+Wants=postgresql.service redis-server.service
+
+[Service]
+Type=simple
+User=mytasker
+Group=mytasker
+WorkingDirectory=/home/mytasker/htdocs/mytasker.io/backend
+EnvironmentFile=/home/mytasker/htdocs/mytasker.io/backend/.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/mytasker/htdocs/mytasker.io/backend/.venv/bin/celery -A config beat \
+  --scheduler django_celery_beat.schedulers:DatabaseScheduler \
+  --loglevel INFO
+Restart=always
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/home/mytasker/htdocs/mytasker.io/backend /home/mytasker/logs/mytasker
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,154 @@
+.actions {
+  display: flex;
+  gap: var(--s-2);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s-8);
+  height: 100%;
+  min-height: 0;
+}
+
+.chat {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.plan {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  padding: var(--s-6);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  background: var(--c-surface);
+  overflow-y: auto;
+}
+
+.planHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.planHead h2 {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
+}
+
+.planSummary {
+  font-size: var(--fs-sm);
+  color: var(--c-text-dim);
+  line-height: var(--lh-normal);
+}
+
+.blocks {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.block {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: var(--s-4);
+  font-size: var(--fs-sm);
+}
+
+.blockTime {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--c-text-dim);
+}
+
+.blockLabel {
+  font-weight: var(--fw-medium);
+}
+
+.blockReason,
+.blockTasks {
+  color: var(--c-text-dim);
+  font-size: var(--fs-xs);
+  margin-top: var(--s-1);
+}
+
+.defer h3 {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-text-dim);
+  margin-bottom: var(--s-2);
+}
+
+.defer ul {
+  list-style: disc;
+  padding-left: var(--s-6);
+  font-size: var(--fs-sm);
+  color: var(--c-text-dim);
+}
+
+.history {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.historyItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-5) 0;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.historyHead {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fs-xs);
+  color: var(--c-text-dim);
+}
+
+.status {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.status[data-status='executed'] {
+  color: var(--c-text);
+}
+
+.historyInput {
+  font-size: var(--fs-md);
+}
+
+.historyReply,
+.historyTools,
+.historyError {
+  font-size: var(--fs-sm);
+  color: var(--c-text-dim);
+  line-height: var(--lh-normal);
+}
+
+.historyTools {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+}
+
+.historyError {
+  text-decoration: underline dotted;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .plan {
+    width: auto;
+  }
+}

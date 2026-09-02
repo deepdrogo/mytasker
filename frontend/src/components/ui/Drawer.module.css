@@ -1,0 +1,125 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-drawer);
+  background: rgba(0, 0, 0, 0.66);
+  display: flex;
+  animation: fade var(--t-base);
+}
+
+.panel {
+  --drawer-w: var(--panel-w);
+  display: flex;
+  flex-direction: column;
+  width: var(--drawer-w);
+  max-width: 100%;
+  height: 100%;
+  background: var(--c-surface);
+  border-left: 1px solid var(--c-border);
+  box-shadow: var(--shadow-lg);
+}
+
+.right {
+  margin-left: auto;
+  animation: slideLeft var(--t-base);
+}
+
+.left {
+  margin-right: auto;
+  border-left: none;
+  border-right: 1px solid var(--c-border);
+  animation: slideRight var(--t-base);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  height: var(--topbar-h);
+  padding: 0 var(--s-5);
+  border-bottom: 1px solid var(--c-border);
+  flex: none;
+}
+
+.title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+}
+
+.close {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-sm);
+  color: var(--c-text-dim);
+  transition: all var(--t-fast);
+}
+
+.close:hover {
+  background: var(--c-hover);
+  color: var(--c-text);
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--s-5);
+}
+
+.footer {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s-4);
+  padding: var(--s-5);
+  border-top: 1px solid var(--c-border);
+  background: var(--c-bg);
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes slideLeft {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slideRight {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+@media (max-width: 899px) {
+  .backdrop {
+    align-items: flex-end;
+  }
+  .panel {
+    width: 100%;
+    height: auto;
+    max-height: 92vh;
+    border: none;
+    border-top: 1px solid var(--c-border);
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    margin: 0;
+    animation: slideUp var(--t-slow);
+  }
+  .footer {
+    padding-bottom: calc(var(--s-5) + env(safe-area-inset-bottom));
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+}

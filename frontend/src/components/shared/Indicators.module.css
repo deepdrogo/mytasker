@@ -1,0 +1,126 @@
+/* Priority: distinguished by opacity + icon weight, never colour. */
+.priority {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-xs);
+  line-height: 1;
+  flex: none;
+}
+
+.critical {
+  color: var(--c-text);
+  font-weight: var(--fw-semibold);
+}
+.critical svg {
+  stroke-width: 3;
+}
+
+.high {
+  color: var(--c-text);
+}
+.high svg {
+  stroke-width: 2.5;
+}
+
+.normal {
+  color: var(--c-text-faint);
+}
+.normal svg {
+  stroke-width: 2;
+}
+
+.low {
+  color: var(--c-text-faint);
+  opacity: 0.7;
+}
+.low svg {
+  stroke-width: 1.6;
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  height: 18px;
+  padding: 0 var(--s-3);
+  border-radius: var(--r-xs);
+  font-size: var(--fs-xs);
+  line-height: 1;
+  white-space: nowrap;
+  flex: none;
+}
+
+.badge-default {
+  background: var(--c-surface-2);
+  color: var(--c-text-dim);
+  border: 1px solid transparent;
+}
+
+.badge-outline {
+  background: transparent;
+  color: var(--c-text-dim);
+  border: 1px solid var(--c-border);
+}
+
+.badge-solid {
+  background: var(--c-invert-bg);
+  color: var(--c-invert-text);
+  border: 1px solid var(--c-invert-bg);
+  font-weight: var(--fw-medium);
+}
+
+.badge-dashed {
+  background: transparent;
+  color: var(--c-text-dim);
+  border: 1px dashed var(--c-border-strong);
+}
+
+.overdue {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-xs);
+  color: var(--c-text);
+  font-weight: var(--fw-medium);
+  border-bottom: 1px solid var(--c-text);
+  padding-bottom: 1px;
+  line-height: 1.1;
+  flex: none;
+}
+
+.source {
+  font-size: var(--fs-xs);
+  color: var(--c-text-faint);
+  text-transform: lowercase;
+}
+
+.progress {
+  height: 3px;
+  width: 100%;
+  background: var(--c-surface-3);
+  border-radius: var(--r-full);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--c-text);
+  border-radius: var(--r-full);
+  transition: width var(--t-slow);
+}
+
+.dot {
+  color: var(--c-text-faint);
+  user-select: none;
+}
+
+.meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: var(--fs-xs);
+  color: var(--c-text-dim);
+  min-width: 0;
+}

@@ -1,0 +1,90 @@
+.indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  height: 30px;
+  padding: 0 var(--s-2) 0 var(--s-3);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--r-full);
+  background: var(--c-surface-2);
+  font-size: var(--fs-xs);
+  color: var(--c-text);
+  max-width: 260px;
+}
+
+.sleep {
+  padding-right: var(--s-3);
+  cursor: pointer;
+}
+
+.pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-full);
+  background: var(--c-text);
+  animation: pulse 1.6s ease-in-out infinite;
+  flex: none;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.name {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--c-text-dim);
+}
+
+.clock {
+  font-variant-numeric: tabular-nums;
+}
+
+.stop {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-full);
+  border: none;
+  background: transparent;
+  color: var(--c-text);
+  cursor: pointer;
+}
+
+.stop:hover {
+  background: var(--c-hover);
+}
+
+@media (max-width: 599px) {
+  .name {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse {
+    animation: none;
+  }
+}

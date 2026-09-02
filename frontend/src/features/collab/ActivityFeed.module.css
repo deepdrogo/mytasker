@@ -1,0 +1,78 @@
+.list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding-left: var(--s-2);
+}
+
+.list::before {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: var(--c-border);
+}
+
+.item {
+  display: flex;
+  gap: var(--s-4);
+  padding: var(--s-3) 0;
+  position: relative;
+}
+
+.compact .item {
+  padding: var(--s-2) 0;
+}
+
+.dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin-top: 6px;
+  margin-left: 1px;
+  border-radius: var(--r-full);
+  background: var(--c-bg);
+  border: 1.5px solid var(--c-text-dim);
+}
+
+.body {
+  min-width: 0;
+  flex: 1;
+}
+
+.line {
+  font-size: var(--fs-sm);
+  line-height: var(--lh-normal);
+}
+
+.actor {
+  font-weight: var(--fw-medium);
+}
+
+.kind {
+  margin-left: var(--s-2);
+  font-size: 10px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  padding: 0 4px;
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--r-xs);
+  color: var(--c-text-dim);
+}
+
+.meta {
+  display: flex;
+  gap: var(--s-2);
+  font-size: var(--fs-xs);
+  color: var(--c-text-faint);
+  margin-top: 1px;
+}
+
+.more {
+  display: flex;
+  justify-content: center;
+  padding: var(--s-4) 0;
+}

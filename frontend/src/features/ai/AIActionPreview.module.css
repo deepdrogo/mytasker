@@ -1,0 +1,96 @@
+.trace {
+  margin-top: var(--s-3);
+}
+
+.traceToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-xs);
+  font-family: var(--font-mono);
+  color: var(--c-text-dim);
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.traceToggle:hover {
+  color: var(--c-text);
+}
+
+.traceList {
+  list-style: none;
+  margin-top: var(--s-3);
+  padding-left: var(--s-4);
+  border-left: 1px solid var(--c-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.traceItem {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  font-size: var(--fs-xs);
+}
+
+.traceName {
+  color: var(--c-text);
+}
+
+.traceArgs,
+.traceErrorText,
+.traceProposed {
+  color: var(--c-text-dim);
+}
+
+.traceError .traceName {
+  text-decoration: line-through;
+}
+
+.traceProposed {
+  font-style: italic;
+}
+
+.preview {
+  margin-top: var(--s-4);
+  padding: var(--s-5);
+  border: 1px dashed var(--c-border-strong);
+  border-radius: var(--r-md);
+  background: var(--c-surface);
+}
+
+.previewHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
+}
+
+.previewItems {
+  list-style: none;
+  margin: var(--s-4) 0 0;
+  padding-left: var(--s-6);
+  font-size: var(--fs-sm);
+  color: var(--c-text-dim);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.previewItems li::before {
+  content: '– ';
+}
+
+.previewMore {
+  font-style: italic;
+}
+
+.previewActions {
+  display: flex;
+  gap: var(--s-3);
+  margin-top: var(--s-5);
+}

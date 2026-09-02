@@ -1,0 +1,37 @@
+[Unit]
+Description=MyTasker API + WebSockets (uvicorn ASGI)
+After=network.target postgresql.service redis-server.service
+Wants=postgresql.service redis-server.service
+
+[Service]
+Type=simple
+User=mytasker
+Group=mytasker
+WorkingDirectory=/home/mytasker/htdocs/mytasker.io/backend
+EnvironmentFile=/home/mytasker/htdocs/mytasker.io/backend/.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/mytasker/htdocs/mytasker.io/backend/.venv/bin/uvicorn config.asgi:application \
+  --host 127.0.0.1 --port 8015 \
+  --workers 2 \
+  --proxy-headers --forwarded-allow-ips=127.0.0.1 \
+  --timeout-keep-alive 65 \
+  --no-server-header --no-date-header \
+  --log-level info --access-log
+Restart=always
+RestartSec=3
+KillSignal=SIGTERM
+TimeoutStopSec=30
+LimitNOFILE=65536
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/home/mytasker/htdocs/mytasker.io/backend /home/mytasker/logs/mytasker
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target

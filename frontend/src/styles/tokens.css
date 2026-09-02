@@ -1,0 +1,95 @@
+/*
+ * MyTasker design tokens - strict monochrome.
+ * The ONLY allowed colors: #000000 #0D0D0D #1A1A1A #262626 #404040 #808080 #FFFFFF
+ * State is expressed through contrast, borders, opacity, weight and icons - never hue.
+ */
+
+:root {
+  /* Surfaces */
+  --c-bg: #000000;
+  --c-surface: #0d0d0d;
+  --c-surface-2: #1a1a1a;
+  --c-surface-3: #262626;
+
+  /* Lines */
+  --c-border: #262626;
+  --c-border-strong: #404040;
+
+  /* Text */
+  --c-text: #ffffff;
+  --c-text-dim: #808080;
+  --c-text-faint: #404040;
+
+  /* Interactive */
+  --c-hover: #1a1a1a;
+  --c-active: #262626;
+  --c-focus: #ffffff;
+  --c-invert-bg: #ffffff;
+  --c-invert-text: #000000;
+
+  /* Radii */
+  --r-xs: 3px;
+  --r-sm: 5px;
+  --r-md: 7px;
+  --r-lg: 10px;
+  --r-full: 999px;
+
+  /* Spacing scale */
+  --s-1: 2px;
+  --s-2: 4px;
+  --s-3: 6px;
+  --s-4: 8px;
+  --s-5: 12px;
+  --s-6: 16px;
+  --s-7: 20px;
+  --s-8: 24px;
+  --s-9: 32px;
+  --s-10: 40px;
+
+  /* Typography */
+  --font-sans:
+    ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 13px;
+  --fs-base: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 19px;
+  --fs-2xl: 24px;
+  --lh-tight: 1.25;
+  --lh-normal: 1.5;
+  --fw-normal: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+
+  /* Layout */
+  --sidebar-w: 216px;
+  --topbar-h: 48px;
+  --bottomnav-h: 56px;
+  --panel-w: 380px;
+
+  /* Motion */
+  --t-fast: 90ms ease-out;
+  --t-base: 140ms ease-out;
+  --t-slow: 220ms ease-out;
+
+  /* Elevation - neutral only, no tint */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.6);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.8);
+
+  --z-sticky: 20;
+  --z-drawer: 60;
+  --z-modal: 70;
+  --z-toast: 80;
+  --z-palette: 90;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --t-fast: 0ms;
+    --t-base: 0ms;
+    --t-slow: 0ms;
+  }
+}

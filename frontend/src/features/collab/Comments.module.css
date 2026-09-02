@@ -1,0 +1,95 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.comment {
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--c-surface);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  font-size: var(--fs-xs);
+  color: var(--c-text-dim);
+}
+
+.author {
+  color: var(--c-text);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-sm);
+}
+
+.time {
+  color: var(--c-text-faint);
+}
+
+.actions {
+  margin-left: auto;
+  display: flex;
+  gap: var(--s-3);
+  opacity: 0;
+  transition: opacity var(--t-fast);
+}
+
+.comment:hover .actions,
+.comment:focus-within .actions {
+  opacity: 1;
+}
+
+.linkBtn {
+  background: none;
+  border: none;
+  color: var(--c-text-dim);
+  font: inherit;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+
+.linkBtn:hover {
+  color: var(--c-text);
+  text-decoration: underline;
+}
+
+.body {
+  margin-top: var(--s-2);
+  font-size: var(--fs-sm);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.editBox {
+  margin-top: var(--s-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.editActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-2);
+}
+
+.composer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  align-items: flex-end;
+}
+
+.composer > :first-child {
+  width: 100%;
+}

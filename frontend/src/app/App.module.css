@@ -1,0 +1,21 @@
+.boot {
+  height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: var(--c-bg);
+}
+
+.bootMark {
+  animation: pulse 1.2s ease-in-out infinite;
+  filter: drop-shadow(0 8px 24px rgba(255, 255, 255, 0.12));
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}

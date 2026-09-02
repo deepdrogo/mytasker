@@ -1,0 +1,101 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+.quickBar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.tracked {
+  font-size: var(--fs-sm);
+  color: var(--c-text-dim);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-5);
+}
+
+.hint {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: var(--fs-xs);
+  color: var(--c-text-faint);
+}
+
+.section {
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--c-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-text-faint);
+  font-weight: var(--fw-medium);
+}
+
+.subtasks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.subtaskRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-3) var(--s-2);
+  font-size: var(--fs-md);
+  cursor: pointer;
+  border-radius: var(--r-sm);
+}
+
+.subtaskRow:hover {
+  background: var(--c-hover);
+}
+
+.subtaskRow input {
+  accent-color: var(--c-text);
+  width: 14px;
+  height: 14px;
+}
+
+.subtaskDone {
+  text-decoration: line-through;
+  color: var(--c-text-dim);
+}
+
+.footnote {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-xs);
+  color: var(--c-text-faint);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--c-border);
+}
+
+.footerSpacer {
+  flex: 1;
+}
+
+@media (max-width: 899px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

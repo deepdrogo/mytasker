@@ -1,0 +1,180 @@
+.chart {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  overflow: hidden;
+}
+
+.svg {
+  width: 100%;
+  flex: none;
+  display: block;
+  overflow: hidden;
+}
+
+.axis {
+  stroke: var(--c-border-strong);
+  stroke-width: 1;
+}
+
+.bar {
+  fill: var(--c-text);
+}
+
+.barMuted {
+  fill: var(--c-border-strong);
+}
+
+.reference {
+  fill: none;
+  stroke: var(--c-text-dim);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+}
+
+.values,
+.labels {
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--c-text-dim);
+}
+
+.values {
+  order: -1;
+  height: 14px;
+}
+
+.values span,
+.labels span {
+  text-align: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.labels {
+  margin-top: var(--s-2);
+}
+
+.labelMuted {
+  color: var(--c-text-faint);
+}
+
+.spark {
+  width: 100%;
+  height: 28px;
+  display: block;
+}
+
+.sparkLine {
+  fill: none;
+  stroke: var(--c-text-dim);
+  stroke-width: 1.2;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-5);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  background: var(--c-surface);
+  min-width: 0;
+}
+
+.statLabel {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-text-dim);
+}
+
+.statValue {
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xl);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.statDelta {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--c-text-dim);
+}
+
+.statDeltaGood {
+  color: var(--c-text);
+}
+
+.meter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.meterHead {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fs-sm);
+}
+
+.meterTrack {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--c-border);
+  overflow: hidden;
+}
+
+.meterFill {
+  height: 100%;
+  background: var(--c-text);
+  transition: width var(--t-slow);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--c-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.breakdown {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.breakdownRow {
+  display: grid;
+  grid-template-columns: minmax(80px, 160px) 1fr auto;
+  gap: var(--s-4);
+  align-items: center;
+  font-size: var(--fs-sm);
+}
+
+.breakdownLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.breakdownTrack {
+  height: 6px;
+  background: var(--c-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.breakdownFill {
+  display: block;
+  height: 100%;
+  background: var(--c-text);
+}
+
+.empty {
+  font-size: var(--fs-sm);
+  color: var(--c-text-dim);
+}

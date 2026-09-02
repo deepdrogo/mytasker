@@ -1,0 +1,134 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding-bottom: var(--s-4);
+  margin-bottom: var(--s-4);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.filters {
+  display: flex;
+  gap: var(--s-2);
+}
+
+.filter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-4);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm);
+  color: var(--c-text-dim);
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: color var(--t-fast), background var(--t-fast);
+}
+
+.filter:hover {
+  color: var(--c-text);
+  background: var(--c-hover);
+}
+
+.filterActive {
+  color: var(--c-text);
+  border-color: var(--c-border-strong);
+}
+
+.count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 0 5px;
+  border-radius: var(--r-full);
+  background: var(--c-invert-bg);
+  color: var(--c-invert-text);
+}
+
+.actions {
+  display: flex;
+  gap: var(--s-1);
+}
+
+.list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.item {
+  display: flex;
+  gap: var(--s-4);
+  width: 100%;
+  text-align: left;
+  padding: var(--s-4) var(--s-3);
+  border-radius: var(--r-md);
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+
+.item:hover {
+  background: var(--c-hover);
+}
+
+.marker {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-top: 7px;
+  border-radius: var(--r-full);
+  background: transparent;
+}
+
+.unread .marker {
+  background: var(--c-text);
+}
+
+.unread .title {
+  font-weight: var(--fw-medium);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--fs-md);
+  line-height: var(--lh-normal);
+}
+
+.text {
+  font-size: var(--fs-sm);
+  color: var(--c-text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  display: flex;
+  gap: var(--s-4);
+  font-size: var(--fs-xs);
+  color: var(--c-text-dim);
+  margin-top: var(--s-1);
+}
+
+.category {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.more {
+  display: flex;
+  justify-content: center;
+  padding: var(--s-5) 0;
+}

@@ -1,0 +1,64 @@
+.shell {
+  display: flex;
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  background: var(--c-bg);
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.loading {
+  padding: var(--s-6);
+}
+
+.mobileSidebar {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-drawer);
+  background: rgba(0, 0, 0, 0.66);
+  display: flex;
+  animation: fade var(--t-base);
+}
+
+.mobileSidebarPanel {
+  width: 250px;
+  max-width: 84%;
+  height: 100%;
+  background: var(--c-surface);
+  border-right: 1px solid var(--c-border);
+  animation: slideIn var(--t-base);
+  display: flex;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+@media (max-width: 899px) {
+  .content {
+    padding-bottom: calc(var(--bottomnav-h) + env(safe-area-inset-bottom));
+  }
+}

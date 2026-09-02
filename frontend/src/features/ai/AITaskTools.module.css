@@ -1,0 +1,67 @@
+.tools {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.buttons {
+  display: flex;
+  gap: var(--s-2);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-5);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--c-surface);
+}
+
+.cardTitle {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-text-dim);
+}
+
+.suggestion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  font-size: var(--fs-md);
+  line-height: var(--lh-normal);
+}
+
+.suggestion > button {
+  align-self: flex-start;
+}
+
+.label {
+  font-size: var(--fs-xs);
+  color: var(--c-text-dim);
+}
+
+.pre {
+  white-space: pre-wrap;
+}
+
+.plain {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  font-size: var(--fs-md);
+}
+
+.note {
+  font-size: var(--fs-sm);
+  color: var(--c-text-dim);
+}
+
+.cardActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-2);
+}

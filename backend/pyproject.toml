@@ -1,0 +1,18 @@
+[tool.ruff]
+line-length = 118
+target-version = "py312"
+exclude = [".venv", "*/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "C4", "DJ", "N", "SIM"]
+ignore = ["B008", "N818", "SIM105"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "common", "config"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["test_*.py", "tests.py"]
+addopts = "-q --reuse-db"
+testpaths = ["apps", "common"]
+filterwarnings = ["ignore::DeprecationWarning"]

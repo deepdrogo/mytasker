@@ -1,0 +1,138 @@
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+}
+
+.segment {
+  display: inline-flex;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.segmentBtn {
+  background: transparent;
+  border: none;
+  color: var(--c-text-dim);
+  font-size: var(--fs-sm);
+  padding: 0 var(--s-5);
+  height: 28px;
+  cursor: pointer;
+}
+
+.segmentBtn + .segmentBtn {
+  border-left: 1px solid var(--c-border);
+}
+
+.segmentBtn[aria-selected='true'] {
+  background: var(--c-invert-bg);
+  color: var(--c-invert-text);
+}
+
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.groupHead {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fs-sm);
+  color: var(--c-text-dim);
+}
+
+.entries {
+  list-style: none;
+}
+
+.entry {
+  display: grid;
+  grid-template-columns: 110px 1fr auto auto 28px;
+  gap: var(--s-4);
+  align-items: center;
+  min-height: 36px;
+  padding: 0 var(--s-2);
+  border-bottom: 1px solid var(--c-border);
+  font-size: var(--fs-sm);
+}
+
+.time,
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--c-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.what {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project {
+  color: var(--c-text-dim);
+}
+
+.cat {
+  font-size: var(--fs-xs);
+  color: var(--c-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.del {
+  background: none;
+  border: none;
+  color: var(--c-text-faint);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.del:hover:not(:disabled) {
+  color: var(--c-text);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-4);
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-3);
+}
+
+.error {
+  font-size: var(--fs-sm);
+  color: var(--c-text);
+}
+
+@media (max-width: 640px) {
+  .entry {
+    grid-template-columns: 90px 1fr auto 24px;
+  }
+  .cat {
+    display: none;
+  }
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+}

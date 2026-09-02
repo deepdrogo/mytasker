@@ -1,0 +1,148 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  max-width: 880px;
+}
+
+.quick {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 0 var(--s-4);
+  border: 1px dashed var(--c-border-strong);
+  border-radius: var(--r-md);
+  background: var(--c-surface);
+}
+
+.quick:focus-within {
+  border-style: solid;
+  border-color: var(--c-text);
+}
+
+.quickIcon {
+  color: var(--c-text-dim);
+  flex: none;
+}
+
+.quickInput {
+  flex: 1;
+  height: 42px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--c-text);
+  font: inherit;
+}
+
+.list {
+  list-style: none;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  background: var(--c-surface);
+  overflow: hidden;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  border-bottom: 1px solid var(--c-border);
+  padding-right: var(--s-3);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.rowConverted {
+  opacity: 0.55;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-4);
+  text-align: left;
+  min-width: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.main:hover {
+  background: var(--c-surface-2);
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  font-weight: var(--fw-medium);
+}
+
+.excerpt {
+  font-size: var(--fs-sm);
+  color: var(--c-text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  display: flex;
+  gap: var(--s-3);
+  font-size: var(--fs-xs);
+  color: var(--c-text-faint);
+  flex: none;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex: none;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-4);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  width: 100%;
+}
+
+.footerRight {
+  display: flex;
+  gap: var(--s-3);
+  margin-left: auto;
+}
+
+@media (max-width: 599px) {
+  .meta {
+    display: none;
+  }
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

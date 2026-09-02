@@ -1,0 +1,145 @@
+.sidebar {
+  width: var(--sidebar-w);
+  flex: none;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--c-surface);
+  border-right: 1px solid var(--c-border);
+  overflow: hidden;
+}
+
+.brand {
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--s-5);
+  border-bottom: 1px solid var(--c-border);
+  flex: none;
+}
+
+.brandLink {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+}
+
+.nav {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--s-4) var(--s-3);
+}
+
+.section + .section {
+  margin-top: var(--s-5);
+}
+
+.sectionLabel {
+  padding: var(--s-2) var(--s-4);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-text-faint);
+  font-weight: var(--fw-medium);
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  height: 28px;
+  padding: 0 var(--s-4);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-md);
+  color: var(--c-text-dim);
+  transition:
+    background var(--t-fast),
+    color var(--t-fast);
+}
+
+.link:hover {
+  background: var(--c-hover);
+  color: var(--c-text);
+}
+
+.linkActive {
+  background: var(--c-surface-3);
+  color: var(--c-text);
+  font-weight: var(--fw-medium);
+}
+
+.linkIcon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  opacity: 0.85;
+}
+
+.linkActive .linkIcon {
+  opacity: 1;
+}
+
+.linkLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footer {
+  flex: none;
+  padding: var(--s-3);
+  border-top: 1px solid var(--c-border);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  margin-top: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-top: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  color: var(--c-text-dim);
+  font-size: var(--fs-sm);
+  transition: all var(--t-fast);
+}
+
+.account:hover {
+  background: var(--c-hover);
+  color: var(--c-text);
+}
+
+.avatar {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--r-full);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  color: var(--c-text);
+}
+
+.accountName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 899px) {
+  .sidebar {
+    width: 100%;
+    border-right: none;
+  }
+  .link {
+    height: 38px;
+    font-size: var(--fs-base);
+  }
+}

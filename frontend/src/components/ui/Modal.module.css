@@ -1,0 +1,139 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s-6);
+  animation: fade var(--t-base);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: calc(100vh - 2 * var(--s-6));
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+  animation: rise var(--t-base);
+  overflow: hidden;
+}
+
+.sm {
+  max-width: 380px;
+}
+.md {
+  max-width: 540px;
+}
+.lg {
+  max-width: 820px;
+}
+.full {
+  max-width: min(1240px, 100%);
+  height: calc(100vh - 2 * var(--s-6));
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-5);
+  padding: var(--s-5) var(--s-6);
+  border-bottom: 1px solid var(--c-border);
+  flex: none;
+}
+
+.titleWrap {
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+}
+
+.description {
+  margin-top: var(--s-2);
+  font-size: var(--fs-sm);
+  color: var(--c-text-dim);
+}
+
+.close {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-sm);
+  color: var(--c-text-dim);
+  transition: all var(--t-fast);
+}
+
+.close:hover {
+  background: var(--c-hover);
+  color: var(--c-text);
+}
+
+.body {
+  padding: var(--s-6);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  flex: 1;
+  min-height: 0;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s-4);
+  padding: var(--s-5) var(--s-6);
+  border-top: 1px solid var(--c-border);
+  background: var(--c-bg);
+  flex: none;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.995);
+  }
+}
+
+@media (max-width: 899px) {
+  .backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+  .panel {
+    max-width: 100%;
+    max-height: 92vh;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    border-bottom: none;
+    animation: slideUp var(--t-slow);
+  }
+  .full {
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  .footer {
+    padding-bottom: calc(var(--s-5) + env(safe-area-inset-bottom));
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+}

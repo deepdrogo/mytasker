@@ -1,0 +1,30 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding-bottom: var(--s-4);
+}
+
+.hint {
+  font-size: var(--fs-xs);
+  color: var(--c-text-dim);
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+}
+
+.unavailable {
+  font-size: var(--fs-md);
+  color: var(--c-text-dim);
+  line-height: var(--lh-normal);
+}
