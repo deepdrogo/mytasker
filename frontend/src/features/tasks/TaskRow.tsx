@@ -13,6 +13,7 @@ import {
   Play,
   Repeat,
   Share2,
+  Sparkles,
   Square,
   Trash2,
 } from 'lucide-solid';
@@ -20,8 +21,11 @@ import type { JSX } from 'solid-js';
 import { createSignal, Show } from 'solid-js';
 import { Dropdown, type MenuItem } from '~/components/ui/Dropdown';
 import { Dot, Meta, OverdueMark, PriorityMark, VisibilityMark } from '~/components/shared/Indicators';
+import { polishTasks } from '~/features/ai/polish';
 import { tasksApi } from '~/features/tasks/api';
+import { t } from '~/i18n';
 import { authStore } from '~/stores/auth';
+import { tx } from '~/stores/translations';
 import { startTimer, stopTimer, timerStore } from '~/stores/timer';
 import { toast } from '~/stores/ui';
 import type { Task } from '~/types';
@@ -42,8 +46,22 @@ interface TaskRowProps {
 
 export function TaskRow(props: TaskRowProps): JSX.Element {
   const [busy, setBusy] = createSignal(false);
+  const [polishing, setPolishing] = createSignal(false);
   const use12h = () => authStore.user()?.preferences.time_format === '12h';
   const isRunning = () => timerStore.running()?.task?.id === props.task.id;
+  const title = () => tx('task', props.task.id, 'title', props.task.title);
+  const canPolish = () => authStore.aiEnabled() && props.task.can_edit && props.task.status !== 'done';
+
+  const polish = async (event?: MouseEvent) => {
+    event?.stopPropagation();
+    if (polishing() || !canPolish()) return;
+    setPolishing(true);
+    try {
+      await polishTasks([props.task.id], props.onChanged);
+    } finally {
+      setPolishing(false);
+    }
+  };
 
   const toggleComplete = async (event: MouseEvent) => {
     event.stopPropagation();
@@ -55,9 +73,9 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
         await tasksApi.reopen(props.task.id);
       } else {
         await tasksApi.complete(props.task.id);
-        toast(`Completed “${props.task.title}”`, {
+        toast(t('Completed “{title}”', { title: title() }), {
           action: {
-            label: 'Undo',
+            label: t('Undo'),
             run: () => {
               void tasksApi.reopen(props.task.id).then(() => props.onChanged?.());
             },
@@ -66,7 +84,7 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
       }
       props.onChanged?.();
     } catch {
-      toast('Could not update the task.');
+      toast(t('Could not update the task.'));
     } finally {
       setBusy(false);
     }
@@ -84,29 +102,35 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
         });
       }
     } catch {
-      toast('Could not change the timer.');
+      toast(t('Could not change the timer.'));
     }
   };
 
   const menuItems = (): MenuItem[] => [
-    { label: 'Open', icon: <ChevronRight size={14} />, onSelect: () => props.onOpen?.(props.task) },
+    { label: t('Open'), icon: <ChevronRight size={14} />, onSelect: () => props.onOpen?.(props.task) },
     {
-      label: isRunning() ? 'Stop timer' : 'Start timer',
+      label: isRunning() ? t('Stop timer') : t('Start timer'),
       icon: <Play size={14} />,
       onSelect: () => void toggleTimer(new MouseEvent('click')),
     },
-    { label: 'Share', icon: <Share2 size={14} />, onSelect: () => props.onShare?.(props.task) },
+    { label: t('Share'), icon: <Share2 size={14} />, onSelect: () => props.onShare?.(props.task) },
     {
-      label: 'Duplicate',
+      label: t('Polish with AI'),
+      icon: <Sparkles size={14} />,
+      disabled: !canPolish(),
+      onSelect: () => void polish(),
+    },
+    {
+      label: t('Duplicate'),
       icon: <Copy size={14} />,
       onSelect: async () => {
         await tasksApi.duplicate(props.task.id);
         props.onChanged?.();
-        toast('Task duplicated');
+        toast(t('Task duplicated'));
       },
     },
     {
-      label: 'Tomorrow',
+      label: t('Tomorrow'),
       icon: <Clock size={14} />,
       separatorBefore: true,
       onSelect: async () => {
@@ -118,7 +142,7 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
       },
     },
     {
-      label: 'Delete',
+      label: t('Delete'),
       icon: <Trash2 size={14} />,
       danger: true,
       separatorBefore: true,
@@ -126,7 +150,7 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
       onSelect: async () => {
         await tasksApi.remove(props.task.id);
         props.onChanged?.();
-        toast('Task deleted');
+        toast(t('Task deleted'));
       },
     },
   ];
@@ -153,7 +177,7 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
             e.stopPropagation();
             props.onToggleSelect?.(props.task);
           }}
-          aria-label={props.selected ? 'Deselect task' : 'Select task'}
+          aria-label={props.selected ? t('Deselect task') : t('Select task')}
           aria-pressed={props.selected}
         >
           <Show when={props.selected} fallback={<Square size={13} />}>
@@ -166,7 +190,7 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
         class={styles.checkbox}
         onClick={toggleComplete}
         disabled={busy() || !props.task.can_edit}
-        aria-label={done() ? `Reopen ${props.task.title}` : `Complete ${props.task.title}`}
+        aria-label={done() ? t('Reopen {title}', { title: title() }) : t('Complete {title}', { title: title() })}
         aria-pressed={done()}
       >
         <Show when={done()}>
@@ -177,9 +201,9 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
       <div class={styles.main}>
         <div class={styles.titleLine}>
           <PriorityMark priority={props.task.priority} />
-          <span class={styles.title}>{props.task.title}</span>
+          <span class={styles.title}>{title()}</span>
           <Show when={props.task.recurrence}>
-            <Repeat size={11} class={styles.inlineIcon} aria-label="Recurring" />
+            <Repeat size={11} class={styles.inlineIcon} aria-label={t('Recurring')} />
           </Show>
           <VisibilityMark visibility={props.task.visibility} />
         </div>
@@ -205,7 +229,7 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
                   </Show>
                   <A href={`/projects/${project().id}/tasks`} class={styles.projectLink} onClick={(e) => e.stopPropagation()}>
                     <Briefcase size={11} />
-                    {project().name}
+                    {tx('project', project().id, 'name', project().name)}
                   </A>
                 </>
               )}
@@ -249,23 +273,34 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
 
       <div class={styles.actions}>
         <Show when={isRunning()}>
-          <span class={[styles.runningPill, 'mt-mono'].join(' ')} aria-label="Timer running">
+          <span class={[styles.runningPill, 'mt-mono'].join(' ')} aria-label={t('Timer running')}>
             ● rec
           </span>
+        </Show>
+        <Show when={canPolish()}>
+          <button
+            class={[styles.iconAction, polishing() ? styles.iconActionBusy : ''].filter(Boolean).join(' ')}
+            onClick={(e) => void polish(e)}
+            disabled={polishing()}
+            aria-label={t('Polish {title} with AI', { title: title() })}
+            title={t('Polish with AI')}
+          >
+            <Sparkles size={13} />
+          </button>
         </Show>
         <button
           class={styles.iconAction}
           onClick={toggleTimer}
-          aria-label={isRunning() ? 'Stop timer' : 'Start timer for this task'}
-          title={isRunning() ? 'Stop timer' : 'Start timer'}
+          aria-label={isRunning() ? t('Stop timer') : t('Start timer for this task')}
+          title={isRunning() ? t('Stop timer') : t('Start timer')}
         >
           <Play size={13} />
         </button>
         <Dropdown
           items={menuItems()}
-          label={`Actions for ${props.task.title}`}
+          label={t('Actions for {title}', { title: title() })}
           trigger={({ toggle }) => (
-            <button class={styles.iconAction} onClick={toggle} aria-label="Task actions">
+            <button class={styles.iconAction} onClick={toggle} aria-label={t('Task actions')}>
               <MoreHorizontal size={14} />
             </button>
           )}

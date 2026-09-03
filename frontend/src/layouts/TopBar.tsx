@@ -2,8 +2,10 @@ import { useNavigate } from '@solidjs/router';
 import { Bell, Menu, Plus, Search, Sparkles } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
+import { LanguageSwitch } from '~/components/shared/LanguageSwitch';
 import { Button } from '~/components/ui/Button';
 import { TimerIndicator } from '~/features/timer/TimerIndicator';
+import { t } from '~/i18n';
 import { authStore } from '~/stores/auth';
 import { notificationStore } from '~/stores/notifications';
 import { uiStore, useIsMobile } from '~/stores/ui';
@@ -12,12 +14,12 @@ import styles from './TopBar.module.css';
 export function TopBar(): JSX.Element {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const searchLabel = () => (authStore.aiEnabled() ? 'Search or ask AI' : 'Search');
+  const searchLabel = () => (authStore.aiEnabled() ? t('Search or ask AI') : t('Search'));
 
   return (
     <header class={styles.topbar}>
       <Show when={isMobile()}>
-        <button class={styles.iconBtn} onClick={uiStore.openSidebar} aria-label="Open navigation">
+        <button class={styles.iconBtn} onClick={uiStore.openSidebar} aria-label={t('Open navigation')}>
           <Menu size={17} />
         </button>
       </Show>
@@ -33,8 +35,12 @@ export function TopBar(): JSX.Element {
       <div class={styles.right}>
         <TimerIndicator />
 
+        <Show when={!isMobile()}>
+          <LanguageSwitch compact />
+        </Show>
+
         <Show when={!isMobile() && authStore.isAdmin()}>
-          <Button variant="ghost" size="icon" aria-label="Ask AI" onClick={() => navigate('/ai')}>
+          <Button variant="ghost" size="icon" aria-label={t('Ask AI')} onClick={() => navigate('/ai')}>
             <Sparkles size={15} />
           </Button>
         </Show>
@@ -42,7 +48,11 @@ export function TopBar(): JSX.Element {
         <button
           class={styles.iconBtn}
           onClick={uiStore.toggleNotifications}
-          aria-label={`Notifications${notificationStore.unread() > 0 ? ` (${notificationStore.unread()} unread)` : ''}`}
+          aria-label={
+            notificationStore.unread() > 0
+              ? t('Notifications ({count} unread)', { count: notificationStore.unread() })
+              : t('Notifications')
+          }
         >
           <Bell size={15} />
           <Show when={notificationStore.unread() > 0}>
@@ -50,10 +60,10 @@ export function TopBar(): JSX.Element {
           </Show>
         </button>
 
-        <Button variant="primary" size={isMobile() ? 'icon' : 'sm'} onClick={uiStore.openQuickAdd} aria-label="Quick add">
+        <Button variant="primary" size={isMobile() ? 'icon' : 'sm'} onClick={uiStore.openQuickAdd} aria-label={t('Quick add')}>
           <Plus size={15} />
           <Show when={!isMobile()}>
-            <span>Add</span>
+            <span>{t('Add')}</span>
           </Show>
         </Button>
       </div>

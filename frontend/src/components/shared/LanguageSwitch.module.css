@@ -1,0 +1,35 @@
+.switch {
+  display: inline-flex;
+  align-items: stretch;
+  padding: 2px;
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.option {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.02em;
+  color: var(--c-text-dim);
+  transition: color var(--t-fast), background var(--t-fast);
+}
+
+.compact .option {
+  padding: 2px 8px;
+}
+
+.option:hover {
+  color: var(--c-text);
+}
+
+.active {
+  color: var(--c-invert-text);
+  background: var(--g-primary);
+}
+
+.active:hover {
+  color: var(--c-invert-text);
+}

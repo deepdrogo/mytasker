@@ -4,6 +4,7 @@ import { Show, Suspense, lazy } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import { Page } from '~/components/shared/Page';
 import { Skeleton } from '~/components/ui/Feedback';
+import { t } from '~/i18n';
 import { cx } from '~/utils/cx';
 import styles from './Settings.module.css';
 
@@ -28,19 +29,19 @@ export default function Settings(): JSX.Element {
   const section = () => SECTIONS.find((s) => s.id === current()) ?? SECTIONS[0];
 
   return (
-    <Page title="Settings">
+    <Page title={t('Settings')}>
       <div class={styles.layout}>
-        <nav class={styles.nav} aria-label="Settings sections">
+        <nav class={styles.nav} aria-label={t('Settings sections')}>
           <select class={styles.mobileNav} value={current()} onChange={(e) => navigate(`/settings/${e.currentTarget.value}`)}>
             {SECTIONS.map((s) => (
-              <option value={s.id}>{s.label}</option>
+              <option value={s.id}>{t(s.label)}</option>
             ))}
           </select>
           <ul class={styles.navList}>
             {SECTIONS.map((s) => (
               <li>
                 <A href={`/settings/${s.id}`} class={cx(styles.navLink, current() === s.id && styles.navActive)}>
-                  {s.label}
+                  {t(s.label)}
                 </A>
               </li>
             ))}

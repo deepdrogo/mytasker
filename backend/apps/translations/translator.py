@@ -41,16 +41,18 @@ def _system_prompt(target_langs: list[str]) -> str:
         "descriptions, project names, notes, comments, routine items or personal rules.\n\n"
         f"Supported languages: {names}.\n\n"
         "Rules:\n"
-        "1. Detect the dominant language of the values. Report it as an ISO 639-1 code; use 'other' if it is none of "
-        "the supported languages.\n"
-        "2. Translate every value into every supported language EXCEPT the detected source language. Never include the "
-        "source language in `translations`. If the source is 'other', translate into all supported languages.\n"
-        "3. Keep the meaning, tone and register. Georgian output must be natural, modern Georgian as a native speaker "
-        "would write in a to-do app; English output must be concise, natural English.\n"
+        "1. Detect the dominant language of the values. Report it as an ISO 639-1 code; use 'other' if it is "
+        "none of the supported languages.\n"
+        "2. Translate every value into every supported language EXCEPT the detected source language. Never "
+        "include the source language in `translations`. If the source is 'other', translate into all supported "
+        "languages.\n"
+        "3. Keep the meaning, tone and register. Georgian output must be natural, modern Georgian as a native "
+        "speaker would write in a to-do app; English output must be concise, natural English.\n"
         "4. Preserve markdown, line breaks, bullet structure, URLs, emails, code, numbers, dates, times, emojis, "
-        "hashtags, @mentions and product or brand names exactly. Do not translate proper names of people or companies.\n"
-        "5. Keep every key exactly as given and never add, drop or merge keys. Never leave a translated value empty when "
-        "the source value is non-empty.\n"
+        "hashtags, @mentions and product or brand names exactly. Do not translate proper names of people or "
+        "companies.\n"
+        "5. Keep every key exactly as given and never add, drop or merge keys. Never leave a translated value "
+        "empty when the source value is non-empty.\n"
         "6. Do not explain, do not add notes. Only call the tool."
     )
 
@@ -75,7 +77,7 @@ def _tool_schema(fields: list[str], target_langs: list[str]) -> dict:
                 "translations": {
                     "type": "object",
                     "description": "Map of target language code -> translated fields. Omit the source language.",
-                    "properties": {code: per_lang for code in target_langs},
+                    "properties": dict.fromkeys(target_langs, per_lang),
                     "additionalProperties": False,
                 },
             },

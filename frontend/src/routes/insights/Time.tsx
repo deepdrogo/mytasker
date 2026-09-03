@@ -12,15 +12,29 @@ import { ProjectSelector } from '~/features/projects/ProjectSelector';
 import { timeApi } from '~/features/routines/api';
 import { analyticsApi, isoDay, shiftDays, shiftMonths } from '~/features/today/api';
 import { createQuery } from '~/hooks/createQuery';
+import { t, tn } from '~/i18n';
+import { tx } from '~/stores/translations';
 import { toast } from '~/stores/ui';
 import type { Paginated } from '~/api/client';
-import type { TimeEntry, TimeTotals, WeeklyReview } from '~/types';
+import type { TimeCategory, TimeEntry, TimeTotals, WeeklyReview } from '~/types';
 import { formatDuration, formatTime, fromLocalInputValue, toLocalInputValue } from '~/utils/format';
 import styles from './Time.module.css';
 
 type Window = 'today' | 'week' | 'month';
 
+const WINDOWS: Window[] = ['today', 'week', 'month'];
+
 const secondsFmt = (s: number) => formatDuration(s);
+
+const windowLabel = (w: Window): string => (w === 'today' ? t('Day') : w === 'week' ? t('Week') : t('Month'));
+const categoryLabel = (c: TimeCategory): string => (c === 'business' ? t('Business') : t('Personal'));
+
+/** What the entry was spent on, in the current UI language. */
+function entryLabel(e: TimeEntry): string {
+  if (e.task?.title) return tx('task', e.task.id, 'title', e.task.title);
+  if (e.routine_item?.name) return tx('routine_item', e.routine_item.id, 'name', e.routine_item.name);
+  return e.note || categoryLabel(e.category);
+}
 
 export default function InsightsTime(): JSX.Element {
   const today = isoDay(new Date());
@@ -41,24 +55,31 @@ export default function InsightsTime(): JSX.Element {
   // Project names come from the weekly review's lookup table; cheap and already cached for the Weekly tab.
   const names = createQuery<WeeklyReview>(() => `analytics:weekly:${date()}`, () => analyticsApi.weekly(date()), { staleMs: 60_000 });
 
-  const t = () => totals.data();
-  const projectName = (id: number) => names.data()?.projects[String(id)] ?? `Project ${id}`;
+  const tot = () => totals.data();
+  const projectName = (id: number) => {
+    const name = names.data()?.projects[String(id)];
+    return name ? tx('project', id, 'name', name) : t('Project {id}', { id });
+  };
+  const taskName = (id: number) => {
+    const task = entries.data()?.results.find((e: TimeEntry) => e.task?.id === id)?.task;
+    return task ? tx('task', task.id, 'title', task.title) : t('Task {id}', { id });
+  };
   const step = (dir: 1 | -1) =>
     setDate(window() === 'month' ? shiftMonths(date(), dir) : shiftDays(date(), window() === 'week' ? 7 * dir : dir));
 
   const periodLabel = () => {
-    const data = t();
+    const data = tot();
     if (!data) return '…';
-    if (window() === 'today') return date() === today ? 'Today' : shortDate(date());
+    if (window() === 'today') return date() === today ? t('Today') : shortDate(date());
     return `${shortDate(data.start_date)} – ${shortDate(data.end_date)}`;
   };
 
   const remove = async (entry: TimeEntry) => {
     try {
       await timeApi.remove(entry.id);
-      toast('Entry deleted');
+      toast(t('Entry deleted'));
     } catch (err) {
-      toast(err instanceof ApiError ? err.message : 'Could not delete.');
+      toast(err instanceof ApiError ? err.message : t('Could not delete.'));
     }
   };
 
@@ -73,13 +94,13 @@ export default function InsightsTime(): JSX.Element {
 
   return (
     <InsightsPage
-      title="Insights"
+      title={t('Insights')}
       periodLabel={periodLabel()}
       onPrev={() => step(-1)}
       onNext={() => step(1)}
       onToday={() => setDate(today)}
       nextDisabled={date() >= today}
-      loading={totals.loading() && !t()}
+      loading={totals.loading() && !tot()}
       error={totals.error()}
       onRetry={() => {
         totals.refetch();
@@ -88,52 +109,49 @@ export default function InsightsTime(): JSX.Element {
       actions={
         <div class={styles.actions}>
           <div class={styles.segment} role="tablist">
-            <For each={['today', 'week', 'month'] as Window[]}>
+            <For each={WINDOWS}>
               {(w) => (
                 <button type="button" role="tab" aria-selected={window() === w} class={styles.segmentBtn} onClick={() => setWindow(w)}>
-                  {w === 'today' ? 'Day' : w === 'week' ? 'Week' : 'Month'}
+                  {windowLabel(w)}
                 </button>
               )}
             </For>
           </div>
           <Button variant="secondary" size="sm" onClick={() => setAdding(true)}>
-            <Plus size={14} /> Add time
+            <Plus size={14} /> {t('Add time')}
           </Button>
         </div>
       }
     >
       <StatGrid>
-        <Stat label="Business" value={secondsFmt(t()?.business ?? 0)} />
-        <Stat label="Personal" value={secondsFmt(t()?.personal ?? 0)} />
-        <Stat label="Total tracked" value={secondsFmt(t()?.total ?? 0)} />
-        <Stat label="Sleep" value={secondsFmt(t()?.sleep ?? 0)} />
+        <Stat label={t('Business')} value={secondsFmt(tot()?.business ?? 0)} />
+        <Stat label={t('Personal')} value={secondsFmt(tot()?.personal ?? 0)} />
+        <Stat label={t('Total tracked')} value={secondsFmt(tot()?.total ?? 0)} />
+        <Stat label={t('Sleep')} value={secondsFmt(tot()?.sleep ?? 0)} />
       </StatGrid>
 
       <TwoCol>
-        <Block title="By project">
+        <Block title={t('By project')}>
           <Breakdown
-            rows={(t()?.by_project ?? []).map((r) => ({ label: projectName(r.project_id), value: r.seconds })).sort((a, b) => b.value - a.value)}
+            rows={(tot()?.by_project ?? []).map((r) => ({ label: projectName(r.project_id), value: r.seconds })).sort((a, b) => b.value - a.value)}
             format={secondsFmt}
-            emptyText="No project time in this period."
+            emptyText={t('No project time in this period.')}
           />
         </Block>
-        <Block title="By task" hint={`${t()?.by_task.length ?? 0} tasks`}>
+        <Block title={t('By task')} hint={tn(tot()?.by_task.length ?? 0, 'task')}>
           <Breakdown
-            rows={(t()?.by_task ?? [])
-              .map((r) => ({
-                label: entries.data()?.results.find((e: TimeEntry) => e.task?.id === r.task_id)?.task?.title ?? `Task ${r.task_id}`,
-                value: r.seconds,
-              }))
+            rows={(tot()?.by_task ?? [])
+              .map((r) => ({ label: taskName(r.task_id), value: r.seconds }))
               .sort((a, b) => b.value - a.value)
               .slice(0, 10)}
             format={secondsFmt}
-            emptyText="No task-linked time in this period."
+            emptyText={t('No task-linked time in this period.')}
           />
         </Block>
       </TwoCol>
 
-      <Block title="Entries" hint={`${entries.data()?.count ?? 0}`}>
-        <Show when={grouped().length > 0} fallback={<EmptyState title="No time entries in this period." hint="Start the timer or add time manually." compact />}>
+      <Block title={t('Entries')} hint={`${entries.data()?.count ?? 0}`}>
+        <Show when={grouped().length > 0} fallback={<EmptyState title={t('No time entries in this period.')} hint={t('Start the timer or add time manually.')} compact />}>
           <div class={styles.groups}>
             <For each={grouped()}>
               {([day, list]) => (
@@ -151,14 +169,12 @@ export default function InsightsTime(): JSX.Element {
                             {e.ended_at ? `–${formatTime(e.ended_at)}` : ' →'}
                           </span>
                           <span class={styles.what}>
-                            {e.task?.title || e.routine_item?.name || e.note || (e.category === 'business' ? 'Business' : 'Personal')}
-                            <Show when={e.project}>
-                              <span class={styles.project}> · {e.project?.name}</span>
-                            </Show>
+                            {entryLabel(e)}
+                            <Show when={e.project}>{(project) => <span class={styles.project}> · {tx('project', project().id, 'name', project().name)}</span>}</Show>
                           </span>
-                          <span class={styles.cat}>{e.category}</span>
-                          <span class={styles.mono}>{e.is_running ? 'running' : secondsFmt(e.duration_seconds)}</span>
-                          <button type="button" class={styles.del} onClick={() => void remove(e)} aria-label="Delete entry" disabled={e.is_running}>
+                          <span class={styles.cat}>{categoryLabel(e.category)}</span>
+                          <span class={styles.mono}>{e.is_running ? t('running') : secondsFmt(e.duration_seconds)}</span>
+                          <button type="button" class={styles.del} onClick={() => void remove(e)} aria-label={t('Delete entry')} disabled={e.is_running}>
                             <Trash2 size={13} />
                           </button>
                         </li>
@@ -180,7 +196,7 @@ export default function InsightsTime(): JSX.Element {
 function ManualEntryDialog(props: { open: boolean; onClose: () => void }): JSX.Element {
   const [start, setStart] = createSignal(toLocalInputValue(new Date(Date.now() - 3600e3).toISOString()));
   const [end, setEnd] = createSignal(toLocalInputValue(new Date().toISOString()));
-  const [category, setCategory] = createSignal<'business' | 'personal'>('business');
+  const [category, setCategory] = createSignal<TimeCategory>('business');
   const [projectId, setProjectId] = createSignal<number | null>(null);
   const [note, setNote] = createSignal('');
   const [busy, setBusy] = createSignal(false);
@@ -190,28 +206,28 @@ function ManualEntryDialog(props: { open: boolean; onClose: () => void }): JSX.E
     const s = fromLocalInputValue(start());
     const e = fromLocalInputValue(end());
     if (!s || !e) {
-      setError('Both start and end are required.');
+      setError(t('Both start and end are required.'));
       return;
     }
     if (e <= s) {
-      setError('End must be after start.');
+      setError(t('End must be after start.'));
       return;
     }
     setBusy(true);
     setError('');
     try {
       await timeApi.addManual({ started_at: s, ended_at: e, category: category(), project_id: projectId(), note: note().trim() });
-      toast('Time added');
+      toast(t('Time added'));
       props.onClose();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not save.');
+      setError(err instanceof ApiError ? err.message : t('Could not save.'));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <Modal open={props.open} onClose={props.onClose} title="Add time manually" size="sm">
+    <Modal open={props.open} onClose={props.onClose} title={t('Add time manually')} size="sm">
       <form
         class={styles.form}
         onSubmit={(ev) => {
@@ -220,25 +236,25 @@ function ManualEntryDialog(props: { open: boolean; onClose: () => void }): JSX.E
         }}
       >
         <div class={styles.formGrid}>
-          <Field label="Start">
+          <Field label={t('Start')}>
             <Input type="datetime-local" value={start()} onInput={(ev) => setStart(ev.currentTarget.value)} required />
           </Field>
-          <Field label="End">
+          <Field label={t('End')}>
             <Input type="datetime-local" value={end()} onInput={(ev) => setEnd(ev.currentTarget.value)} required />
           </Field>
         </div>
         <div class={styles.formGrid}>
-          <Field label="Category">
-            <Select value={category()} onChange={(ev) => setCategory(ev.currentTarget.value as 'business' | 'personal')}>
-              <option value="business">Business</option>
-              <option value="personal">Personal</option>
+          <Field label={t('Category')}>
+            <Select value={category()} onChange={(ev) => setCategory(ev.currentTarget.value as TimeCategory)}>
+              <option value="business">{t('Business')}</option>
+              <option value="personal">{t('Personal')}</option>
             </Select>
           </Field>
-          <Field label="Project">
+          <Field label={t('Project')}>
             <ProjectSelector value={projectId()} onChange={setProjectId} />
           </Field>
         </div>
-        <Field label="Note">
+        <Field label={t('Note')}>
           <Textarea rows={2} value={note()} onInput={(ev) => setNote(ev.currentTarget.value)} maxLength={500} />
         </Field>
         <Show when={error()}>
@@ -246,10 +262,10 @@ function ManualEntryDialog(props: { open: boolean; onClose: () => void }): JSX.E
         </Show>
         <div class={styles.formActions}>
           <Button variant="ghost" type="button" onClick={props.onClose}>
-            Cancel
+            {t('Cancel')}
           </Button>
           <Button variant="primary" type="submit" loading={busy()}>
-            Save
+            {t('Save')}
           </Button>
         </div>
       </form>

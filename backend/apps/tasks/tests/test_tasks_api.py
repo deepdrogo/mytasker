@@ -135,3 +135,69 @@ def test_counts_endpoint(client_for, user):
     counts = client.get("/api/v1/tasks/counts/").data
     assert counts["personal"] == 1
     assert counts["business"] == 1
+
+
+def test_business_list_only_shows_tasks_added_from_the_list(client_for, user):
+    """
+    Tasks typed inside a project page stay in that project; tasks typed on the Business page
+    show up there even when linked to a project - and in the project as well.
+    """
+    client = client_for(user)
+    pid = client.post("/api/v1/projects/", {"name": "Drogoz"}, format="json").data["id"]
+
+    from_project = client.post(
+        "/api/v1/tasks/", {"title": "Inside project", "kind": "business", "project_id": pid}, format="json"
+    ).data
+    assert from_project["origin"] == "project"
+
+    from_list = client.post(
+        "/api/v1/tasks/",
+        {"title": "From business list", "kind": "business", "project_id": pid, "origin": "list"},
+        format="json",
+    ).data
+    assert from_list["origin"] == "list"
+    assert from_list["project"]["id"] == pid
+
+    plain = client.post("/api/v1/tasks/", {"title": "No project", "kind": "business"}, format="json").data
+    assert plain["origin"] == "list"
+
+    business = client.get("/api/v1/tasks/?kind=business&origin=list&top_level=true").data["results"]
+    assert sorted(t["title"] for t in business) == ["From business list", "No project"]
+
+    in_project = client.get(f"/api/v1/tasks/?project={pid}").data["results"]
+    assert sorted(t["title"] for t in in_project) == ["From business list", "Inside project"]
+
+    counts = client.get("/api/v1/tasks/counts/").data
+    assert counts["business"] == 2
+
+    # Detaching a project-only task from its project moves it back into the list so it stays reachable.
+    detached = client.patch(f"/api/v1/tasks/{from_project['id']}/", {"project_id": None}, format="json").data
+    assert detached["origin"] == "list"
+    assert detached["project"] is None
+
+
+def test_bulk_reschedule_sets_and_clears_deadline_and_skips_foreign_tasks(client_for, user, make_user):
+    client = client_for(user)
+    a = client.post("/api/v1/tasks/", {"title": "A"}, format="json").data["id"]
+    b = client.post("/api/v1/tasks/", {"title": "B"}, format="json").data["id"]
+    foreign = Task.objects.create(owner=make_user("other@example.com"), title="theirs", kind="personal")
+
+    res = client.post(
+        "/api/v1/tasks/bulk-reschedule/",
+        {"task_ids": [a, b, foreign.pk, a], "due_at": "2030-01-15T20:59:00Z", "due_has_time": False},
+        format="json",
+    )
+    assert res.status_code == 200, res.content
+    assert res.data == {"updated": [a, b], "skipped": [foreign.pk]}
+    for task_id in (a, b):
+        task = client.get(f"/api/v1/tasks/{task_id}/").data
+        assert task["due_at"].startswith("2030-01-15T20:59")
+        assert task["due_has_time"] is False
+    foreign.refresh_from_db()
+    assert foreign.due_at is None
+
+    cleared = client.post("/api/v1/tasks/bulk-reschedule/", {"task_ids": [a], "due_at": None}, format="json")
+    assert cleared.status_code == 200
+    assert client.get(f"/api/v1/tasks/{a}/").data["due_at"] is None
+
+    assert client.post("/api/v1/tasks/bulk-reschedule/", {"task_ids": [], "due_at": None}, format="json").status_code == 400

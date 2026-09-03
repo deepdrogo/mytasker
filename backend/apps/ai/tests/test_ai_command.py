@@ -164,6 +164,81 @@ def test_breakdown_and_apply(auth_client, user, scripted):
     assert Task.objects.filter(parent=task).count() == 2
 
 
+def _polished(*rows):
+    return LLMResponse(tool_calls=[ToolCall(id="t", name="polished_tasks", input={"tasks": list(rows)})])
+
+
+def test_polish_rewrites_titles_retries_echoed_drafts_and_skips_foreign_tasks(auth_client, user, make_user, scripted):
+    terse = Task.objects.create(owner=user, created_by=user, title="ნინისთან შეხვედრა ხვალე ჰიპერბლასტის", kind="business")
+    sloppy = Task.objects.create(owner=user, created_by=user, title="fix site bugs lol", kind="business")
+    fine = Task.objects.create(owner=user, created_by=user, title="Pay rent", description="By the 5th.", kind="personal")
+    foreign = Task.objects.create(owner=make_user("x@example.com"), title="secret", kind="personal")
+    fake = scripted(
+        [
+            # First pass: the model edits one draft but copies the other two back verbatim.
+            _polished(
+                {"id": terse.pk, "title": "შეხვედრა ნინისთან Hyperblast-ის თაობაზე", "description": "შეხვედრა ხვალ."},
+                {"id": sloppy.pk, "title": "fix site bugs lol"},
+                {"id": fine.pk, "title": "Pay rent", "description": "By the 5th."},
+            ),
+            # Focused retry gets only the echoed drafts; one is fixed, one still comes back unchanged.
+            _polished(
+                {"id": sloppy.pk, "title": "Resolve website defects", "description": "Fix the reported bugs."},
+                {"id": fine.pk, "title": "Pay rent", "description": "By the 5th."},
+            ),
+        ]
+    )
+    res = auth_client.post(
+        "/api/v1/ai/tasks/polish/",
+        {"task_ids": [terse.pk, sloppy.pk, fine.pk, foreign.pk, terse.pk]},
+        format="json",
+    )
+    assert res.status_code == 200, res.content
+    assert len(fake.calls) == 2, "one batch call plus one retry for the echoed drafts"
+    assert fake.calls[0]["tool_choice"] == {"type": "tool", "name": "polished_tasks"}
+    first, retry = (call["messages"][0]["content"] for call in fake.calls)
+    assert f"DRAFT #{terse.pk}:" in first and f"DRAFT #{sloppy.pk}:" in first and f"DRAFT #{fine.pk}:" in first
+    assert "returned unchanged on a previous pass" in retry
+    assert f"DRAFT #{terse.pk}:" not in retry
+    assert f"DRAFT #{sloppy.pk}:" in retry and f"DRAFT #{fine.pk}:" in retry
+
+    assert [row["id"] for row in res.data["updated"]] == [terse.pk, sloppy.pk]
+    assert res.data["updated"][0]["previous_title"] == "ნინისთან შეხვედრა ხვალე ჰიპერბლასტის"
+    assert res.data["unchanged"] == [fine.pk]
+    assert res.data["skipped"] == [foreign.pk]
+    terse.refresh_from_db()
+    assert terse.title == "შეხვედრა ნინისთან Hyperblast-ის თაობაზე"
+    assert terse.description == "შეხვედრა ხვალ."
+    sloppy.refresh_from_db()
+    assert sloppy.title == "Resolve website defects"
+    foreign.refresh_from_db()
+    assert foreign.title == "secret"
+
+
+def test_reply_language_follows_interface_locale(auth_client, user, scripted):
+    user.locale = "ka"
+    user.save(update_fields=["locale"])
+    fake = scripted([LLMResponse(text="გამარჯობა.")])
+    auth_client.post("/api/v1/ai/command/", {"text": "hello"}, format="json")
+    assert "REPLY LANGUAGE: Georgian." in fake.calls[0]["system"]
+    assert "Interface language: Georgian." in fake.calls[0]["system"]
+    assert fake.calls[0]["messages"][-1]["content"].endswith("[Answer in Georgian.]")
+
+    user.locale = "en"
+    user.save(update_fields=["locale"])
+    task = Task.objects.create(owner=user, created_by=user, title="x", kind="personal")
+    fake = scripted([LLMResponse(tool_calls=[ToolCall(id="t", name="polished_tasks", input={"tasks": []})])])
+    auth_client.post("/api/v1/ai/tasks/polish/", {"task_ids": [task.pk]}, format="json")
+    assert "generated text in English" in fake.calls[0]["system"]
+    assert "formal, professional English" in fake.calls[0]["messages"][0]["content"]
+
+
+def test_polish_requires_task_ids(auth_client, scripted):
+    scripted([])
+    assert auth_client.post("/api/v1/ai/tasks/polish/", {"task_ids": []}, format="json").status_code == 400
+    assert auth_client.post("/api/v1/ai/tasks/polish/", {"task_ids": "1"}, format="json").status_code == 400
+
+
 def test_unconfigured_returns_503(auth_client, settings):
     settings.ANTHROPIC_API_KEY = ""
     res = auth_client.post("/api/v1/ai/command/", {"text": "hello"}, format="json")

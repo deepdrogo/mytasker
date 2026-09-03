@@ -12,6 +12,7 @@ import {
   Lightbulb,
   ListChecks,
   Plus,
+  Rocket,
   Search,
   Sparkles,
 } from 'lucide-solid';
@@ -22,7 +23,9 @@ import { api } from '~/api/client';
 import { PriorityMark } from '~/components/shared/Indicators';
 import { TaskEditor } from '~/features/tasks/TaskEditor';
 import { tasksApi } from '~/features/tasks/api';
+import { t } from '~/i18n';
 import { authStore } from '~/stores/auth';
+import { tx } from '~/stores/translations';
 import { toast, uiStore } from '~/stores/ui';
 import type { SearchResults, Task } from '~/types';
 import styles from './CommandPalette.module.css';
@@ -78,6 +81,7 @@ export function CommandPalette(): JSX.Element {
     { id: 'upcoming', label: 'Upcoming', icon: <Calendar size={15} />, run: go('/tasks/upcoming') },
     { id: 'completed', label: 'Completed tasks', icon: <CheckSquare size={15} />, run: go('/tasks/completed') },
     { id: 'projects', label: 'Active projects', icon: <FolderKanban size={15} />, run: go('/projects/active') },
+    { id: 'startups', label: 'Startups', icon: <Rocket size={15} />, run: go('/projects/startups') },
     { id: 'all-projects', label: 'All projects', icon: <FolderKanban size={15} />, run: go('/projects/all') },
     { id: 'ideas', label: 'Project ideas', icon: <Lightbulb size={15} />, run: go('/projects/ideas') },
     { id: 'prompts', label: 'Prompt library', icon: <FileText size={15} />, run: go('/prompts') },
@@ -97,7 +101,8 @@ export function CommandPalette(): JSX.Element {
     const q = query().trim().toLowerCase();
     if (isAI()) return [];
     if (!q) return commands.slice(0, 8);
-    return commands.filter((c) => `${c.label} ${c.keywords ?? ''}`.toLowerCase().includes(q)).slice(0, 6);
+    // Match the English label, its translation and keywords so Georgian users can type in Georgian.
+    return commands.filter((c) => `${c.label} ${t(c.label)} ${c.keywords ?? ''}`.toLowerCase().includes(q)).slice(0, 6);
   });
 
   const rows = createMemo<ResultRow[]>(() => {
@@ -106,8 +111,8 @@ export function CommandPalette(): JSX.Element {
       const message = query().trim().slice(1).trim();
       out.push({
         id: 'ai-send',
-        group: 'AI',
-        label: message ? `Ask AI: “${message}”` : 'Type a request for the AI…',
+        group: t('AI'),
+        label: message ? t('Ask AI: “{message}”', { message }) : t('Type a request for the AI…'),
         icon: <Sparkles size={15} />,
         run: () => {
           uiStore.closePalette();
@@ -116,14 +121,14 @@ export function CommandPalette(): JSX.Element {
       });
       return out;
     }
-    for (const c of filteredCommands()) out.push({ id: `cmd-${c.id}`, group: 'Commands', label: c.label, hint: c.hint, icon: c.icon, run: c.run });
+    for (const c of filteredCommands()) out.push({ id: `cmd-${c.id}`, group: t('Commands'), label: t(c.label), hint: c.hint, icon: c.icon, run: c.run });
     const r = results();
     for (const task of r.tasks) {
       out.push({
         id: `task-${task.id}`,
-        group: 'Tasks',
-        label: task.title,
-        hint: task.project?.name ?? (task.kind === 'business' ? 'Business' : 'Personal'),
+        group: t('Tasks'),
+        label: tx('task', task.id, 'title', task.title),
+        hint: task.project ? tx('project', task.project.id, 'name', task.project.name) : task.kind === 'business' ? t('Business') : t('Personal'),
         icon: <PriorityMark priority={task.priority} />,
         run: () => {
           uiStore.closePalette();
@@ -131,20 +136,20 @@ export function CommandPalette(): JSX.Element {
         },
       });
     }
-    for (const project of r.projects) out.push({ id: `project-${project.id}`, group: 'Projects', label: project.name, hint: `${project.progress}%`, icon: <FolderKanban size={15} />, run: go(`/projects/${project.id}/overview`) });
-    for (const prompt of r.prompts) out.push({ id: `prompt-${prompt.id}`, group: 'Prompts', label: prompt.title, hint: prompt.category || undefined, icon: <FileText size={15} />, run: go(`/prompts/${prompt.id}`) });
-    for (const idea of r.ideas) out.push({ id: `idea-${idea.id}`, group: 'Ideas', label: idea.title, icon: <Lightbulb size={15} />, run: go('/projects/ideas') });
-    for (const item of r.routine_items) out.push({ id: `routine-${item.id}`, group: 'Routine', label: item.name, hint: item.kind, icon: <ListChecks size={15} />, run: go(`/routine/${item.kind}`) });
+    for (const project of r.projects) out.push({ id: `project-${project.id}`, group: t('Projects'), label: tx('project', project.id, 'name', project.name), hint: project.progress === null ? undefined : `${project.progress}%`, icon: <FolderKanban size={15} />, run: go(`/projects/${project.id}/tasks`) });
+    for (const prompt of r.prompts) out.push({ id: `prompt-${prompt.id}`, group: t('Prompts'), label: tx('prompt', prompt.id, 'title', prompt.title), hint: prompt.category ? tx('prompt', prompt.id, 'category', prompt.category) : undefined, icon: <FileText size={15} />, run: go(`/prompts/${prompt.id}`) });
+    for (const idea of r.ideas) out.push({ id: `idea-${idea.id}`, group: t('Ideas'), label: tx('idea', idea.id, 'title', idea.title), icon: <Lightbulb size={15} />, run: go('/projects/ideas') });
+    for (const item of r.routine_items) out.push({ id: `routine-${item.id}`, group: t('Routine'), label: tx('routine_item', item.id, 'name', item.name), hint: item.kind === 'business' ? t('Business') : t('Personal'), icon: <ListChecks size={15} />, run: go(`/routine/${item.kind}`) });
     if (query().trim() && !isAI()) {
       out.push({
         id: 'create-task',
-        group: 'Create',
-        label: `Create task “${query().trim()}”`,
+        group: t('Create'),
+        label: t('Create task “{title}”', { title: query().trim() }),
         icon: <Plus size={15} />,
         run: () => {
           const title = query().trim();
           uiStore.closePalette();
-          void tasksApi.create({ title }).then(() => toast('Task created')).catch(() => toast('Could not create the task.'));
+          void tasksApi.create({ title }).then(() => toast(t('Task created'))).catch(() => toast(t('Could not create the task.')));
         },
       });
     }
@@ -213,7 +218,7 @@ export function CommandPalette(): JSX.Element {
       <Show when={uiStore.paletteOpen()}>
         <Portal>
           <div class={styles.backdrop} onClick={(e) => e.target === e.currentTarget && uiStore.closePalette()}>
-            <div class={styles.panel} role="dialog" aria-modal="true" aria-label="Command palette">
+            <div class={styles.panel} role="dialog" aria-modal="true" aria-label={t('Command palette')}>
               <div class={styles.inputRow}>
                 <Show when={!isAI()} fallback={<Sparkles size={16} class={styles.inputIcon} />}>
                   <Search size={16} class={styles.inputIcon} />
@@ -221,7 +226,7 @@ export function CommandPalette(): JSX.Element {
                 <input
                   ref={input}
                   class={styles.input}
-                  placeholder="Search tasks, projects, prompts… or type > to ask AI"
+                  placeholder={t('Search tasks, projects, prompts… or type > to ask AI')}
                   value={query()}
                   onInput={(e) => setQuery(e.currentTarget.value)}
                   onKeyDown={onKey}
@@ -234,7 +239,7 @@ export function CommandPalette(): JSX.Element {
                 />
                 <Show when={searching()}>
                   <span class={styles.searching} aria-live="polite">
-                    searching
+                    {t('searching')}
                   </span>
                 </Show>
               </div>
@@ -268,22 +273,22 @@ export function CommandPalette(): JSX.Element {
                   )}
                 </For>
                 <Show when={rows().length === 0}>
-                  <li class={styles.empty}>Nothing found</li>
+                  <li class={styles.empty}>{t('Nothing found')}</li>
                 </Show>
               </ul>
 
               <div class={styles.footer}>
                 <span>
-                  <kbd>↑↓</kbd> navigate
+                  <kbd>↑↓</kbd> {t('navigate')}
                 </span>
                 <span>
-                  <kbd>↵</kbd> open
+                  <kbd>↵</kbd> {t('open item')}
                 </span>
                 <span>
-                  <kbd>&gt;</kbd> ask AI
+                  <kbd>&gt;</kbd> {t('ask AI')}
                 </span>
                 <span>
-                  <kbd>esc</kbd> close
+                  <kbd>esc</kbd> {t('close')}
                 </span>
               </div>
             </div>

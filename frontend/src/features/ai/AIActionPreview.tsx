@@ -2,6 +2,7 @@ import { AlertTriangle, Check, ChevronDown, ChevronRight, X } from 'lucide-solid
 import type { JSX } from 'solid-js';
 import { For, Show, createSignal } from 'solid-js';
 import { Button } from '~/components/ui/Button';
+import { t, tn } from '~/i18n';
 import type { AIPending, AIToolCall } from '~/types';
 import styles from './AIActionPreview.module.css';
 import { cx } from '~/utils/cx';
@@ -25,13 +26,19 @@ const TOOL_LABEL: Record<string, string> = {
   add_comment: 'Added comment',
 };
 
+/** Human label for a tool call; falls back to the raw tool name for tools we do not know. */
+function toolLabel(call: AIToolCall): string {
+  const label = TOOL_LABEL[call.name];
+  return label ? t(label) : call.name;
+}
+
 function summarise(call: AIToolCall): string {
   const input = call.input ?? {};
   const title = typeof input.title === 'string' ? input.title : '';
   const when = typeof input.when === 'string' ? ` · ${input.when}` : '';
   if (title) return `“${title}”${when}`;
   if (typeof input.task_id === 'number') return `#${input.task_id}${when}`;
-  if (Array.isArray(input.task_ids)) return `${input.task_ids.length} tasks`;
+  if (Array.isArray(input.task_ids)) return tn(input.task_ids.length, 'task');
   if (typeof input.query === 'string') return `“${input.query}”`;
   if (typeof input.name === 'string') return `“${input.name}”`;
   return '';
@@ -47,20 +54,20 @@ export function ToolTrace(props: { calls: AIToolCall[] }): JSX.Element {
           <Show when={open()} fallback={<ChevronRight size={12} />}>
             <ChevronDown size={12} />
           </Show>
-          {props.calls.length} {props.calls.length === 1 ? 'action' : 'actions'}
+          {tn(props.calls.length, 'action')}
         </button>
         <Show when={open()}>
           <ul class={styles.traceList}>
             <For each={props.calls}>
               {(call) => (
                 <li class={cx(styles.traceItem, call.status === 'error' && styles.traceError)}>
-                  <span class={styles.traceName}>{TOOL_LABEL[call.name] ?? call.name}</span>
+                  <span class={styles.traceName}>{toolLabel(call)}</span>
                   <span class={styles.traceArgs}>{summarise(call)}</span>
                   <Show when={call.status === 'error'}>
                     <span class={styles.traceErrorText}>{call.error}</span>
                   </Show>
                   <Show when={call.status === 'proposed'}>
-                    <span class={styles.traceProposed}>needs confirmation</span>
+                    <span class={styles.traceProposed}>{t('needs confirmation')}</span>
                   </Show>
                 </li>
               )}
@@ -79,7 +86,7 @@ export function AIActionPreview(props: {
   onReject: () => void;
 }): JSX.Element {
   return (
-    <div class={styles.preview} role="group" aria-label="Confirm AI action">
+    <div class={styles.preview} role="group" aria-label={t('Confirm AI action')}>
       <div class={styles.previewHead}>
         <AlertTriangle size={14} />
         <span>{props.pending.preview.summary}</span>
@@ -88,16 +95,16 @@ export function AIActionPreview(props: {
         <ul class={styles.previewItems}>
           <For each={props.pending.preview.items.slice(0, 8)}>{(item) => <li>{item}</li>}</For>
           <Show when={props.pending.preview.items.length > 8}>
-            <li class={styles.previewMore}>+{props.pending.preview.items.length - 8} more</li>
+            <li class={styles.previewMore}>{t('+{count} more', { count: props.pending.preview.items.length - 8 })}</li>
           </Show>
         </ul>
       </Show>
       <div class={styles.previewActions}>
         <Button variant="primary" size="sm" loading={props.busy} onClick={props.onConfirm}>
-          <Check size={14} /> Confirm
+          <Check size={14} /> {t('Confirm')}
         </Button>
         <Button variant="ghost" size="sm" disabled={props.busy} onClick={props.onReject}>
-          <X size={14} /> Cancel
+          <X size={14} /> {t('Cancel')}
         </Button>
       </div>
     </div>

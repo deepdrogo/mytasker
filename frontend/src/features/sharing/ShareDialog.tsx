@@ -1,12 +1,14 @@
 import { Check, Copy, Link2 } from 'lucide-solid';
 import type { JSX } from 'solid-js';
-import { For, Show, createEffect, createSignal } from 'solid-js';
+import { For, Show, createEffect, createSignal, untrack } from 'solid-js';
 import { ApiError } from '~/api/client';
 import { Button } from '~/components/ui/Button';
 import { Checkbox, Field, Input, Select } from '~/components/ui/Input';
 import { Modal } from '~/components/ui/Modal';
 import { copyToClipboard } from '~/features/prompts/api';
 import { sharesApi } from '~/features/sharing/api';
+import { intlLocale, t, tn } from '~/i18n';
+import { tx } from '~/stores/translations';
 import { toast } from '~/stores/ui';
 import type { ShareLink, Task } from '~/types';
 import styles from './ShareDialog.module.css';
@@ -45,7 +47,8 @@ export function ShareDialog(props: ShareDialogProps): JSX.Element {
   createEffect(() => {
     if (!props.open) return;
     const tasks = props.tasks ?? [];
-    setTitle(tasks.length === 1 ? tasks[0]?.title ?? '' : tasks.length ? `${tasks.length} tasks` : '');
+    // untrack: a locale switch while the dialog is open must not reset the form.
+    setTitle(tasks.length === 1 ? tasks[0]?.title ?? '' : tasks.length ? untrack(() => tn(tasks.length, 'task')) : '');
     setPassword('');
     setExpiry('7d');
     setAskName(true);
@@ -63,7 +66,7 @@ export function ShareDialog(props: ShareDialogProps): JSX.Element {
     try {
       const exp = expiry();
       const share = await sharesApi.create({
-        task_ids: tasks.map((t) => t.id),
+        task_ids: tasks.map((task) => task.id),
         title: title().trim(),
         password: password() || null,
         expires_at: exp === 'never' ? null : new Date(Date.now() + EXPIRY_MS[exp]).toISOString(),
@@ -75,7 +78,7 @@ export function ShareDialog(props: ShareDialogProps): JSX.Element {
       setCreated(share);
       await copy(share.url);
     } catch (err) {
-      toast(err instanceof ApiError ? err.message : 'Could not create link.');
+      toast(err instanceof ApiError ? err.message : t('Could not create link.'));
     } finally {
       setBusy(false);
     }
@@ -84,17 +87,17 @@ export function ShareDialog(props: ShareDialogProps): JSX.Element {
   const copy = async (url: string) => {
     const ok = await copyToClipboard(url);
     setCopied(ok);
-    if (ok) toast('Link copied');
+    if (ok) toast(t('Link copied'));
   };
 
   return (
-    <Modal open={props.open} onClose={props.onClose} title={created() ? 'Link ready' : 'Share tasks'} size="sm">
+    <Modal open={props.open} onClose={props.onClose} title={created() ? t('Link ready') : t('Share tasks')} size="sm">
       <Show
         when={!created()}
         fallback={
           <div class={styles.result}>
             <p class={styles.resultHint}>
-              Copy it now - for security only a fingerprint is stored, so this exact link is shown once.
+              {t('Copy it now - for security only a fingerprint is stored, so this exact link is shown once.')}
             </p>
             <div class={styles.urlRow}>
               <code class={styles.url}>{created()?.url}</code>
@@ -102,19 +105,23 @@ export function ShareDialog(props: ShareDialogProps): JSX.Element {
                 <Show when={copied()} fallback={<Copy size={14} />}>
                   <Check size={14} />
                 </Show>
-                {copied() ? 'Copied' : 'Copy'}
+                {copied() ? t('Copied') : t('Copy')}
               </Button>
             </div>
             <ul class={styles.summary}>
-              <li>{created()?.task_count} task(s)</li>
-              <li>{created()?.requires_password ? 'Password protected' : 'No password'}</li>
-              <li>{created()?.expires_at ? `Expires ${new Date(created()!.expires_at as string).toLocaleString()}` : 'Never expires'}</li>
-              <li>{created()?.one_time ? 'Single use' : 'Reusable'}</li>
+              <li>{tn(created()?.task_count ?? 0, 'task')}</li>
+              <li>{created()?.requires_password ? t('Password protected') : t('No password')}</li>
+              <li>
+                {created()?.expires_at
+                  ? t('Expires {date}', { date: new Date(created()!.expires_at as string).toLocaleString(intlLocale()) })
+                  : t('Never expires')}
+              </li>
+              <li>{created()?.one_time ? t('Single use') : t('Reusable')}</li>
             </ul>
-            <p class={styles.manage}>Manage or revoke links in Settings → Sharing.</p>
+            <p class={styles.manage}>{t('Manage or revoke links in Settings → Sharing.')}</p>
             <div class={styles.actions}>
               <Button variant="secondary" onClick={props.onClose}>
-                Done
+                {t('Done')}
               </Button>
             </div>
           </div>
@@ -128,31 +135,31 @@ export function ShareDialog(props: ShareDialogProps): JSX.Element {
           }}
         >
           <ul class={styles.tasks}>
-            <For each={(props.tasks ?? []).slice(0, 6)}>{(t) => <li>{t.title}</li>}</For>
+            <For each={(props.tasks ?? []).slice(0, 6)}>{(task) => <li>{tx('task', task.id, 'title', task.title)}</li>}</For>
             <Show when={(props.tasks?.length ?? 0) > 6}>
-              <li class={styles.more}>+{(props.tasks?.length ?? 0) - 6} more</li>
+              <li class={styles.more}>{t('+{count} more', { count: (props.tasks?.length ?? 0) - 6 })}</li>
             </Show>
           </ul>
 
-          <Field label="Title (shown to guests)">
+          <Field label={t('Title (shown to guests)')}>
             <Input value={title()} onInput={(e) => setTitle(e.currentTarget.value)} maxLength={200} />
           </Field>
 
           <div class={styles.grid}>
-            <Field label="Expires">
+            <Field label={t('Expires')}>
               <Select value={expiry()} onChange={(e) => setExpiry(e.currentTarget.value as Expiry)}>
-                <option value="1h">1 hour</option>
-                <option value="24h">24 hours</option>
-                <option value="7d">7 days</option>
-                <option value="30d">30 days</option>
-                <option value="never">Never</option>
+                <option value="1h">{t('1 hour')}</option>
+                <option value="24h">{t('24 hours')}</option>
+                <option value="7d">{t('7 days')}</option>
+                <option value="30d">{t('30 days')}</option>
+                <option value="never">{t('Never')}</option>
               </Select>
             </Field>
-            <Field label="Password (optional)">
+            <Field label={t('Password (optional)')}>
               <Input
                 type="text"
                 autocomplete="off"
-                placeholder="min 4 chars"
+                placeholder={t('min 4 chars')}
                 value={password()}
                 onInput={(e) => setPassword(e.currentTarget.value)}
                 maxLength={128}
@@ -161,18 +168,18 @@ export function ShareDialog(props: ShareDialogProps): JSX.Element {
           </div>
 
           <div class={styles.options}>
-            <Checkbox label="Ask guests for their name" checked={askName()} onChange={(e) => setAskName(e.currentTarget.checked)} />
-            <Checkbox label="Guests can complete tasks" checked={allowComplete()} onChange={(e) => setAllowComplete(e.currentTarget.checked)} />
-            <Checkbox label="Guests can reopen tasks" checked={allowReopen()} onChange={(e) => setAllowReopen(e.currentTarget.checked)} />
-            <Checkbox label="Single use (first visitor only)" checked={oneTime()} onChange={(e) => setOneTime(e.currentTarget.checked)} />
+            <Checkbox label={t('Ask guests for their name')} checked={askName()} onChange={(e) => setAskName(e.currentTarget.checked)} />
+            <Checkbox label={t('Guests can complete tasks')} checked={allowComplete()} onChange={(e) => setAllowComplete(e.currentTarget.checked)} />
+            <Checkbox label={t('Guests can reopen tasks')} checked={allowReopen()} onChange={(e) => setAllowReopen(e.currentTarget.checked)} />
+            <Checkbox label={t('Single use (first visitor only)')} checked={oneTime()} onChange={(e) => setOneTime(e.currentTarget.checked)} />
           </div>
 
           <div class={styles.actions}>
             <Button variant="ghost" type="button" onClick={props.onClose}>
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button variant="primary" type="submit" loading={busy()} disabled={!props.tasks?.length}>
-              <Link2 size={14} /> Create link
+              <Link2 size={14} /> {t('Create link')}
             </Button>
           </div>
         </form>

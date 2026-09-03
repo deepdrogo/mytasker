@@ -6,6 +6,7 @@
 import { AlertTriangle, ChevronsUp, Minus, MoveDown, MoveUp } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
+import { t } from '~/i18n';
 import type { Priority, Source, Visibility } from '~/types';
 import { percent } from '~/utils/format';
 import styles from './Indicators.module.css';
@@ -22,12 +23,12 @@ export function PriorityMark(props: { priority: Priority; withLabel?: boolean })
   return (
     <span
       class={[styles.priority, styles[meta().className]].join(' ')}
-      title={`${meta().label} priority`}
-      aria-label={`${meta().label} priority`}
+      title={t('{level} priority', { level: t(meta().label) })}
+      aria-label={t('{level} priority', { level: t(meta().label) })}
     >
       {meta().icon()}
       <Show when={props.withLabel}>
-        <span>{meta().label}</span>
+        <span>{t(meta().label)}</span>
       </Show>
     </span>
   );
@@ -47,10 +48,10 @@ export function Badge(props: {
 
 export function OverdueMark(props: { withLabel?: boolean }): JSX.Element {
   return (
-    <span class={styles.overdue} title="Overdue">
+    <span class={styles.overdue} title={t('Overdue')}>
       <AlertTriangle size={12} />
       <Show when={props.withLabel}>
-        <span>Overdue</span>
+        <span>{t('Overdue')}</span>
       </Show>
     </span>
   );
@@ -59,8 +60,8 @@ export function OverdueMark(props: { withLabel?: boolean }): JSX.Element {
 export function VisibilityMark(props: { visibility: Visibility; mode?: string }): JSX.Element {
   return (
     <Show when={props.visibility === 'private'}>
-      <Badge variant="dashed" title="Private - visible only to you">
-        Private
+      <Badge variant="dashed" title={t('Private - visible only to you')}>
+        {t('Private')}
       </Badge>
     </Show>
   );
@@ -78,7 +79,7 @@ const SOURCE_LABEL: Record<Source, string> = {
 };
 
 export function SourceLabel(props: { source: Source | '' }): JSX.Element {
-  return <Show when={props.source}>{(s) => <span class={styles.source}>{SOURCE_LABEL[s() as Source] ?? s()}</span>}</Show>;
+  return <Show when={props.source}>{(s) => <span class={styles.source}>{t(SOURCE_LABEL[s() as Source] ?? s())}</span>}</Show>;
 }
 
 export function ProgressBar(props: { value: number; max?: number; label?: string }): JSX.Element {
@@ -90,7 +91,7 @@ export function ProgressBar(props: { value: number; max?: number; label?: string
       aria-valuenow={pct()}
       aria-valuemin={0}
       aria-valuemax={100}
-      aria-label={props.label ?? 'Progress'}
+      aria-label={props.label ?? t('Progress')}
     >
       <div class={styles.progressFill} style={{ width: `${pct()}%` }} />
     </div>

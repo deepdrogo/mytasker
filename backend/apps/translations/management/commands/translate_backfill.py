@@ -18,8 +18,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         if not enabled():
             raise CommandError("Translations are disabled or ANTHROPIC_API_KEY is not configured.")
-        User = get_user_model()
-        users = User.objects.filter(is_active=True)
+        users = get_user_model().objects.filter(is_active=True)
         if options["user"]:
             users = users.filter(email__iexact=options["user"])
             if not users.exists():

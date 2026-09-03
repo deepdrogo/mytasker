@@ -5,6 +5,7 @@ import { ApiError } from '~/api/client';
 import { Button } from '~/components/ui/Button';
 import { ErrorNote } from '~/components/ui/Feedback';
 import { Field, Input, nextId } from '~/components/ui/Input';
+import { t } from '~/i18n';
 import { guessTimezone, register } from '~/stores/auth';
 import styles from './auth.module.css';
 
@@ -35,14 +36,14 @@ export default function Register(): JSX.Element {
       navigate('/today', { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(err.isValidation ? 'Check the fields below.' : err.message);
+        setError(err.isValidation ? t('Check the fields below.') : err.message);
         setFieldErrors({
           email: err.fieldError('email') ?? '',
           password: err.fieldError('password') ?? '',
           full_name: err.fieldError('full_name') ?? '',
         });
       } else {
-        setError('Something went wrong. Try again.');
+        setError(t('Something went wrong. Try again.'));
       }
     } finally {
       setBusy(false);
@@ -52,13 +53,13 @@ export default function Register(): JSX.Element {
   return (
     <form class={styles.form} onSubmit={submit} novalidate>
       <div class={styles.head}>
-        <h1 class={styles.heading}>Create your account</h1>
-        <p class={styles.sub}>Free forever. Takes under a minute.</p>
+        <h1 class={styles.heading}>{t('Create your account')}</h1>
+        <p class={styles.sub}>{t('Free forever. Takes under a minute.')}</p>
       </div>
 
       {error() && <ErrorNote message={error()} />}
 
-      <Field label="Name" id={nameId} error={fieldErrors().full_name}>
+      <Field label={t('Name')} id={nameId} error={fieldErrors().full_name}>
         <Input
           id={nameId}
           type="text"
@@ -69,7 +70,7 @@ export default function Register(): JSX.Element {
         />
       </Field>
 
-      <Field label="Email" id={emailId} error={fieldErrors().email} required>
+      <Field label={t('Email')} id={emailId} error={fieldErrors().email} required>
         <Input
           id={emailId}
           type="email"
@@ -83,10 +84,10 @@ export default function Register(): JSX.Element {
       </Field>
 
       <Field
-        label="Password"
+        label={t('Password')}
         id={passwordId}
         error={fieldErrors().password}
-        hint="At least 10 characters."
+        hint={t('At least 10 characters.')}
         required
       >
         <Input
@@ -101,13 +102,13 @@ export default function Register(): JSX.Element {
       </Field>
 
       <Button type="submit" variant="primary" size="lg" block loading={busy()}>
-        Create account
+        {t('Create account')}
       </Button>
 
       <div class={styles.links}>
-        <span class="mt-dim">Already have an account?</span>
+        <span class="mt-dim">{t('Already have an account?')}</span>
         <A href="/auth/login" class={styles.link}>
-          Sign in
+          {t('Sign in')}
         </A>
       </div>
     </form>

@@ -11,6 +11,7 @@ from common.tz import day_bounds, week_bounds
 
 class TaskFilter(filters.FilterSet):
     kind = filters.CharFilter(field_name="kind")
+    origin = filters.CharFilter(field_name="origin")
     status = filters.BaseInFilter(field_name="status")
     priority = filters.BaseInFilter(field_name="priority")
     project = filters.NumberFilter(field_name="project_id")

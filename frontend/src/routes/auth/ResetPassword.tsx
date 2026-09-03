@@ -5,6 +5,7 @@ import { api, ApiError } from '~/api/client';
 import { Button } from '~/components/ui/Button';
 import { ErrorNote } from '~/components/ui/Feedback';
 import { Field, Input, nextId } from '~/components/ui/Input';
+import { t } from '~/i18n';
 import { toast } from '~/stores/ui';
 import styles from './auth.module.css';
 
@@ -25,14 +26,14 @@ export default function ResetPassword(): JSX.Element {
     setBusy(true);
     try {
       await api.post('/auth/password/reset/confirm/', { token: token(), password: password() });
-      toast('Password updated. Sign in with your new password.');
+      toast(t('Password updated. Sign in with your new password.'));
       navigate('/auth/login', { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
         setFieldError(err.fieldError('password') ?? '');
         setError(err.fieldError('token') ?? err.message);
       } else {
-        setError('Something went wrong.');
+        setError(t('Something went wrong.'));
       }
     } finally {
       setBusy(false);
@@ -44,20 +45,20 @@ export default function ResetPassword(): JSX.Element {
       when={token()}
       fallback={
         <div class={styles.form}>
-          <h1 class={styles.heading}>Invalid link</h1>
-          <p class={styles.note}>This reset link is missing its token.</p>
+          <h1 class={styles.heading}>{t('Invalid link')}</h1>
+          <p class={styles.note}>{t('This reset link is missing its token.')}</p>
           <A href="/auth/forgot" class={styles.link} style={{ 'text-align': 'center' }}>
-            Request a new link
+            {t('Request a new link')}
           </A>
         </div>
       }
     >
       <form class={styles.form} onSubmit={submit} novalidate>
-        <h1 class={styles.heading}>Set a new password</h1>
+        <h1 class={styles.heading}>{t('Set a new password')}</h1>
 
         {error() && <ErrorNote message={error()} />}
 
-        <Field label="New password" id={passwordId} error={fieldError()} hint="At least 10 characters.">
+        <Field label={t('New password')} id={passwordId} error={fieldError()} hint={t('At least 10 characters.')}>
           <Input
             id={passwordId}
             type="password"
@@ -71,7 +72,7 @@ export default function ResetPassword(): JSX.Element {
         </Field>
 
         <Button type="submit" variant="primary" size="lg" block loading={busy()}>
-          Update password
+          {t('Update password')}
         </Button>
       </form>
     </Show>

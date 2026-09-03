@@ -23,6 +23,7 @@ PROJECT_FIELDS = {
     "name",
     "description",
     "kind",
+    "category",
     "status",
     "priority",
     "start_date",

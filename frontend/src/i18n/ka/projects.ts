@@ -1,0 +1,175 @@
+// Georgian UI strings — projects feature. Keys are the English source strings.
+export const projects: Record<string, string> = {
+  // Statuses, modes, roles
+  Paused: 'შეჩერებული',
+  Archived: 'დაარქივებული',
+  Group: 'ჯგუფური',
+  'Group+': 'ჯგუფური+',
+  'Group Plus': 'ჯგუფური პლუს',
+  Owner: 'მფლობელი',
+  Admin: 'ადმინი',
+  Member: 'წევრი',
+  Viewer: 'მნახველი',
+
+  // Project card
+  '{done}/{total} tasks': '{done}/{total} დავალება',
+  '{count} open': '{count} ღია',
+  'Due {date}': 'ვადა: {date}',
+  'No tasks yet': 'დავალებები ჯერ არ არის',
+  'No tasks yet. Progress appears once you add one.': 'დავალებები ჯერ არ არის. პროგრესი პირველი დავალების დამატების შემდეგ გამოჩნდება.',
+
+  // Startups
+  Startups: 'სტარტაპები',
+  Startup: 'სტარტაპი',
+  'Ventures kept apart from everyday projects': 'წამოწყებები, რომლებიც ყოველდღიური პროექტებისგან ცალკეა',
+  'No startups yet': 'სტარტაპები ჯერ არ არის',
+  'Projects created here are filed under Startups automatically.': 'აქ შექმნილი პროექტები ავტომატურად სტარტაპებში მოხვდება.',
+  'Regular project': 'ჩვეულებრივი პროექტი',
+  'Listed under Startups, separate from regular projects.': 'ჩანს „სტარტაპებში“, ჩვეულებრივი პროექტებისგან ცალკე.',
+
+  // Project editor
+  'Only you. Members cannot be invited.': 'მხოლოდ შენ. წევრების მოწვევა შეუძლებელია.',
+  'Everything in the project is shared with members.': 'პროექტში ყველაფერი წევრებთან გაზიარებულია.',
+  'Shared, but each member can keep private tasks and prompts inside the project.':
+    'გაზიარებული, თუმცა თითოეულ წევრს პროექტში პირადი დავალებებისა და პრომპტების შენახვა შეუძლია.',
+  'Name is required.': 'სახელი აუცილებელია.',
+  'Project saved': 'პროექტი შენახულია',
+  'Project created': 'პროექტი შეიქმნა',
+  'Project deleted': 'პროექტი წაიშალა',
+  'Could not save the project.': 'პროექტის შენახვა ვერ მოხერხდა.',
+  'Could not delete the project.': 'პროექტის წაშლა ვერ მოხერხდა.',
+  'Edit project': 'პროექტის რედაქტირება',
+  'New project': 'ახალი პროექტი',
+  Name: 'სახელი',
+  Description: 'აღწერა',
+  Type: 'ტიპი',
+  'Shown on Today and in Active Projects.': 'ჩანს „დღეს“ გვერდზე და აქტიურ პროექტებში.',
+  Project: 'პროექტი',
+  'Active project': 'აქტიური პროექტი',
+  Status: 'სტატუსი',
+  Priority: 'პრიორიტეტი',
+  Collaboration: 'თანამშრომლობა',
+  Deadline: 'ვადა',
+  Notes: 'შენიშვნები',
+  'Delete this project?': 'წავშალოთ ეს პროექტი?',
+  'Tasks stay in your lists without a project. Prompts linked to the project remain in your library.':
+    'დავალებები შენს სიებში პროექტის გარეშე დარჩება. პროექტთან დაკავშირებული პრომპტები ბიბლიოთეკაში რჩება.',
+
+  // Project list page
+  Manual: 'ხელით',
+  'Recently updated': 'ბოლოს განახლებული',
+  New: 'ახალი',
+  'Filter by name': 'ფილტრი სახელით',
+  'Filter projects': 'პროექტების ფილტრი',
+  'Any status': 'ნებისმიერი სტატუსი',
+  Sort: 'დალაგება',
+  'Could not load projects.': 'პროექტების ჩატვირთვა ვერ მოხერხდა.',
+  'Create a project': 'პროექტის შექმნა',
+
+  // Active / All routes
+  'Active Projects': 'აქტიური პროექტები',
+  'What you are pushing forward right now': 'რაზეც ახლა აქტიურად მუშაობ',
+  'No active projects': 'აქტიური პროექტები არ არის',
+  'Mark a project as Active to keep it in focus here and on Today.':
+    'მონიშნე პროექტი აქტიურად, რომ ის აქ და „დღეს“ გვერდზე ფოკუსში დარჩეს.',
+  'Everything you own or collaborate on': 'ყველაფერი, რასაც ფლობ ან რაშიც მონაწილეობ',
+  'No projects yet': 'პროექტები ჯერ არ არის',
+  'Projects group tasks, prompts, time and people.': 'პროექტი აერთიანებს დავალებებს, პრომპტებს, დროსა და ადამიანებს.',
+
+  // Project selector
+  'No project': 'პროექტის გარეშე',
+  'Current project': 'მიმდინარე პროექტი',
+
+  // Project detail — shell & overview
+  Overview: 'მიმოხილვა',
+  Activity: 'აქტივობა',
+  'This project does not exist or you no longer have access.': 'ეს პროექტი არ არსებობს ან წვდომა აღარ გაქვს.',
+  'Could not load the project.': 'პროექტის ჩატვირთვა ვერ მოხერხდა.',
+  'Back to projects': 'პროექტებზე დაბრუნება',
+  '{done} of {total} tasks done': 'შესრულდა {done} დავალება {total}-დან',
+  '{active} in progress · {overdue} overdue': '{active} მიმდინარე · {overdue} ვადაგადაცილებული',
+  'Time tracked': 'აღრიცხული დრო',
+  Details: 'დეტალები',
+  'Upcoming deadlines': 'მოახლოებული ვადები',
+  'Nothing due soon': 'ახლო ვადები არ არის',
+  'Recent activity': 'ბოლო აქტივობა',
+  Discussion: 'დისკუსია',
+
+  // Project detail — tasks
+  'Add a task to {project}…': 'დაამატე დავალება პროექტში „{project}“…',
+  'Nothing completed yet': 'ჯერ არაფერია დასრულებული',
+  'No open tasks': 'ღია დავალებები არ არის',
+  'Add the next concrete step above.': 'დაამატე შემდეგი კონკრეტული ნაბიჯი ზემოთ.',
+
+  // Project detail — prompts
+  'Prompts linked to this project.': 'ამ პროექტთან დაკავშირებული პრომპტები.',
+  'Private prompts stay visible only to their owner.': 'პირად პრომპტებს მხოლოდ მათი მფლობელი ხედავს.',
+  'New prompt': 'ახალი პრომპტი',
+  'No prompts here yet': 'აქ პრომპტები ჯერ არ არის',
+  'Prompts created from this tab are linked to the project automatically.':
+    'ამ ჩანართიდან შექმნილი პრომპტები პროექტს ავტომატურად უკავშირდება.',
+
+  // Project detail — team
+  'Could not send the invitation.': 'მოწვევის გაგზავნა ვერ მოხერხდა.',
+  'Could not change the role.': 'როლის შეცვლა ვერ მოხერხდა.',
+  'Could not remove the member.': 'წევრის ამოშლა ვერ მოხერხდა.',
+  'You left the project': 'პროექტი დატოვე',
+  'Could not leave.': 'დატოვება ვერ მოხერხდა.',
+  'This is a private project': 'ეს პირადი პროექტია',
+  'Switch it to Group or Group Plus in the project settings to invite people.':
+    'ადამიანების მოსაწვევად პროექტის პარამეტრებში გადართე „ჯგუფური“ ან „ჯგუფური პლუს“ რეჟიმზე.',
+  'Group Plus: shared workspace where members may also keep private items.':
+    'ჯგუფური პლუს: საზიარო სივრცე, სადაც წევრებს პირადი ჩანაწერების შენახვაც შეუძლიათ.',
+  'Group: everything in the project is visible to all members.': 'ჯგუფური: პროექტში ყველაფერი ყველა წევრისთვის ხილულია.',
+  Invite: 'მოწვევა',
+  'Could not load members.': 'წევრების ჩატვირთვა ვერ მოხერხდა.',
+  you: 'შენ',
+  'Invited · pending': 'მოწვეული · ელოდება',
+  '{email} · joined {time}': '{email} · შემოვიდა {time}',
+  Role: 'როლი',
+  Remove: 'ამოშლა',
+  'Leave project': 'პროექტის დატოვება',
+  'Invite to project': 'პროექტში მოწვევა',
+  'They will receive an email. You can also copy the link below and send it yourself.':
+    'მას ელფოსტა მიუვა. ასევე შეგიძლია ქვემოთ მოცემული ბმულის კოპირება და თავად გაგზავნა.',
+  'Send invitation': 'მოწვევის გაგზავნა',
+  'Can manage members and the project.': 'შეუძლია წევრებისა და პროექტის მართვა.',
+  'Read only.': 'მხოლოდ ნახვა.',
+  'Can add and edit tasks, prompts and comments.': 'შეუძლია დავალებების, პრომპტებისა და კომენტარების დამატება და რედაქტირება.',
+  'Invitation link': 'მოწვევის ბმული',
+  'Valid for 7 days. Single use.': 'მოქმედებს 7 დღე. ერთჯერადი.',
+  'Remove this member?': 'ამოვშალოთ ეს წევრი?',
+  'They lose access immediately. Tasks they created stay in the project.':
+    'წვდომა მაშინვე გაუქმდება. მის მიერ შექმნილი დავალებები პროექტში დარჩება.',
+  'Leave this project?': 'დავტოვოთ ეს პროექტი?',
+  'You will need a new invitation to come back.': 'დასაბრუნებლად ახალი მოწვევა დაგჭირდება.',
+  Leave: 'დატოვება',
+
+  // Ideas
+  'Could not save the idea.': 'იდეის შენახვა ვერ მოხერხდა.',
+  'Idea converted to a project': 'იდეა პროექტად გადაკეთდა',
+  'Could not convert the idea.': 'იდეის გადაკეთება ვერ მოხერხდა.',
+  'Could not delete the idea.': 'იდეის წაშლა ვერ მოხერხდა.',
+  'Project Ideas': 'პროექტის იდეები',
+  'Capture first, decide later': 'ჯერ ჩაიწერე, მერე გადაწყვიტე',
+  'Hide converted': 'გადაკეთებულების დამალვა',
+  'Show converted': 'გადაკეთებულების ჩვენება',
+  'New idea…': 'ახალი იდეა…',
+  'New idea': 'ახალი იდეა',
+  'Could not load ideas.': 'იდეების ჩატვირთვა ვერ მოხერხდა.',
+  'No ideas yet': 'იდეები ჯერ არ არის',
+  'Type one above. It takes two seconds.': 'ჩაწერე ზემოთ — ორ წამს წაიღებს.',
+  'Open project': 'პროექტის გახსნა',
+  Convert: 'გადაკეთება',
+  'Idea actions': 'იდეის მოქმედებები',
+  More: 'მეტი',
+  'Title is required.': 'სათაური აუცილებელია.',
+  Idea: 'იდეა',
+  'Convert to project': 'პროექტად გადაკეთება',
+  Title: 'სათაური',
+  Category: 'კატეგორია',
+  'Raw idea': 'ნედლი იდეა',
+  'Brain dump. Unstructured is fine.': 'ჩამოწერე ყველაფერი — სტრუქტურა არ არის საჭირო.',
+  'Refined version': 'დახვეწილი ვერსია',
+  'Use AI › Improve, or write it yourself.': 'გამოიყენე AI › გაუმჯობესება, ან თავად დაწერე.',
+};

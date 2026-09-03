@@ -6,6 +6,7 @@ import { Button } from '~/components/ui/Button';
 import { ConfirmDialog } from '~/components/ui/Feedback';
 import { telegramApi, type TelegramLinkStart } from '~/features/settings/api';
 import { createQuery, invalidate } from '~/hooks/createQuery';
+import { t } from '~/i18n';
 import { refreshMe } from '~/stores/auth';
 import { toast } from '~/stores/ui';
 import type { TelegramStatus } from '~/types';
@@ -37,11 +38,11 @@ export default function TelegramSection(): JSX.Element {
           setLink(null);
           invalidate('telegram');
           await refreshMe();
-          toast('Telegram linked');
+          toast(t('Telegram linked'));
         }
       }, 3000);
     } catch (err) {
-      toast(err instanceof ApiError ? err.message : 'Could not start linking.');
+      toast(err instanceof ApiError ? err.message : t('Could not start linking.'));
     } finally {
       setBusy(false);
     }
@@ -52,9 +53,9 @@ export default function TelegramSection(): JSX.Element {
     try {
       await telegramApi.unlink();
       await refreshMe();
-      toast('Telegram unlinked');
+      toast(t('Telegram unlinked'));
     } catch (err) {
-      toast(err instanceof ApiError ? err.message : 'Could not unlink.');
+      toast(err instanceof ApiError ? err.message : t('Could not unlink.'));
     } finally {
       setBusy(false);
       setConfirmUnlink(false);
@@ -64,45 +65,45 @@ export default function TelegramSection(): JSX.Element {
   const test = async () => {
     try {
       await telegramApi.test();
-      toast('Test message queued');
+      toast(t('Test message queued'));
     } catch (err) {
-      toast(err instanceof ApiError ? err.message : 'Could not send.');
+      toast(err instanceof ApiError ? err.message : t('Could not send.'));
     }
   };
 
   return (
     <section class={styles.section}>
       <header class={styles.sectionHead}>
-        <h2>Telegram</h2>
-        <p>Reminders, summaries and quick task management from chat. Commands: /add, /done, /list, /timer, /summary, /week - or just type naturally.</p>
+        <h2>{t('Telegram')}</h2>
+        <p>{t('Reminders, summaries and quick task management from chat. Commands: /add, /done, /list, /timer, /summary, /week - or just type naturally.')}</p>
       </header>
 
-      <Show when={status.data()} fallback={<p class={styles.dim}>Loading…</p>}>
+      <Show when={status.data()} fallback={<p class={styles.dim}>{t('Loading…')}</p>}>
         {(s) => (
           <div class={styles.card}>
-            <Show when={s().configured} fallback={<p class={styles.dim}>The Telegram bot is not configured on this server.</p>}>
+            <Show when={s().configured} fallback={<p class={styles.dim}>{t('The Telegram bot is not configured on this server.')}</p>}>
               <Show
                 when={s().linked}
                 fallback={
                   <>
-                    <p class={styles.dim}>Not linked. Open the bot and press Start; the link expires in 10 minutes.</p>
+                    <p class={styles.dim}>{t('Not linked. Open the bot and press Start; the link expires in 10 minutes.')}</p>
                     <Show when={link()}>
                       {(l) => (
                         <div class={styles.form}>
                           <Show when={l().deep_link}>
                             <a class={styles.dim} href={l().deep_link} target="_blank" rel="noopener">
-                              Open @{l().bot_username} <ExternalLink size={12} />
+                              {t('Open @{name}', { name: l().bot_username })} <ExternalLink size={12} />
                             </a>
                           </Show>
-                          <p class={styles.dim}>Or send this to the bot manually:</p>
+                          <p class={styles.dim}>{t('Or send this to the bot manually:')}</p>
                           <code class={styles.code}>/start {l().token}</code>
-                          <p class={styles.mono}>Waiting for confirmation…</p>
+                          <p class={styles.mono}>{t('Waiting for confirmation…')}</p>
                         </div>
                       )}
                     </Show>
                     <div class={styles.actions} style={{ 'justify-content': 'flex-start' }}>
                       <Button variant="primary" size="sm" loading={busy()} onClick={() => void startLink()}>
-                        {link() ? 'Generate a new link' : 'Link Telegram'}
+                        {link() ? t('Generate a new link') : t('Link Telegram')}
                       </Button>
                     </div>
                   </>
@@ -111,25 +112,25 @@ export default function TelegramSection(): JSX.Element {
                 <div class={styles.row} style={{ 'border-bottom': 'none', padding: '0' }}>
                   <div class={styles.rowText}>
                     <span>
-                      Linked as <strong>{s().first_name || s().username || 'Telegram user'}</strong>
+                      {t('Linked as')} <strong>{s().first_name || s().username || t('Telegram user')}</strong>
                       <Show when={s().username}> (@{s().username})</Show>
                     </span>
                     <span class={styles.rowHint}>
-                      Linked {formatRelative(s().linked_at ?? null)}
-                      <Show when={s().last_interaction_at}> · last message {formatRelative(s().last_interaction_at ?? null)}</Show>
+                      {t('Linked {time}', { time: formatRelative(s().linked_at ?? null) })}
+                      <Show when={s().last_interaction_at}> · {t('last message {time}', { time: formatRelative(s().last_interaction_at ?? null) })}</Show>
                     </span>
                   </div>
-                  <span class={styles.badge}>linked</span>
+                  <span class={styles.badge}>{t('linked')}</span>
                 </div>
                 <div class={styles.actions} style={{ 'justify-content': 'flex-start' }}>
                   <Button variant="secondary" size="sm" onClick={() => void test()}>
-                    Send test message
+                    {t('Send test message')}
                   </Button>
                   <Button variant="ghost" size="sm" onClick={() => setShowLog(!showLog())}>
-                    {showLog() ? 'Hide log' : 'Delivery log'}
+                    {showLog() ? t('Hide log') : t('Delivery log')}
                   </Button>
                   <Button variant="ghost" size="sm" loading={busy()} onClick={() => setConfirmUnlink(true)}>
-                    Unlink
+                    {t('Unlink')}
                   </Button>
                 </div>
               </Show>
@@ -141,19 +142,19 @@ export default function TelegramSection(): JSX.Element {
       <Show when={showLog()}>
         <div class={styles.section}>
           <div class={styles.row}>
-            <span class={styles.dim}>Last deliveries</span>
-            <Button variant="ghost" size="sm" onClick={() => deliveries.refetch()} aria-label="Refresh">
+            <span class={styles.dim}>{t('Last deliveries')}</span>
+            <Button variant="ghost" size="sm" onClick={() => deliveries.refetch()} aria-label={t('Refresh')}>
               <RefreshCw size={13} />
             </Button>
           </div>
           <ul class={styles.list}>
-            <For each={deliveries.data() ?? []} fallback={<li class={styles.dim}>Nothing sent yet.</li>}>
+            <For each={deliveries.data() ?? []} fallback={<li class={styles.dim}>{t('Nothing sent yet.')}</li>}>
               {(d) => (
                 <li class={styles.row}>
                   <div class={styles.rowText}>
-                    <span>{d.kind || 'message'}</span>
+                    <span>{d.kind || t('message')}</span>
                     <span class={styles.rowHint}>
-                      {formatRelative(d.created_at)} · {d.attempts} attempt(s)
+                      {formatRelative(d.created_at)} · {t('{count} attempt(s)', { count: d.attempts })}
                       <Show when={d.last_error}> · {d.last_error}</Show>
                     </span>
                   </div>
@@ -167,9 +168,9 @@ export default function TelegramSection(): JSX.Element {
 
       <ConfirmDialog
         open={confirmUnlink()}
-        title="Unlink Telegram?"
-        message="You will stop receiving reminders and summaries in Telegram. You can link again any time."
-        confirmLabel="Unlink"
+        title={t('Unlink Telegram?')}
+        message={t('You will stop receiving reminders and summaries in Telegram. You can link again any time.')}
+        confirmLabel={t('Unlink')}
         onConfirm={() => void unlink()}
         onCancel={() => setConfirmUnlink(false)}
       />

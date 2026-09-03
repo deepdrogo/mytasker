@@ -184,6 +184,11 @@
   color: var(--c-text);
 }
 
+.iconActionBusy {
+  color: var(--c-text);
+  animation: blink 1s ease-in-out infinite;
+}
+
 .runningPill {
   font-size: var(--fs-xs);
   font-weight: var(--fw-medium);

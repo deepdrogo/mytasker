@@ -1,4 +1,10 @@
+import { intlLocale, locale, t, tn } from '~/i18n';
 import type { ISODate, ISODateTime } from '~/types';
+
+/** Duration unit suffixes: 2h 30m / 2სთ 30წთ */
+function units(): { h: string; m: string; s: string; d: string } {
+  return locale() === 'ka' ? { h: 'სთ', m: 'წთ', s: 'წმ', d: 'დ' } : { h: 'h', m: 'm', s: 's', d: 'd' };
+}
 
 export function pad2(value: number): string {
   return value < 10 ? `0${value}` : String(value);
@@ -10,9 +16,10 @@ export function formatDuration(seconds: number, opts: { withSeconds?: boolean } 
   const h = Math.floor(total / 3600);
   const m = Math.floor((total % 3600) / 60);
   const s = total % 60;
-  if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
-  if (m > 0) return opts.withSeconds && s > 0 ? `${m}m ${s}s` : `${m}m`;
-  return `${s}s`;
+  const u = units();
+  if (h > 0) return m > 0 ? `${h}${u.h} ${m}${u.m}` : `${h}${u.h}`;
+  if (m > 0) return opts.withSeconds && s > 0 ? `${m}${u.m} ${s}${u.s}` : `${m}${u.m}`;
+  return `${s}${u.s}`;
 }
 
 /** Timer display: 02:41 or 1:02:41 */
@@ -38,20 +45,20 @@ export function formatTime(value: ISODateTime | null | undefined, use12h = false
   const date = parseDate(value);
   if (!date) return '';
   return use12h
-    ? date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true })
+    ? date.toLocaleTimeString(intlLocale(), { hour: 'numeric', minute: '2-digit', hour12: true })
     : `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
 }
 
 export function formatDate(value: ISODateTime | ISODate | null | undefined): string {
   const date = parseDate(value);
   if (!date) return '';
-  return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  return date.toLocaleDateString(intlLocale(), { day: 'numeric', month: 'short' });
 }
 
 export function formatDateFull(value: ISODateTime | ISODate | null | undefined): string {
   const date = parseDate(value);
   if (!date) return '';
-  return date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  return date.toLocaleDateString(intlLocale(), { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function startOfDay(date: Date): Date {
@@ -73,12 +80,12 @@ export function formatDueDate(value: ISODateTime | null | undefined, hasTime = f
   if (!date) return '';
   const offset = dayOffset(value) ?? 0;
   const time = hasTime ? ` ${formatTime(value, use12h)}` : '';
-  if (offset === 0) return `Today${time}`;
-  if (offset === 1) return `Tomorrow${time}`;
-  if (offset === -1) return `Yesterday${time}`;
-  if (offset > 1 && offset < 7) return `${date.toLocaleDateString(undefined, { weekday: 'short' })}${time}`;
+  if (offset === 0) return `${t('Today')}${time}`;
+  if (offset === 1) return `${t('Tomorrow')}${time}`;
+  if (offset === -1) return `${t('Yesterday')}${time}`;
+  if (offset > 1 && offset < 7) return `${date.toLocaleDateString(intlLocale(), { weekday: 'short' })}${time}`;
   const sameYear = date.getFullYear() === new Date().getFullYear();
-  const label = date.toLocaleDateString(undefined, {
+  const label = date.toLocaleDateString(intlLocale(), {
     day: 'numeric',
     month: 'short',
     ...(sameYear ? {} : { year: 'numeric' }),
@@ -92,12 +99,13 @@ export function formatRelative(value: ISODateTime | null | undefined): string {
   const diff = Math.round((Date.now() - date.getTime()) / 1000);
   const future = diff < 0;
   const seconds = Math.abs(diff);
-  const wrap = (s: string) => (future ? `in ${s}` : `${s} ago`);
-  if (seconds < 45) return future ? 'in a moment' : 'just now';
-  if (seconds < 3600) return wrap(`${Math.round(seconds / 60)}m`);
-  if (seconds < 86_400) return wrap(`${Math.round(seconds / 3600)}h`);
+  const u = units();
+  const wrap = (s: string) => (future ? t('in {time}', { time: s }) : t('{time} ago', { time: s }));
+  if (seconds < 45) return future ? t('in a moment') : t('just now');
+  if (seconds < 3600) return wrap(`${Math.round(seconds / 60)}${u.m}`);
+  if (seconds < 86_400) return wrap(`${Math.round(seconds / 3600)}${u.h}`);
   const days = Math.round(seconds / 86_400);
-  if (days < 7) return wrap(`${days}d`);
+  if (days < 7) return wrap(`${days}${u.d}`);
   return formatDate(value);
 }
 
@@ -122,7 +130,7 @@ export function fromLocalInputValue(value: string): string | null {
 }
 
 export function pluralize(count: number, singular: string, plural?: string): string {
-  return `${count} ${count === 1 ? singular : (plural ?? `${singular}s`)}`;
+  return tn(count, singular, plural);
 }
 
 export function percent(numerator: number, denominator: number): number {
@@ -133,7 +141,7 @@ export function percent(numerator: number, denominator: number): number {
 /** "-1h 18m" / "+22m" */
 export function formatDelta(actualSeconds: number, targetSeconds: number): string {
   const diff = actualSeconds - targetSeconds;
-  if (Math.abs(diff) < 60) return '0m';
+  if (Math.abs(diff) < 60) return `0${units().m}`;
   return `${diff < 0 ? '−' : '+'}${formatDuration(Math.abs(diff))}`;
 }
 

@@ -2,7 +2,9 @@ import { useNavigate } from '@solidjs/router';
 import { Moon, Square } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
+import { t } from '~/i18n';
 import { stopSleep, stopTimer, timerStore } from '~/stores/timer';
+import { tx } from '~/stores/translations';
 import { toast } from '~/stores/ui';
 import { formatClock } from '~/utils/format';
 import styles from './TimerIndicator.module.css';
@@ -18,31 +20,34 @@ export function TimerIndicator(): JSX.Element {
     event.stopPropagation();
     try {
       await stopTimer();
-      toast('Timer stopped');
+      toast(t('Timer stopped'));
     } catch {
-      toast('Could not stop the timer.');
+      toast(t('Could not stop the timer.'));
     }
   };
 
   const endSleep = async () => {
     try {
       await stopSleep();
-      toast('Good morning');
+      toast(t('Good morning'));
     } catch {
-      toast('Could not stop sleep tracking.');
+      toast(t('Could not stop sleep tracking.'));
     }
   };
 
   const label = () => {
     const entry = timerStore.running();
     if (!entry) return '';
-    return entry.task?.title ?? entry.routine_item?.name ?? entry.project?.name ?? (entry.category === 'business' ? 'Business' : 'Personal');
+    if (entry.task) return tx('task', entry.task.id, 'title', entry.task.title);
+    if (entry.routine_item) return tx('routine_item', entry.routine_item.id, 'name', entry.routine_item.name);
+    if (entry.project) return tx('project', entry.project.id, 'name', entry.project.name);
+    return entry.category === 'business' ? t('Business') : t('Personal');
   };
 
   return (
     <>
       <Show when={timerStore.sleep()}>
-        <button type="button" class={[styles.indicator, styles.sleep].join(' ')} onClick={() => void endSleep()} title="Stop sleep tracking">
+        <button type="button" class={[styles.indicator, styles.sleep].join(' ')} onClick={() => void endSleep()} title={t('Stop sleep tracking')}>
           <Moon size={13} />
           <span class={[styles.clock, 'mt-mono'].join(' ')}>{formatClock(timerStore.sleepElapsedSeconds())}</span>
         </button>
@@ -60,7 +65,7 @@ export function TimerIndicator(): JSX.Element {
               <span class={styles.name}>{label()}</span>
               <span class={[styles.clock, 'mt-mono'].join(' ')}>{formatClock(timerStore.elapsedSeconds())}</span>
             </button>
-            <button type="button" class={styles.stop} onClick={stop} aria-label="Stop timer" disabled={timerStore.busy()}>
+            <button type="button" class={styles.stop} onClick={stop} aria-label={t('Stop timer')} disabled={timerStore.busy()}>
               <Square size={11} fill="currentColor" />
             </button>
           </div>

@@ -8,6 +8,7 @@ urlpatterns = [
     path("ai/actions/", views.history, name="ai-history"),
     path("ai/actions/<int:pk>/confirm/", views.confirm, name="ai-confirm"),
     path("ai/actions/<int:pk>/reject/", views.reject, name="ai-reject"),
+    path("ai/tasks/polish/", views.polish_tasks, name="ai-polish-tasks"),
     path("ai/tasks/<int:pk>/improve/", views.improve_task, name="ai-improve-task"),
     path("ai/tasks/<int:pk>/breakdown/", views.break_down, name="ai-breakdown"),
     path("ai/tasks/<int:pk>/breakdown/apply/", views.apply_breakdown, name="ai-breakdown-apply"),

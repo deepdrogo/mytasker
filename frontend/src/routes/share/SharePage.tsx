@@ -7,6 +7,7 @@ import { PriorityMark } from '~/components/shared/Indicators';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { guestApi } from '~/features/sharing/api';
+import { t } from '~/i18n';
 import type { GuestShareView, GuestTask } from '~/types';
 import { formatDueDate, formatRelative } from '~/utils/format';
 import styles from './SharePage.module.css';
@@ -30,7 +31,7 @@ export default function SharePage(): JSX.Element {
 
   const fail = (err: unknown) => {
     if (err instanceof ApiError) setError({ code: err.code, message: err.message });
-    else setError({ code: 'network_error', message: 'Could not load this link.' });
+    else setError({ code: 'network_error', message: t('Could not load this link.') });
   };
 
   const [initial] = createResource(
@@ -51,7 +52,7 @@ export default function SharePage(): JSX.Element {
       apply(await guestApi.unlock(params.token, password()));
       setPassword('');
     } catch (err) {
-      if (err instanceof ApiError && err.code === 'share_wrong_password') setError({ code: err.code, message: 'Wrong password.' });
+      if (err instanceof ApiError && err.code === 'share_wrong_password') setError({ code: err.code, message: t('Wrong password.') });
       else fail(err);
     } finally {
       setBusy(null);
@@ -60,7 +61,7 @@ export default function SharePage(): JSX.Element {
 
   const identify = async () => {
     if (!name().trim()) {
-      setNameError('Please enter your name.');
+      setNameError(t('Please enter your name.'));
       return;
     }
     setBusy('name');
@@ -84,7 +85,7 @@ export default function SharePage(): JSX.Element {
     if (!v || busy() !== null) return;
     if (task.status === 'done' ? !v.allow_reopen : !v.allow_complete) return;
     if (needsName()) {
-      setNameError('Tell us your name first so the owner knows who did it.');
+      setNameError(t('Tell us your name first so the owner knows who did it.'));
       return;
     }
     setBusy(task.id);
@@ -97,28 +98,26 @@ export default function SharePage(): JSX.Element {
     }
   };
 
-  const done = () => view()?.tasks.filter((t) => t.status === 'done').length ?? 0;
+  const done = () => view()?.tasks.filter((task) => task.status === 'done').length ?? 0;
 
   return (
     <div class={styles.page}>
       <header class={styles.header}>
         <Logo size={20} class={styles.brand} />
         <Show when={view()}>
-          <span class={styles.meta}>
-            {done()}/{view()?.tasks.length} done
-          </span>
+          <span class={styles.meta}>{t('{done}/{total} done', { done: done(), total: view()?.tasks.length ?? 0 })}</span>
         </Show>
       </header>
 
       <main class={styles.main}>
-        <Show when={!initial.loading} fallback={<p class={styles.dim}>Loading…</p>}>
+        <Show when={!initial.loading} fallback={<p class={styles.dim}>{t('Loading…')}</p>}>
           <Show when={!(error() && !view())}>
             <h1 class={styles.title}>{view()?.title}</h1>
           </Show>
 
           <Show when={error() && !view()}>
             <div class={styles.blocked}>
-              <h1 class={styles.title}>This link is not available</h1>
+              <h1 class={styles.title}>{t('This link is not available')}</h1>
               <p class={styles.dim}>{error()?.message}</p>
             </div>
           </Show>
@@ -132,11 +131,11 @@ export default function SharePage(): JSX.Element {
               }}
             >
               <div class={styles.cardHead}>
-                <Lock size={14} /> This link is password protected
+                <Lock size={14} /> {t('This link is password protected')}
               </div>
               <Input
                 type="password"
-                placeholder="Password"
+                placeholder={t('Password')}
                 value={password()}
                 onInput={(e) => setPassword(e.currentTarget.value)}
                 autofocus
@@ -146,7 +145,7 @@ export default function SharePage(): JSX.Element {
                 <p class={styles.error}>{error()?.message}</p>
               </Show>
               <Button variant="primary" type="submit" loading={busy() === 'unlock'} disabled={!password()}>
-                Unlock
+                {t('Unlock')}
               </Button>
             </form>
           </Show>
@@ -159,14 +158,14 @@ export default function SharePage(): JSX.Element {
                 void identify();
               }}
             >
-              <div class={styles.cardHead}>Your name</div>
-              <p class={styles.dim}>The owner will see who completed each task.</p>
-              <Input placeholder="e.g. Nino" value={name()} onInput={(e) => setName(e.currentTarget.value)} maxLength={80} invalid={Boolean(nameError())} />
+              <div class={styles.cardHead}>{t('Your name')}</div>
+              <p class={styles.dim}>{t('The owner will see who completed each task.')}</p>
+              <Input placeholder={t('e.g. Nino')} value={name()} onInput={(e) => setName(e.currentTarget.value)} maxLength={80} invalid={Boolean(nameError())} />
               <Show when={nameError()}>
                 <p class={styles.error}>{nameError()}</p>
               </Show>
               <Button variant="primary" type="submit" loading={busy() === 'name'}>
-                Continue
+                {t('Continue')}
               </Button>
             </form>
           </Show>
@@ -174,7 +173,7 @@ export default function SharePage(): JSX.Element {
           <Show when={view()?.authenticated}>
             <Show when={view()?.guest_name}>
               <p class={styles.dim}>
-                Working as <strong>{view()?.guest_name}</strong>
+                {t('Working as')} <strong>{view()?.guest_name}</strong>
               </p>
             </Show>
             <Show when={error() && view()?.authenticated}>
@@ -189,7 +188,7 @@ export default function SharePage(): JSX.Element {
                       class={styles.check}
                       disabled={busy() !== null || (task.status === 'done' ? !view()?.allow_reopen : !view()?.allow_complete)}
                       onClick={() => void toggle(task)}
-                      aria-label={task.status === 'done' ? 'Reopen' : 'Complete'}
+                      aria-label={task.status === 'done' ? t('Reopen') : t('Complete')}
                     >
                       <Show when={task.status === 'done'} fallback={<Circle size={18} />}>
                         <Check size={18} />
@@ -211,7 +210,7 @@ export default function SharePage(): JSX.Element {
                         </Show>
                         <Show when={task.status === 'done'}>
                           <span>
-                            Done {task.completed_by_name ? `by ${task.completed_by_name}` : ''} {formatRelative(task.completed_at)}
+                            {task.completed_by_name ? t('Done by {name}', { name: task.completed_by_name }) : t('Done')} {formatRelative(task.completed_at)}
                           </span>
                         </Show>
                       </div>
@@ -225,7 +224,7 @@ export default function SharePage(): JSX.Element {
                                   class={styles.checkSmall}
                                   disabled={busy() !== null || (sub.status === 'done' ? !view()?.allow_reopen : !view()?.allow_complete)}
                                   onClick={() => void toggle(sub)}
-                                  aria-label={sub.status === 'done' ? 'Reopen' : 'Complete'}
+                                  aria-label={sub.status === 'done' ? t('Reopen') : t('Complete')}
                                 >
                                   <Show when={sub.status === 'done'} fallback={<Circle size={13} />}>
                                     <Check size={13} />
@@ -250,7 +249,7 @@ export default function SharePage(): JSX.Element {
       </main>
 
       <footer class={styles.footer}>
-        Shared via <a href="/">mytasker.io</a> — a free control center for life and business.
+        {t('Shared via')} <a href="/">mytasker.io</a> — {t('a free control center for life and business.')}
       </footer>
     </div>
   );

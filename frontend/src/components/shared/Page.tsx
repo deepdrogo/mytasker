@@ -1,6 +1,7 @@
 import { A, useLocation } from '@solidjs/router';
 import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
+import { t } from '~/i18n';
 import styles from './Page.module.css';
 
 interface PageProps {
@@ -32,7 +33,7 @@ export function Page(props: PageProps): JSX.Element {
         </div>
 
         <Show when={props.tabs?.length}>
-          <nav class={styles.tabs} aria-label="Section">
+          <nav class={styles.tabs} aria-label={t('Section')}>
             <For each={props.tabs}>
               {(tab) => (
                 <A

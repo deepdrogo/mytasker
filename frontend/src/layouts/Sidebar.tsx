@@ -11,6 +11,7 @@ import {
   Lightbulb,
   ListChecks,
   Repeat,
+  Rocket,
   ScrollText,
   Settings,
   Sparkles,
@@ -19,7 +20,9 @@ import {
 } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
+import { LanguageSwitch } from '~/components/shared/LanguageSwitch';
 import { Logo } from '~/components/shared/Logo';
+import { t } from '~/i18n';
 import { authStore } from '~/stores/auth';
 import styles from './Sidebar.module.css';
 
@@ -52,6 +55,7 @@ const SECTIONS: NavSection[] = [
     label: 'Projects',
     links: [
       { label: 'Active', href: '/projects/active', icon: () => <CircleDashed size={15} /> },
+      { label: 'Startups', href: '/projects/startups', icon: () => <Rocket size={15} /> },
       { label: 'All', href: '/projects/all', icon: () => <FolderKanban size={15} /> },
       { label: 'Ideas', href: '/projects/ideas', icon: () => <Lightbulb size={15} /> },
     ],
@@ -90,9 +94,9 @@ export function Sidebar(props: { onNavigate?: () => void }): JSX.Element {
   const footerLinks = () => (authStore.isAdmin() ? [AI_LINK, ...FOOTER_LINKS] : FOOTER_LINKS);
 
   return (
-    <aside class={styles.sidebar} aria-label="Main navigation">
+    <aside class={styles.sidebar} aria-label={t('Main navigation')}>
       <div class={styles.brand}>
-        <A href="/today" class={styles.brandLink} onClick={props.onNavigate} aria-label="MyTasker - Today">
+        <A href="/today" class={styles.brandLink} onClick={props.onNavigate} aria-label={t('MyTasker - Today')}>
           <Logo size={22} />
         </A>
       </div>
@@ -102,7 +106,7 @@ export function Sidebar(props: { onNavigate?: () => void }): JSX.Element {
           {(section) => (
             <div class={styles.section}>
               <Show when={section.label}>
-                <p class={styles.sectionLabel}>{section.label}</p>
+                <p class={styles.sectionLabel}>{t(section.label!)}</p>
               </Show>
               <For each={section.links}>
                 {(link) => (
@@ -113,7 +117,7 @@ export function Sidebar(props: { onNavigate?: () => void }): JSX.Element {
                     aria-current={isActive(link.href) ? 'page' : undefined}
                   >
                     <span class={styles.linkIcon}>{link.icon()}</span>
-                    <span class={styles.linkLabel}>{link.label}</span>
+                    <span class={styles.linkLabel}>{t(link.label)}</span>
                   </A>
                 )}
               </For>
@@ -131,10 +135,15 @@ export function Sidebar(props: { onNavigate?: () => void }): JSX.Element {
               onClick={props.onNavigate}
             >
               <span class={styles.linkIcon}>{link.icon()}</span>
-              <span class={styles.linkLabel}>{link.label}</span>
+              <span class={styles.linkLabel}>{t(link.label)}</span>
             </A>
           )}
         </For>
+        <Show when={props.onNavigate}>
+          <div class={styles.langRow}>
+            <LanguageSwitch compact />
+          </div>
+        </Show>
         <Show when={authStore.user()}>
           {(user) => (
             <A href="/settings/profile" class={styles.account} onClick={props.onNavigate}>

@@ -6,8 +6,9 @@ import { Drawer } from '~/components/ui/Drawer';
 import { ConfirmDialog } from '~/components/ui/Feedback';
 import { Field, Input, Select, Textarea } from '~/components/ui/Input';
 import { projectsApi, type ProjectInput } from '~/features/projects/api';
+import { t } from '~/i18n';
 import { toast } from '~/stores/ui';
-import type { Priority, Project, ProjectKind, ProjectMode, ProjectStatus } from '~/types';
+import type { Priority, Project, ProjectCategory, ProjectKind, ProjectMode, ProjectStatus } from '~/types';
 import styles from './ProjectEditor.module.css';
 
 interface ProjectEditorProps {
@@ -15,6 +16,7 @@ interface ProjectEditorProps {
   onClose: () => void;
   project?: Project | null;
   defaultKind?: ProjectKind;
+  defaultCategory?: ProjectCategory;
   onSaved?: (project: Project) => void;
   onDeleted?: () => void;
 }
@@ -29,6 +31,7 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
   const [name, setName] = createSignal('');
   const [description, setDescription] = createSignal('');
   const [kind, setKind] = createSignal<ProjectKind>('project');
+  const [category, setCategory] = createSignal<ProjectCategory>('general');
   const [mode, setMode] = createSignal<ProjectMode>('private');
   const [status, setStatus] = createSignal<ProjectStatus>('active');
   const [priority, setPriority] = createSignal<Priority>('normal');
@@ -48,6 +51,7 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
       setName(p?.name ?? '');
       setDescription(p?.description ?? '');
       setKind(p?.kind ?? props.defaultKind ?? 'project');
+      setCategory(p?.category ?? props.defaultCategory ?? 'general');
       setMode(p?.mode ?? 'private');
       setStatus(p?.status ?? 'active');
       setPriority(p?.priority ?? 'normal');
@@ -62,7 +66,7 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
     event?.preventDefault();
     if (saving()) return;
     if (!name().trim()) {
-      setError('Name is required.');
+      setError(t('Name is required.'));
       return;
     }
     setSaving(true);
@@ -71,6 +75,7 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
       name: name().trim(),
       description: description(),
       kind: kind(),
+      category: category(),
       status: status(),
       priority: priority(),
       start_date: startDate() || null,
@@ -82,15 +87,15 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
       if (props.project) {
         saved = await projectsApi.update(props.project.id, { ...payload, version: props.project.version });
         if (mode() !== props.project.mode) saved = await projectsApi.changeMode(saved.id, mode());
-        toast('Project saved');
+        toast(t('Project saved'));
       } else {
         saved = await projectsApi.create({ ...payload, mode: mode() });
-        toast('Project created');
+        toast(t('Project created'));
       }
       props.onSaved?.(saved);
       props.onClose();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not save the project.');
+      setError(err instanceof ApiError ? err.message : t('Could not save the project.'));
     } finally {
       setSaving(false);
     }
@@ -100,11 +105,11 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
     if (!props.project) return;
     try {
       await projectsApi.remove(props.project.id);
-      toast('Project deleted');
+      toast(t('Project deleted'));
       props.onDeleted?.();
       props.onClose();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not delete the project.');
+      setError(err instanceof ApiError ? err.message : t('Could not delete the project.'));
     } finally {
       setConfirmDelete(false);
     }
@@ -117,82 +122,88 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
     <Drawer
       open={props.open}
       onClose={props.onClose}
-      title={isEdit() ? 'Edit project' : 'New project'}
+      title={isEdit() ? t('Edit project') : t('New project')}
       footer={
         <div class={styles.footer}>
           <Show when={isEdit() && isOwner()}>
             <Button variant="danger" size="sm" onClick={() => setConfirmDelete(true)}>
-              Delete
+              {t('Delete')}
             </Button>
           </Show>
           <div class={styles.footerRight}>
             <Button variant="ghost" onClick={props.onClose}>
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button onClick={save} loading={saving()} disabled={!canManage()}>
-              {isEdit() ? 'Save' : 'Create'}
+              {isEdit() ? t('Save') : t('Create')}
             </Button>
           </div>
         </div>
       }
     >
       <form class={styles.form} onSubmit={save}>
-        <Field label="Name" required error={error()}>
+        <Field label={t('Name')} required error={error()}>
           <Input value={name()} onInput={(e) => setName(e.currentTarget.value)} autofocus disabled={!canManage()} />
         </Field>
-        <Field label="Description">
+        <Field label={t('Description')}>
           <Textarea rows={2} value={description()} onInput={(e) => setDescription(e.currentTarget.value)} disabled={!canManage()} />
         </Field>
 
         <div class={styles.grid}>
-          <Field label="Type" hint={kind() === 'active' ? 'Shown on Today and in Active Projects.' : undefined}>
+          <Field label={t('Type')} hint={kind() === 'active' ? t('Shown on Today and in Active Projects.') : undefined}>
             <Select value={kind()} onChange={(e) => setKind(e.currentTarget.value as ProjectKind)} disabled={!canManage()}>
-              <option value="project">Project</option>
-              <option value="active">Active project</option>
+              <option value="project">{t('Project')}</option>
+              <option value="active">{t('Active project')}</option>
             </Select>
           </Field>
-          <Field label="Status">
+          <Field label={t('Category')} hint={category() === 'startup' ? t('Listed under Startups, separate from regular projects.') : undefined}>
+            <Select value={category()} onChange={(e) => setCategory(e.currentTarget.value as ProjectCategory)} disabled={!canManage()}>
+              <option value="general">{t('Regular project')}</option>
+              <option value="startup">{t('Startup')}</option>
+            </Select>
+          </Field>
+          <Field label={t('Status')}>
             <Select value={status()} onChange={(e) => setStatus(e.currentTarget.value as ProjectStatus)} disabled={!canManage()}>
-              <option value="planned">Planned</option>
-              <option value="active">Active</option>
-              <option value="paused">Paused</option>
-              <option value="completed">Completed</option>
-              <option value="archived">Archived</option>
+              <option value="planned">{t('Planned')}</option>
+              <option value="active">{t('Active')}</option>
+              <option value="paused">{t('Paused')}</option>
+              <option value="completed">{t('Completed')}</option>
+              <option value="archived">{t('Archived')}</option>
             </Select>
           </Field>
-          <Field label="Priority">
+          <Field label={t('Priority')}>
             <Select value={priority()} onChange={(e) => setPriority(e.currentTarget.value as Priority)} disabled={!canManage()}>
-              <option value="critical">Critical</option>
-              <option value="high">High</option>
-              <option value="normal">Normal</option>
-              <option value="low">Low</option>
+              <option value="critical">{t('Critical')}</option>
+              <option value="high">{t('High')}</option>
+              <option value="normal">{t('Normal')}</option>
+              <option value="low">{t('Low')}</option>
             </Select>
           </Field>
-          <Field label="Collaboration" hint={MODE_HINT[mode()]}>
+          <Field label={t('Collaboration')} hint={t(MODE_HINT[mode()])}>
             <Select value={mode()} onChange={(e) => setMode(e.currentTarget.value as ProjectMode)} disabled={!isOwner()}>
-              <option value="private">Private</option>
-              <option value="group">Group</option>
-              <option value="group_plus">Group Plus</option>
+              <option value="private">{t('Private')}</option>
+              <option value="group">{t('Group')}</option>
+              <option value="group_plus">{t('Group Plus')}</option>
             </Select>
           </Field>
-          <Field label="Start">
+          <Field label={t('Start')}>
             <Input type="date" value={startDate()} onInput={(e) => setStartDate(e.currentTarget.value)} disabled={!canManage()} />
           </Field>
-          <Field label="Deadline">
+          <Field label={t('Deadline')}>
             <Input type="date" value={deadline()} onInput={(e) => setDeadline(e.currentTarget.value)} disabled={!canManage()} />
           </Field>
         </div>
 
-        <Field label="Notes">
+        <Field label={t('Notes')}>
           <Textarea rows={4} value={notes()} onInput={(e) => setNotes(e.currentTarget.value)} disabled={!canManage()} />
         </Field>
       </form>
 
       <ConfirmDialog
         open={confirmDelete()}
-        title="Delete this project?"
-        message="Tasks stay in your lists without a project. Prompts linked to the project remain in your library."
-        confirmLabel="Delete"
+        title={t('Delete this project?')}
+        message={t('Tasks stay in your lists without a project. Prompts linked to the project remain in your library.')}
+        confirmLabel={t('Delete')}
         destructive
         onConfirm={remove}
         onCancel={() => setConfirmDelete(false)}

@@ -4,6 +4,7 @@ import { ApiError } from '~/api/client';
 import { Button } from '~/components/ui/Button';
 import { Checkbox, Field, Input, Select } from '~/components/ui/Input';
 import { settingsApi } from '~/features/settings/api';
+import { t } from '~/i18n';
 import { authStore } from '~/stores/auth';
 import { toast } from '~/stores/ui';
 import type { NotificationPreferences } from '~/types';
@@ -11,6 +12,7 @@ import styles from './Settings.module.css';
 
 type EventKey = Exclude<keyof NotificationPreferences, 'mode' | 'telegram_enabled' | 'in_app_enabled' | 'quiet_hours_start' | 'quiet_hours_end'>;
 
+// English labels are the translation keys; wrapped with t() at render time.
 const EVENTS: Array<{ key: EventKey; label: string; hint?: string }> = [
   { key: 'on_task_created', label: 'Task created in a shared project' },
   { key: 'on_task_completed', label: 'Task completed by a teammate' },
@@ -57,9 +59,9 @@ export default function NotificationsSection(): JSX.Element {
     setBusy(true);
     try {
       await settingsApi.updateNotificationPreferences(form());
-      toast('Notification settings saved');
+      toast(t('Notification settings saved'));
     } catch (err) {
-      toast(err instanceof ApiError ? err.message : 'Could not save.');
+      toast(err instanceof ApiError ? err.message : t('Could not save.'));
     } finally {
       setBusy(false);
     }
@@ -68,8 +70,8 @@ export default function NotificationsSection(): JSX.Element {
   return (
     <section class={styles.section}>
       <header class={styles.sectionHead}>
-        <h2>Notifications</h2>
-        <p>"Important" keeps only what needs your attention. "Custom" lets you pick per event. Quiet hours hold Telegram messages until morning.</p>
+        <h2>{t('Notifications')}</h2>
+        <p>{t('"Important" keeps only what needs your attention. "Custom" lets you pick per event. Quiet hours hold Telegram messages until morning.')}</p>
       </header>
       <form
         class={styles.form}
@@ -78,31 +80,31 @@ export default function NotificationsSection(): JSX.Element {
           void save();
         }}
       >
-        <Field label="Mode">
+        <Field label={t('Mode')}>
           <Select value={form().mode} onChange={(e) => set('mode', e.currentTarget.value as NotificationPreferences['mode'])}>
-            <option value="important">Important only</option>
-            <option value="all">Everything</option>
-            <option value="custom">Custom</option>
+            <option value="important">{t('Important only')}</option>
+            <option value="all">{t('Everything')}</option>
+            <option value="custom">{t('Custom')}</option>
           </Select>
         </Field>
 
         <div class={styles.row}>
-          <Checkbox label="In-app notifications" checked={form().in_app_enabled} onChange={(e) => set('in_app_enabled', e.currentTarget.checked)} />
+          <Checkbox label={t('In-app notifications')} checked={form().in_app_enabled} onChange={(e) => set('in_app_enabled', e.currentTarget.checked)} />
         </div>
         <div class={styles.row}>
           <div class={styles.rowText}>
-            <Checkbox label="Telegram notifications" checked={form().telegram_enabled} onChange={(e) => set('telegram_enabled', e.currentTarget.checked)} />
+            <Checkbox label={t('Telegram notifications')} checked={form().telegram_enabled} onChange={(e) => set('telegram_enabled', e.currentTarget.checked)} />
             <Show when={!authStore.user()?.telegram_linked}>
-              <span class={styles.rowHint}>Link Telegram in the Telegram section to receive these.</span>
+              <span class={styles.rowHint}>{t('Link Telegram in the Telegram section to receive these.')}</span>
             </Show>
           </div>
         </div>
 
         <div class={styles.grid}>
-          <Field label="Quiet hours start" hint="Leave empty to disable">
+          <Field label={t('Quiet hours start')} hint={t('Leave empty to disable')}>
             <Input type="time" value={form().quiet_hours_start?.slice(0, 5) ?? ''} onInput={(e) => set('quiet_hours_start', e.currentTarget.value || null)} />
           </Field>
-          <Field label="Quiet hours end">
+          <Field label={t('Quiet hours end')}>
             <Input type="time" value={form().quiet_hours_end?.slice(0, 5) ?? ''} onInput={(e) => set('quiet_hours_end', e.currentTarget.value || null)} />
           </Field>
         </div>
@@ -113,10 +115,8 @@ export default function NotificationsSection(): JSX.Element {
             {(ev) => (
               <div class={styles.row}>
                 <div class={styles.rowText}>
-                  <Checkbox label={ev.label} checked={form()[ev.key]} onChange={(e) => set(ev.key, e.currentTarget.checked)} />
-                  <Show when={ev.hint}>
-                    <span class={styles.rowHint}>{ev.hint}</span>
-                  </Show>
+                  <Checkbox label={t(ev.label)} checked={form()[ev.key]} onChange={(e) => set(ev.key, e.currentTarget.checked)} />
+                  <Show when={ev.hint}>{(hint) => <span class={styles.rowHint}>{t(hint())}</span>}</Show>
                 </div>
               </div>
             )}
@@ -125,7 +125,7 @@ export default function NotificationsSection(): JSX.Element {
 
         <div class={styles.actions}>
           <Button variant="primary" type="submit" loading={busy()}>
-            Save
+            {t('Save')}
           </Button>
         </div>
       </form>

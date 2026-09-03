@@ -8,6 +8,7 @@ import { Input, Select } from '~/components/ui/Input';
 import { promptListKey, promptsApi, type PromptListParams } from '~/features/prompts/api';
 import { PromptList } from '~/features/prompts/PromptList';
 import { createQuery } from '~/hooks/createQuery';
+import { t } from '~/i18n';
 import styles from './List.module.css';
 
 const SORTS = [
@@ -68,12 +69,12 @@ export default function Prompts(): JSX.Element {
 
   return (
     <Page
-      title="Prompt Library"
-      subtitle="Your reusable prompts, with history"
+      title={t('Prompt Library')}
+      subtitle={t('Your reusable prompts, with history')}
       actions={
         <Button size="sm" onClick={() => navigate('/prompts/new')}>
           <Plus size={14} />
-          New prompt
+          {t('New prompt')}
         </Button>
       }
       toolbar={
@@ -82,18 +83,18 @@ export default function Prompts(): JSX.Element {
             <Search size={14} class={styles.searchIcon} />
             <Input
               sizeVariant="sm"
-              placeholder="Search title, body, tags…"
+              placeholder={t('Search title, body, tags…')}
               value={q()}
               onInput={(e) => onSearch(e.currentTarget.value)}
-              aria-label="Search prompts"
+              aria-label={t('Search prompts')}
             />
           </div>
-          <Select sizeVariant="sm" value={view()} onChange={(e) => setView(e.currentTarget.value as View)} aria-label="View">
-            <option value="all">All</option>
-            <option value="favorites">Favorites</option>
-            <option value="mine">Mine</option>
-            <option value="shared">Shared with me</option>
-            <option value="archived">Archived</option>
+          <Select sizeVariant="sm" value={view()} onChange={(e) => setView(e.currentTarget.value as View)} aria-label={t('View')}>
+            <option value="all">{t('All')}</option>
+            <option value="favorites">{t('Favorites')}</option>
+            <option value="mine">{t('Mine')}</option>
+            <option value="shared">{t('Shared with me')}</option>
+            <option value="archived">{t('Archived')}</option>
           </Select>
           <Select
             sizeVariant="sm"
@@ -102,9 +103,9 @@ export default function Prompts(): JSX.Element {
               setPage(1);
               setSearchParams({ category: e.currentTarget.value || undefined });
             }}
-            aria-label="Category"
+            aria-label={t('Category')}
           >
-            <option value="">Any category</option>
+            <option value="">{t('Any category')}</option>
             <For each={facets.data()?.categories ?? []}>
               {(c) => (
                 <option value={c.category}>
@@ -113,8 +114,8 @@ export default function Prompts(): JSX.Element {
               )}
             </For>
           </Select>
-          <Select sizeVariant="sm" value={ordering()} onChange={(e) => setOrdering(e.currentTarget.value)} aria-label="Sort">
-            <For each={SORTS}>{(s) => <option value={s.value}>{s.label}</option>}</For>
+          <Select sizeVariant="sm" value={ordering()} onChange={(e) => setOrdering(e.currentTarget.value)} aria-label={t('Sort')}>
+            <For each={SORTS}>{(s) => <option value={s.value}>{t(s.label)}</option>}</For>
           </Select>
         </div>
       }
@@ -145,12 +146,12 @@ export default function Prompts(): JSX.Element {
           error={query.error()}
           onRetry={query.refetch}
           onChanged={query.refetch}
-          emptyTitle={searchParams.q ? 'No prompts match' : 'Your library is empty'}
-          emptyHint={searchParams.q ? 'Try a different search.' : 'Save the prompts you keep re-typing. Long ones are welcome.'}
+          emptyTitle={searchParams.q ? t('No prompts match') : t('Your library is empty')}
+          emptyHint={searchParams.q ? t('Try a different search.') : t('Save the prompts you keep re-typing. Long ones are welcome.')}
           emptyAction={
             <Show when={!searchParams.q}>
               <Button size="sm" onClick={() => navigate('/prompts/new')}>
-                Create your first prompt
+                {t('Create your first prompt')}
               </Button>
             </Show>
           }
@@ -159,13 +160,13 @@ export default function Prompts(): JSX.Element {
         <Show when={(query.data()?.count ?? 0) > 30}>
           <div class={styles.pager}>
             <Button variant="ghost" size="sm" disabled={page() === 1} onClick={() => setPage((p) => p - 1)}>
-              Previous
+              {t('Previous')}
             </Button>
             <span class="mt-mono mt-dim">
               {page()} / {Math.ceil((query.data()?.count ?? 0) / 30)}
             </span>
             <Button variant="ghost" size="sm" disabled={!query.data()?.next} onClick={() => setPage((p) => p + 1)}>
-              Next
+              {t('Next')}
             </Button>
           </div>
         </Show>

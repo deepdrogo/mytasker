@@ -4,7 +4,9 @@ import { ApiError } from '~/api/client';
 import { Button } from '~/components/ui/Button';
 import { Field, Input, Select } from '~/components/ui/Input';
 import { settingsApi } from '~/features/settings/api';
+import { LOCALES, LOCALE_LABEL, isLocale, locale, t } from '~/i18n';
 import { authStore, guessTimezone } from '~/stores/auth';
+import { changeLocale } from '~/stores/locale';
 import { toast } from '~/stores/ui';
 import styles from './Settings.module.css';
 
@@ -27,9 +29,9 @@ export default function ProfileSection(): JSX.Element {
     setBusy(true);
     try {
       await settingsApi.updateProfile({ full_name: fullName().trim(), timezone: timezone() });
-      toast('Profile saved');
+      toast(t('Profile saved'));
     } catch (err) {
-      toast(err instanceof ApiError ? err.message : 'Could not save.');
+      toast(err instanceof ApiError ? err.message : t('Could not save.'));
     } finally {
       setBusy(false);
     }
@@ -39,9 +41,9 @@ export default function ProfileSection(): JSX.Element {
     try {
       await settingsApi.resendVerification();
       setResent(true);
-      toast('Verification email sent');
+      toast(t('Verification email sent'));
     } catch (err) {
-      toast(err instanceof ApiError ? err.message : 'Could not send.');
+      toast(err instanceof ApiError ? err.message : t('Could not send.'));
     }
   };
 
@@ -50,8 +52,8 @@ export default function ProfileSection(): JSX.Element {
   return (
     <section class={styles.section}>
       <header class={styles.sectionHead}>
-        <h2>Profile</h2>
-        <p>Your timezone drives "today", reminders and summaries - keep it accurate when you travel.</p>
+        <h2>{t('Profile')}</h2>
+        <p>{t('Your timezone drives "today", reminders and summaries - keep it accurate when you travel.')}</p>
       </header>
       <form
         class={styles.form}
@@ -60,25 +62,25 @@ export default function ProfileSection(): JSX.Element {
           void save();
         }}
       >
-        <Field label="Email">
+        <Field label={t('Email')}>
           <div class={styles.row} style={{ 'border-bottom': 'none', padding: '0' }}>
             <span>{me()?.email}</span>
             <Show
               when={me()?.email_verified}
               fallback={
                 <Button variant="ghost" size="sm" type="button" disabled={resent()} onClick={() => void resend()}>
-                  {resent() ? 'Sent' : 'Verify email'}
+                  {resent() ? t('Sent') : t('Verify email')}
                 </Button>
               }
             >
-              <span class={styles.badge}>verified</span>
+              <span class={styles.badge}>{t('verified')}</span>
             </Show>
           </div>
         </Field>
-        <Field label="Full name">
+        <Field label={t('Full name')}>
           <Input value={fullName()} onInput={(e) => setFullName(e.currentTarget.value)} maxLength={120} autocomplete="name" />
         </Field>
-        <Field label="Timezone" hint={`Detected: ${guessTimezone()}`}>
+        <Field label={t('Timezone')} hint={t('Detected: {zone}', { zone: guessTimezone() })}>
           <Show when={zones().length > 0} fallback={<Input value={timezone()} onInput={(e) => setTimezone(e.currentTarget.value)} />}>
             <Select value={timezone()} onChange={(e) => setTimezone(e.currentTarget.value)}>
               {zones().map((z) => (
@@ -87,9 +89,16 @@ export default function ProfileSection(): JSX.Element {
             </Select>
           </Show>
         </Field>
+        <Field label={t('Language')} hint={t('Interface language. Your tasks, projects and notes are translated into it automatically in the background.')}>
+          <Select value={locale()} onChange={(e) => isLocale(e.currentTarget.value) && void changeLocale(e.currentTarget.value)}>
+            {LOCALES.map((code) => (
+              <option value={code}>{LOCALE_LABEL[code]}</option>
+            ))}
+          </Select>
+        </Field>
         <div class={styles.actions}>
           <Button variant="primary" type="submit" loading={busy()}>
-            Save
+            {t('Save')}
           </Button>
         </div>
       </form>

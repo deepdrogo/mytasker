@@ -5,6 +5,7 @@ import { ApiError } from '~/api/client';
 import { Button } from '~/components/ui/Button';
 import { Field, Input, nextId } from '~/components/ui/Input';
 import { ErrorNote } from '~/components/ui/Feedback';
+import { t } from '~/i18n';
 import { login } from '~/stores/auth';
 import styles from './auth.module.css';
 
@@ -36,7 +37,7 @@ export default function Login(): JSX.Element {
           password: err.fieldError('password') ?? '',
         });
       } else {
-        setError('Something went wrong. Try again.');
+        setError(t('Something went wrong. Try again.'));
       }
     } finally {
       setBusy(false);
@@ -46,13 +47,13 @@ export default function Login(): JSX.Element {
   return (
     <form class={styles.form} onSubmit={submit} novalidate>
       <div class={styles.head}>
-        <h1 class={styles.heading}>Welcome back</h1>
-        <p class={styles.sub}>Sign in to pick up where you left off.</p>
+        <h1 class={styles.heading}>{t('Welcome back')}</h1>
+        <p class={styles.sub}>{t('Sign in to pick up where you left off.')}</p>
       </div>
 
       {error() && <ErrorNote message={error()} />}
 
-      <Field label="Email" id={emailId} error={fieldErrors().email}>
+      <Field label={t('Email')} id={emailId} error={fieldErrors().email}>
         <Input
           id={emailId}
           type="email"
@@ -66,7 +67,7 @@ export default function Login(): JSX.Element {
         />
       </Field>
 
-      <Field label="Password" id={passwordId} error={fieldErrors().password}>
+      <Field label={t('Password')} id={passwordId} error={fieldErrors().password}>
         <Input
           id={passwordId}
           type="password"
@@ -79,15 +80,15 @@ export default function Login(): JSX.Element {
       </Field>
 
       <Button type="submit" variant="primary" size="lg" block loading={busy()}>
-        Sign in
+        {t('Sign in')}
       </Button>
 
       <div class={styles.links}>
         <A href="/auth/forgot" class={styles.link}>
-          Forgot password?
+          {t('Forgot password?')}
         </A>
         <A href="/auth/register" class={styles.link}>
-          Create account
+          {t('Create account')}
         </A>
       </div>
     </form>

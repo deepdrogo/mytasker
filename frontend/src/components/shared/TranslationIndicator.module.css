@@ -1,0 +1,73 @@
+.pill {
+  position: fixed;
+  z-index: var(--z-toast);
+  left: calc(var(--sidebar-w) + var(--s-6));
+  bottom: var(--s-5);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 5px 10px 5px 8px;
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(28, 28, 28, 0.9), rgba(12, 12, 12, 0.92));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-md);
+  color: var(--c-text-dim);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.01em;
+  pointer-events: none;
+  animation: pillIn var(--t-base);
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  color: var(--c-text);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.done .icon {
+  animation: none;
+}
+
+.done {
+  color: var(--c-text);
+  border-color: var(--c-border-strong);
+}
+
+.count {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  padding: 0 5px;
+  border-radius: 999px;
+  border: 1px solid var(--c-border);
+  color: var(--c-text);
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes pillIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (max-width: 899px) {
+  .pill {
+    left: var(--s-5);
+    bottom: calc(var(--bottomnav-h) + var(--s-4) + env(safe-area-inset-bottom));
+  }
+}

@@ -65,10 +65,17 @@ class Project(TimeStampedModel, SoftDeleteModel):
         COMPLETED = "completed", "Completed"
         ARCHIVED = "archived", "Archived"
 
+    class Category(models.TextChoices):
+        """Where the project is shelved in the UI; orthogonal to kind/status/mode."""
+
+        GENERAL = "general", "Project"
+        STARTUP = "startup", "Startup"
+
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="projects")
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     kind = models.CharField(max_length=10, choices=Kind.choices, default=Kind.PROJECT)
+    category = models.CharField(max_length=12, choices=Category.choices, default=Category.GENERAL, db_index=True)
     mode = models.CharField(max_length=12, choices=Mode.choices, default=Mode.PRIVATE)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.ACTIVE)
     priority = models.CharField(max_length=10, choices=Priority.choices, default=Priority.NORMAL)

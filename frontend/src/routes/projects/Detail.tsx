@@ -9,6 +9,7 @@ import { Button } from '~/components/ui/Button';
 import { ConfirmDialog, EmptyState, ErrorNote, Skeleton } from '~/components/ui/Feedback';
 import { Field, Input, Select } from '~/components/ui/Input';
 import { Modal } from '~/components/ui/Modal';
+import { PolishButton } from '~/features/ai/PolishButton';
 import { ActivityFeed } from '~/features/collab/ActivityFeed';
 import { Comments } from '~/features/collab/Comments';
 import { projectsApi } from '~/features/projects/api';
@@ -20,23 +21,36 @@ import { taskListKey, tasksApi } from '~/features/tasks/api';
 import { TaskComposer } from '~/features/tasks/TaskComposer';
 import { TaskEditor } from '~/features/tasks/TaskEditor';
 import { TaskList } from '~/features/tasks/TaskList';
+import { TaskSelectionBar } from '~/features/tasks/TaskSelectionBar';
 import { createQuery } from '~/hooks/createQuery';
+import { t } from '~/i18n';
 import { authStore } from '~/stores/auth';
+import { tx } from '~/stores/translations';
 import { toast } from '~/stores/ui';
 import type { Project, ProjectMember, Role, Task } from '~/types';
 import { formatDate, formatDuration, formatRelative } from '~/utils/format';
 import styles from './Detail.module.css';
 
 type Tab = 'overview' | 'tasks' | 'prompts' | 'team' | 'activity';
-const TABS: Tab[] = ['overview', 'tasks', 'prompts', 'team', 'activity'];
+// Tasks lead: a project opens on the work itself, the overview is one tab over.
+const TABS: Tab[] = ['tasks', 'overview', 'prompts', 'team', 'activity'];
+const DEFAULT_TAB: Tab = 'tasks';
+
+const STATUS_LABEL: Record<Project['status'], string> = {
+  planned: 'Planned',
+  active: 'Active',
+  paused: 'Paused',
+  completed: 'Completed',
+  archived: 'Archived',
+};
 
 export default function ProjectDetail(): JSX.Element {
   const params = useParams<{ id: string; tab?: string }>();
   const navigate = useNavigate();
   const id = () => Number(params.id);
   const tab = (): Tab => {
-    const t = (params.tab ?? '').split('/')[0] as Tab;
-    return TABS.includes(t) ? t : 'overview';
+    const current = (params.tab ?? '').split('/')[0] as Tab;
+    return TABS.includes(current) ? current : DEFAULT_TAB;
   };
 
   const project = createQuery(
@@ -48,11 +62,11 @@ export default function ProjectDetail(): JSX.Element {
   const tabs = createMemo(() => {
     const p = project.data();
     return [
-      { label: 'Overview', href: `/projects/${id()}/overview` },
-      { label: 'Tasks', href: `/projects/${id()}/tasks`, count: p?.open_tasks },
-      { label: 'Prompts', href: `/projects/${id()}/prompts`, count: p?.prompt_count },
-      { label: 'Team', href: `/projects/${id()}/team`, count: p?.member_count },
-      { label: 'Activity', href: `/projects/${id()}/activity` },
+      { label: t('Tasks'), href: `/projects/${id()}/tasks`, count: p?.open_tasks },
+      { label: t('Overview'), href: `/projects/${id()}/overview` },
+      { label: t('Prompts'), href: `/projects/${id()}/prompts`, count: p?.prompt_count },
+      { label: t('Team'), href: `/projects/${id()}/team`, count: p?.member_count },
+      { label: t('Activity'), href: `/projects/${id()}/activity` },
     ];
   });
 
@@ -60,9 +74,13 @@ export default function ProjectDetail(): JSX.Element {
     <Show
       when={!project.error()}
       fallback={
-        <Page title="Project">
+        <Page title={t('Project')}>
           <ErrorNote
-            message={project.error() instanceof ApiError && (project.error() as ApiError).status === 404 ? 'This project does not exist or you no longer have access.' : 'Could not load the project.'}
+            message={
+              project.error() instanceof ApiError && (project.error() as ApiError).status === 404
+                ? t('This project does not exist or you no longer have access.')
+                : t('Could not load the project.')
+            }
             onRetry={project.refetch}
           />
         </Page>
@@ -72,24 +90,31 @@ export default function ProjectDetail(): JSX.Element {
         {(p) => (
           <>
             <Page
-              title={p().name}
-              subtitle={p().description || undefined}
+              title={tx('project', p().id, 'name', p().name)}
+              subtitle={tx('project', p().id, 'description', p().description) || undefined}
               tabs={tabs()}
               actions={
                 <div class={styles.headActions}>
-                  <A href={p().kind === 'active' ? '/projects/active' : '/projects/all'} class={styles.back} aria-label="Back to projects">
+                  <A
+                    href={p().category === 'startup' ? '/projects/startups' : p().kind === 'active' ? '/projects/active' : '/projects/all'}
+                    class={styles.back}
+                    aria-label={t('Back to projects')}
+                  >
                     <ArrowLeft size={15} />
                   </A>
                   <Show when={p().mode !== 'private'}>
-                    <Badge variant="outline">{p().mode === 'group_plus' ? 'Group Plus' : 'Group'}</Badge>
+                    <Badge variant="outline">{p().mode === 'group_plus' ? t('Group Plus') : t('Group')}</Badge>
                   </Show>
                   <Show when={p().kind === 'active'}>
-                    <Badge variant="solid">Active</Badge>
+                    <Badge variant="solid">{t('Active')}</Badge>
+                  </Show>
+                  <Show when={p().category === 'startup'}>
+                    <Badge variant="outline">{t('Startup')}</Badge>
                   </Show>
                   <Show when={p().capabilities.manage_project}>
                     <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>
                       <Pencil size={13} />
-                      Edit
+                      {t('Edit')}
                     </Button>
                   </Show>
                 </div>
@@ -143,22 +168,34 @@ function OverviewTab(props: { project: Project }): JSX.Element {
     <div class={styles.overview}>
       <div class={styles.statGrid}>
         <Card>
-          <p class={styles.statLabel}>Progress</p>
-          <p class={styles.statValue}>{props.project.progress}%</p>
-          <ProgressBar value={props.project.task_done} max={props.project.task_total} />
-          <p class={styles.statHint}>
-            {props.project.task_done} of {props.project.task_total} tasks done
-          </p>
+          <p class={styles.statLabel}>{t('Progress')}</p>
+          {/* No tasks → nothing to measure, so no percentage or bar rather than a misleading 0%. */}
+          <Show
+            when={props.project.task_total > 0}
+            fallback={
+              <>
+                <p class={[styles.statValue, 'mt-dim'].join(' ')}>–</p>
+                <p class={styles.statHint}>{t('No tasks yet. Progress appears once you add one.')}</p>
+              </>
+            }
+          >
+            <p class={styles.statValue}>{props.project.progress}%</p>
+            <ProgressBar value={props.project.task_done} max={props.project.task_total} />
+            <p class={styles.statHint}>{t('{done} of {total} tasks done', { done: props.project.task_done, total: props.project.task_total })}</p>
+          </Show>
         </Card>
         <Card>
-          <p class={styles.statLabel}>Open</p>
+          <p class={styles.statLabel}>{t('Open')}</p>
           <p class={styles.statValue}>{overview.data()?.stats.total !== undefined ? overview.data()!.stats.total - overview.data()!.stats.done : '–'}</p>
           <p class={styles.statHint}>
-            {overview.data()?.stats.in_progress ?? 0} in progress · {overview.data()?.stats.overdue ?? 0} overdue
+            {t('{active} in progress · {overdue} overdue', {
+              active: overview.data()?.stats.in_progress ?? 0,
+              overdue: overview.data()?.stats.overdue ?? 0,
+            })}
           </p>
         </Card>
         <Card>
-          <p class={styles.statLabel}>Time tracked</p>
+          <p class={styles.statLabel}>{t('Time tracked')}</p>
           <p class={[styles.statValue, 'mt-mono'].join(' ')}>{formatDuration(overview.data()?.tracked_seconds ?? props.project.tracked_seconds)}</p>
           <Show when={(overview.data()?.time_by_member.length ?? 0) > 1}>
             <ul class={styles.memberTime}>
@@ -174,32 +211,32 @@ function OverviewTab(props: { project: Project }): JSX.Element {
           </Show>
         </Card>
         <Card>
-          <p class={styles.statLabel}>Details</p>
+          <p class={styles.statLabel}>{t('Details')}</p>
           <dl class={styles.details}>
             <div>
-              <dt>Priority</dt>
+              <dt>{t('Priority')}</dt>
               <dd>
                 <PriorityMark priority={props.project.priority} withLabel />
               </dd>
             </div>
             <div>
-              <dt>Status</dt>
-              <dd class={styles.capitalize}>{props.project.status}</dd>
+              <dt>{t('Status')}</dt>
+              <dd class={styles.capitalize}>{t(STATUS_LABEL[props.project.status])}</dd>
             </div>
             <Show when={props.project.start_date}>
               <div>
-                <dt>Start</dt>
+                <dt>{t('Start')}</dt>
                 <dd>{formatDate(props.project.start_date)}</dd>
               </div>
             </Show>
             <Show when={props.project.deadline}>
               <div>
-                <dt>Deadline</dt>
+                <dt>{t('Deadline')}</dt>
                 <dd>{formatDate(props.project.deadline)}</dd>
               </div>
             </Show>
             <div>
-              <dt>Owner</dt>
+              <dt>{t('Owner')}</dt>
               <dd>{props.project.owner.display_name}</dd>
             </div>
           </dl>
@@ -207,30 +244,30 @@ function OverviewTab(props: { project: Project }): JSX.Element {
       </div>
 
       <div class={styles.twoCol}>
-        <PageSection title="Upcoming deadlines">
+        <PageSection title={t('Upcoming deadlines')}>
           <Show when={overview.data()} fallback={<Skeleton rows={3} />}>
             <TaskList
               tasks={overview.data()?.upcoming}
               compact
               onOpen={setActiveTask}
-              emptyTitle="Nothing due soon"
+              emptyTitle={t('Nothing due soon')}
             />
           </Show>
         </PageSection>
-        <PageSection title="Recent activity">
+        <PageSection title={t('Recent activity')}>
           <ActivityFeed project={props.project.id} compact limit={8} />
         </PageSection>
       </div>
 
       <Show when={props.project.notes}>
-        <PageSection title="Notes">
+        <PageSection title={t('Notes')}>
           <Card>
-            <p class={styles.notes}>{props.project.notes}</p>
+            <p class={styles.notes}>{tx('project', props.project.id, 'notes', props.project.notes)}</p>
           </Card>
         </PageSection>
       </Show>
 
-      <PageSection title="Discussion">
+      <PageSection title={t('Discussion')}>
         <Comments project={props.project.id} canComment={props.project.capabilities.comment} />
       </PageSection>
 
@@ -245,6 +282,7 @@ function TasksTab(props: { project: Project }): JSX.Element {
   const [filter, setFilter] = createSignal<'open' | 'all' | 'done'>('open');
   const [activeTask, setActiveTask] = createSignal<Task | null>(null);
   const [shareTasks, setShareTasks] = createSignal<Task[] | null>(null);
+  const [selected, setSelected] = createSignal<Set<number>>(new Set());
 
   const params = () => ({
     project: props.project.id,
@@ -258,12 +296,22 @@ function TasksTab(props: { project: Project }): JSX.Element {
     () => tasksApi.list(params()),
   );
 
+  const clearSelection = () => setSelected(new Set<number>());
+  const toggleSelect = (task: Task) =>
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(task.id)) next.delete(task.id);
+      else next.add(task.id);
+      return next;
+    });
+  const selectedTasks = () => (query.data()?.results ?? []).filter((task) => selected().has(task.id));
+
   return (
     <div class={styles.narrow}>
       <Show when={props.project.capabilities.create_task}>
         <TaskComposer
-          defaults={{ project_id: props.project.id, kind: 'business' }}
-          placeholder={`Add a task to ${props.project.name}…`}
+          defaults={{ project_id: props.project.id, kind: 'business', origin: 'project' }}
+          placeholder={t('Add a task to {project}…', { project: tx('project', props.project.id, 'name', props.project.name) })}
           onCreated={() => query.refetch()}
         />
       </Show>
@@ -275,11 +323,26 @@ function TasksTab(props: { project: Project }): JSX.Element {
               class={[styles.chip, filter() === value ? styles.chipActive : ''].join(' ')}
               onClick={() => setFilter(value)}
             >
-              {value === 'open' ? 'Open' : value === 'all' ? 'All' : 'Completed'}
+              {value === 'open' ? t('Open') : value === 'all' ? t('All') : t('Completed')}
             </button>
           )}
         </For>
+        <Show when={filter() !== 'done'}>
+          <div class={styles.filterSpacer} />
+          <PolishButton
+            variant="ghost"
+            taskIds={() => (query.data()?.results ?? []).filter((task) => task.can_edit && task.status !== 'done').map((task) => task.id)}
+            label={t('Polish all with AI')}
+            onChanged={() => query.refetch()}
+          />
+        </Show>
       </div>
+      <TaskSelectionBar
+        tasks={selectedTasks}
+        onChanged={() => query.refetch()}
+        onClear={clearSelection}
+        onShare={setShareTasks}
+      />
       <TaskList
         tasks={query.data()?.results}
         loading={query.loading()}
@@ -288,8 +351,11 @@ function TasksTab(props: { project: Project }): JSX.Element {
         onOpen={setActiveTask}
         onShare={(task) => setShareTasks([task])}
         onChanged={query.refetch}
-        emptyTitle={filter() === 'done' ? 'Nothing completed yet' : 'No open tasks'}
-        emptyHint={filter() === 'done' ? undefined : 'Add the next concrete step above.'}
+        selectable
+        selectedIds={selected()}
+        onToggleSelect={toggleSelect}
+        emptyTitle={filter() === 'done' ? t('Nothing completed yet') : t('No open tasks')}
+        emptyHint={filter() === 'done' ? undefined : t('Add the next concrete step above.')}
       />
       <TaskEditor
         task={activeTask()}
@@ -302,7 +368,14 @@ function TasksTab(props: { project: Project }): JSX.Element {
         }}
         onShare={(task) => setShareTasks([task])}
       />
-      <ShareDialog tasks={shareTasks()} open={shareTasks() !== null} onClose={() => setShareTasks(null)} />
+      <ShareDialog
+        tasks={shareTasks()}
+        open={shareTasks() !== null}
+        onClose={() => {
+          setShareTasks(null);
+          clearSelection();
+        }}
+      />
     </div>
   );
 }
@@ -321,13 +394,13 @@ function PromptsTab(props: { project: Project }): JSX.Element {
     <div class={styles.narrow}>
       <div class={styles.sectionBar}>
         <p class="mt-dim">
-          Prompts linked to this project.{' '}
-          <Show when={props.project.mode === 'group_plus'}>Private prompts stay visible only to their owner.</Show>
+          {t('Prompts linked to this project.')}{' '}
+          <Show when={props.project.mode === 'group_plus'}>{t('Private prompts stay visible only to their owner.')}</Show>
         </p>
         <Show when={props.project.capabilities.edit_shared_prompts}>
           <Button size="sm" onClick={() => navigate(`/prompts/new?project=${props.project.id}`)}>
             <Plus size={14} />
-            New prompt
+            {t('New prompt')}
           </Button>
         </Show>
       </div>
@@ -338,8 +411,8 @@ function PromptsTab(props: { project: Project }): JSX.Element {
         onRetry={query.refetch}
         onChanged={query.refetch}
         showProject={false}
-        emptyTitle="No prompts here yet"
-        emptyHint="Prompts created from this tab are linked to the project automatically."
+        emptyTitle={t('No prompts here yet')}
+        emptyHint={t('Prompts created from this tab are linked to the project automatically.')}
       />
     </div>
   );
@@ -366,6 +439,12 @@ function TeamTab(props: { project: Project; onLeft: () => void }): JSX.Element {
   const canManage = () => props.project.capabilities.manage_members;
   const me = () => authStore.user()?.id;
 
+  const roleHint = () => {
+    if (role() === 'admin') return t('Can manage members and the project.');
+    if (role() === 'viewer') return t('Read only.');
+    return t('Can add and edit tasks, prompts and comments.');
+  };
+
   const invite = async (event: Event) => {
     event.preventDefault();
     if (busy()) return;
@@ -377,7 +456,7 @@ function TeamTab(props: { project: Project; onLeft: () => void }): JSX.Element {
       setEmail('');
       members.refetch();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not send the invitation.');
+      setError(err instanceof ApiError ? err.message : t('Could not send the invitation.'));
     } finally {
       setBusy(false);
     }
@@ -388,7 +467,7 @@ function TeamTab(props: { project: Project; onLeft: () => void }): JSX.Element {
       await projectsApi.changeRole(props.project.id, member.id, next);
       members.refetch();
     } catch (err) {
-      toast(err instanceof ApiError ? err.message : 'Could not change the role.');
+      toast(err instanceof ApiError ? err.message : t('Could not change the role.'));
     }
   };
 
@@ -399,7 +478,7 @@ function TeamTab(props: { project: Project; onLeft: () => void }): JSX.Element {
       await projectsApi.removeMember(props.project.id, member.id);
       members.refetch();
     } catch (err) {
-      toast(err instanceof ApiError ? err.message : 'Could not remove the member.');
+      toast(err instanceof ApiError ? err.message : t('Could not remove the member.'));
     } finally {
       setRemoving(null);
     }
@@ -408,10 +487,10 @@ function TeamTab(props: { project: Project; onLeft: () => void }): JSX.Element {
   const leave = async () => {
     try {
       await projectsApi.leave(props.project.id);
-      toast('You left the project');
+      toast(t('You left the project'));
       props.onLeft();
     } catch (err) {
-      toast(err instanceof ApiError ? err.message : 'Could not leave.');
+      toast(err instanceof ApiError ? err.message : t('Could not leave.'));
     } finally {
       setLeaving(false);
     }
@@ -423,26 +502,26 @@ function TeamTab(props: { project: Project; onLeft: () => void }): JSX.Element {
         when={props.project.mode !== 'private'}
         fallback={
           <EmptyState
-            title="This is a private project"
-            hint="Switch it to Group or Group Plus in the project settings to invite people."
+            title={t('This is a private project')}
+            hint={t('Switch it to Group or Group Plus in the project settings to invite people.')}
           />
         }
       >
         <div class={styles.sectionBar}>
           <p class="mt-dim">
             {props.project.mode === 'group_plus'
-              ? 'Group Plus: shared workspace where members may also keep private items.'
-              : 'Group: everything in the project is visible to all members.'}
+              ? t('Group Plus: shared workspace where members may also keep private items.')
+              : t('Group: everything in the project is visible to all members.')}
           </p>
           <Show when={canManage()}>
             <Button size="sm" onClick={() => setInviting(true)}>
               <UserPlus size={14} />
-              Invite
+              {t('Invite')}
             </Button>
           </Show>
         </div>
 
-        <Show when={!members.error()} fallback={<ErrorNote message="Could not load members." onRetry={members.refetch} />}>
+        <Show when={!members.error()} fallback={<ErrorNote message={t('Could not load members.')} onRetry={members.refetch} />}>
           <Show when={members.data()} fallback={<Skeleton rows={3} height={48} />}>
             {(list) => (
               <ul class={styles.members}>
@@ -453,31 +532,34 @@ function TeamTab(props: { project: Project; onLeft: () => void }): JSX.Element {
                         <span class={styles.memberName}>
                           {member.user?.display_name ?? member.invited_email}
                           <Show when={member.user?.id === me()}>
-                            <span class="mt-dim"> (you)</span>
+                            <span class="mt-dim"> ({t('you')})</span>
                           </Show>
                         </span>
                         <span class={styles.memberSub}>
-                          <Show when={member.accepted_at} fallback={<Badge variant="dashed">Invited · pending</Badge>}>
-                            {member.user?.email ?? member.invited_email} · joined {formatRelative(member.accepted_at)}
+                          <Show when={member.accepted_at} fallback={<Badge variant="dashed">{t('Invited · pending')}</Badge>}>
+                            {t('{email} · joined {time}', {
+                              email: member.user?.email ?? member.invited_email,
+                              time: formatRelative(member.accepted_at),
+                            })}
                           </Show>
                         </span>
                       </div>
                       <Show
                         when={canManage() && member.role !== 'owner' && member.user?.id !== me()}
-                        fallback={<Badge variant="outline">{ROLE_LABEL[member.role]}</Badge>}
+                        fallback={<Badge variant="outline">{t(ROLE_LABEL[member.role])}</Badge>}
                       >
                         <Select
                           sizeVariant="sm"
                           value={member.role}
                           onChange={(e) => void changeRole(member, e.currentTarget.value as Role)}
-                          aria-label="Role"
+                          aria-label={t('Role')}
                         >
-                          <option value="admin">Admin</option>
-                          <option value="member">Member</option>
-                          <option value="viewer">Viewer</option>
+                          <option value="admin">{t('Admin')}</option>
+                          <option value="member">{t('Member')}</option>
+                          <option value="viewer">{t('Viewer')}</option>
                         </Select>
                         <Button variant="ghost" size="sm" onClick={() => setRemoving(member)}>
-                          Remove
+                          {t('Remove')}
                         </Button>
                       </Show>
                     </li>
@@ -491,7 +573,7 @@ function TeamTab(props: { project: Project; onLeft: () => void }): JSX.Element {
         <Show when={props.project.role && props.project.role !== 'owner'}>
           <div class={styles.leaveRow}>
             <Button variant="ghost" size="sm" onClick={() => setLeaving(true)}>
-              Leave project
+              {t('Leave project')}
             </Button>
           </div>
         </Show>
@@ -504,32 +586,32 @@ function TeamTab(props: { project: Project; onLeft: () => void }): JSX.Element {
           setInviteUrl('');
           setError('');
         }}
-        title="Invite to project"
-        description="They will receive an email. You can also copy the link below and send it yourself."
+        title={t('Invite to project')}
+        description={t('They will receive an email. You can also copy the link below and send it yourself.')}
         footer={
           <>
             <Button variant="ghost" onClick={() => setInviting(false)}>
-              Close
+              {t('Close')}
             </Button>
             <Button onClick={invite} loading={busy()} disabled={!email().trim()}>
-              Send invitation
+              {t('Send invitation')}
             </Button>
           </>
         }
       >
         <form class={styles.inviteForm} onSubmit={invite}>
-          <Field label="Email" error={error()} required>
+          <Field label={t('Email')} error={error()} required>
             <Input type="email" value={email()} onInput={(e) => setEmail(e.currentTarget.value)} autofocus />
           </Field>
-          <Field label="Role" hint={role() === 'admin' ? 'Can manage members and the project.' : role() === 'viewer' ? 'Read only.' : 'Can add and edit tasks, prompts and comments.'}>
+          <Field label={t('Role')} hint={roleHint()}>
             <Select value={role()} onChange={(e) => setRole(e.currentTarget.value as Role)}>
-              <option value="admin">Admin</option>
-              <option value="member">Member</option>
-              <option value="viewer">Viewer</option>
+              <option value="admin">{t('Admin')}</option>
+              <option value="member">{t('Member')}</option>
+              <option value="viewer">{t('Viewer')}</option>
             </Select>
           </Field>
           <Show when={inviteUrl()}>
-            <Field label="Invitation link" hint="Valid for 7 days. Single use.">
+            <Field label={t('Invitation link')} hint={t('Valid for 7 days. Single use.')}>
               <Input readOnly value={inviteUrl()} onFocus={(e) => e.currentTarget.select()} />
             </Field>
           </Show>
@@ -538,18 +620,18 @@ function TeamTab(props: { project: Project; onLeft: () => void }): JSX.Element {
 
       <ConfirmDialog
         open={removing() !== null}
-        title="Remove this member?"
-        message="They lose access immediately. Tasks they created stay in the project."
-        confirmLabel="Remove"
+        title={t('Remove this member?')}
+        message={t('They lose access immediately. Tasks they created stay in the project.')}
+        confirmLabel={t('Remove')}
         destructive
         onConfirm={remove}
         onCancel={() => setRemoving(null)}
       />
       <ConfirmDialog
         open={leaving()}
-        title="Leave this project?"
-        message="You will need a new invitation to come back."
-        confirmLabel="Leave"
+        title={t('Leave this project?')}
+        message={t('You will need a new invitation to come back.')}
+        confirmLabel={t('Leave')}
         destructive
         onConfirm={leave}
         onCancel={() => setLeaving(false)}

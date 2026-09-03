@@ -1,5 +1,6 @@
 import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
+import { t } from '~/i18n';
 import { cx } from '~/utils/cx';
 import styles from './Charts.module.css';
 
@@ -117,7 +118,7 @@ export function Stat(props: StatProps): JSX.Element {
       <span class={styles.statLabel}>{props.label}</span>
       <span class={styles.statValue}>{props.value}</span>
       <Show when={deltaText()}>
-        <span class={cx(styles.statDelta, good() && styles.statDeltaGood)}>{deltaText()} vs previous</span>
+        <span class={cx(styles.statDelta, good() && styles.statDeltaGood)}>{t('{delta} vs previous', { delta: deltaText() })}</span>
       </Show>
       <Show when={props.spark && props.spark.length > 1}>
         <Sparkline values={props.spark ?? []} />
@@ -163,7 +164,7 @@ export function Breakdown(props: BreakdownProps): JSX.Element {
   const max = () => Math.max(1, ...props.rows.map((r) => r.value));
   const fmt = (v: number) => (props.format ? props.format(v) : String(v));
   return (
-    <Show when={props.rows.length > 0} fallback={<p class={styles.empty}>{props.emptyText ?? 'No data.'}</p>}>
+    <Show when={props.rows.length > 0} fallback={<p class={styles.empty}>{props.emptyText ?? t('No data.')}</p>}>
       <ul class={styles.breakdown}>
         <For each={props.rows}>
           {(r) => (

@@ -43,6 +43,20 @@ export interface ImproveIdeaResult {
   risks?: string[];
 }
 
+export interface PolishedTask {
+  id: ID;
+  title: string;
+  previous_title: string;
+  description: string;
+  previous_description: string;
+}
+
+export interface PolishTasksResult {
+  updated: PolishedTask[];
+  unchanged: ID[];
+  skipped: ID[];
+}
+
 export type ChatTurn = { role: 'user' | 'assistant'; content: string };
 
 const AI_SCOPES = ['tasks', 'today', 'projects', 'prompts', 'routines', 'ai', 'timer'];
@@ -63,6 +77,12 @@ export const aiApi = {
   history: () => api.get<AIAction[]>('/ai/actions/'),
 
   improveTask: (taskId: ID) => api.post<ImproveTaskResult>(`/ai/tasks/${taskId}/improve/`),
+  /** Rewrites the titles of the given tasks and applies them server-side; returns what changed for undo. */
+  polishTasks: async (taskIds: ID[]) => {
+    const result = await api.post<PolishTasksResult>('/ai/tasks/polish/', { task_ids: taskIds });
+    if (result.updated.length) invalidate('tasks', 'today', 'projects', 'search');
+    return result;
+  },
   breakDown: (taskId: ID) => api.post<BreakdownResult>(`/ai/tasks/${taskId}/breakdown/`),
   applyBreakdown: async (taskId: ID, subtasks: BreakdownResult['subtasks']) => {
     const result = await api.post<{ created: Array<{ id: ID; title: string }> }>(`/ai/tasks/${taskId}/breakdown/apply/`, {

@@ -91,6 +91,18 @@ def improve_task(request, pk: int):
 @api_view(["POST"])
 @permission_classes([IsAIUser])
 @throttle_classes([AIHeavyThrottle])
+def polish_tasks(request):
+    task_ids = request.data.get("task_ids")
+    if not isinstance(task_ids, list):
+        from common.exceptions import ValidationFailed
+
+        raise ValidationFailed("task_ids must be a list.")
+    return Response(_guard(lambda: services.polish_tasks(request.user, task_ids)))
+
+
+@api_view(["POST"])
+@permission_classes([IsAIUser])
+@throttle_classes([AIHeavyThrottle])
 def break_down(request, pk: int):
     return Response(_guard(lambda: services.break_down(request.user, int(pk))))
 

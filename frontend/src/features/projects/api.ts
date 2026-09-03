@@ -1,9 +1,22 @@
 import { api, buildQuery, type Paginated, type QueryParams } from '~/api/client';
 import { invalidate } from '~/hooks/createQuery';
-import type { ID, Idea, Priority, Project, ProjectKind, ProjectMember, ProjectMode, ProjectStatus, Role, Task } from '~/types';
+import type {
+  ID,
+  Idea,
+  Priority,
+  Project,
+  ProjectCategory,
+  ProjectKind,
+  ProjectMember,
+  ProjectMode,
+  ProjectStatus,
+  Role,
+  Task,
+} from '~/types';
 
 export interface ProjectListParams extends QueryParams {
   kind?: ProjectKind;
+  category?: ProjectCategory;
   mode?: ProjectMode;
   status?: string;
   view?: 'active' | 'open' | 'archived' | 'team';
@@ -18,6 +31,7 @@ export interface ProjectInput {
   name?: string;
   description?: string;
   kind?: ProjectKind;
+  category?: ProjectCategory;
   mode?: ProjectMode;
   status?: ProjectStatus;
   priority?: Priority;

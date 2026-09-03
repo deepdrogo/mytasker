@@ -9,8 +9,10 @@ import { Dropdown } from '~/components/ui/Dropdown';
 import { EmptyState, ErrorNote, Skeleton } from '~/components/ui/Feedback';
 import { Checkbox, Field, Input, Textarea } from '~/components/ui/Input';
 import { rulesApi, type RuleInput } from '~/features/routines/api';
-import { ROUTINE_TABS } from '~/features/routines/RoutinePage';
+import { routineTabs } from '~/features/routines/RoutinePage';
 import { createQuery } from '~/hooks/createQuery';
+import { t } from '~/i18n';
+import { tx } from '~/stores/translations';
 import { toast } from '~/stores/ui';
 import type { Rule } from '~/types';
 import styles from './Rules.module.css';
@@ -32,7 +34,7 @@ export default function Rules(): JSX.Element {
       setQuick('');
       query.refetch();
     } catch (err) {
-      toast(err instanceof ApiError ? err.message : 'Could not save the rule.');
+      toast(err instanceof ApiError ? err.message : t('Could not save the rule.'));
     }
   };
 
@@ -58,25 +60,25 @@ export default function Rules(): JSX.Element {
 
   return (
     <>
-      <Page title="Rules" subtitle="Principles you have decided to live by. Not tasks." tabs={ROUTINE_TABS}>
+      <Page title={t('Rules')} subtitle={t('Principles you have decided to live by. Not tasks.')} tabs={routineTabs()}>
         <div class={styles.wrap}>
           <form class={styles.quick} onSubmit={quickAdd}>
             <Plus size={16} class={styles.quickIcon} />
             <input
               class={styles.quickInput}
-              placeholder="New rule, e.g. “No email before 10:00”"
+              placeholder={t('New rule, e.g. “No email before 10:00”')}
               value={quick()}
               onInput={(e) => setQuick(e.currentTarget.value)}
-              aria-label="New rule"
+              aria-label={t('New rule')}
             />
           </form>
 
-          <Show when={!query.error()} fallback={<ErrorNote message="Could not load rules." onRetry={query.refetch} />}>
+          <Show when={!query.error()} fallback={<ErrorNote message={t('Could not load rules.')} onRetry={query.refetch} />}>
             <Show when={query.data()} fallback={<Skeleton rows={4} height={48} />}>
               {(rules) => (
                 <Show
                   when={rules().length > 0}
-                  fallback={<EmptyState icon={<ScrollText size={22} />} title="No rules yet" hint="Rules are the constraints that make the rest of the system work." />}
+                  fallback={<EmptyState icon={<ScrollText size={22} />} title={t('No rules yet')} hint={t('Rules are the constraints that make the rest of the system work.')} />}
                 >
                   <ol class={styles.list}>
                     <For each={rules()}>
@@ -84,22 +86,22 @@ export default function Rules(): JSX.Element {
                         <li class={[styles.row, rule.is_enabled ? '' : styles.disabled].join(' ')}>
                           <span class={styles.index}>{index() + 1}</span>
                           <button type="button" class={styles.main} onClick={() => setEditing(rule)}>
-                            <span class={styles.text}>{rule.text}</span>
+                            <span class={styles.text}>{tx('rule', rule.id, 'text', rule.text)}</span>
                             <Show when={rule.description}>
-                              <span class={styles.description}>{rule.description}</span>
+                              <span class={styles.description}>{tx('rule', rule.id, 'description', rule.description)}</span>
                             </Show>
                           </button>
                           <Dropdown
-                            label="Rule actions"
+                            label={t('Rule actions')}
                             items={[
-                              { label: 'Edit', onSelect: () => setEditing(rule) },
-                              { label: rule.is_enabled ? 'Disable' : 'Enable', onSelect: () => void toggle(rule) },
-                              { label: 'Move up', icon: <ChevronUp size={14} />, disabled: index() === 0, onSelect: () => void move(rule, -1) },
-                              { label: 'Move down', icon: <ChevronDown size={14} />, disabled: index() === rules().length - 1, onSelect: () => void move(rule, 1) },
-                              { label: 'Delete', danger: true, separatorBefore: true, onSelect: () => void remove(rule) },
+                              { label: t('Edit'), onSelect: () => setEditing(rule) },
+                              { label: rule.is_enabled ? t('Disable') : t('Enable'), onSelect: () => void toggle(rule) },
+                              { label: t('Move up'), icon: <ChevronUp size={14} />, disabled: index() === 0, onSelect: () => void move(rule, -1) },
+                              { label: t('Move down'), icon: <ChevronDown size={14} />, disabled: index() === rules().length - 1, onSelect: () => void move(rule, 1) },
+                              { label: t('Delete'), danger: true, separatorBefore: true, onSelect: () => void remove(rule) },
                             ]}
                             trigger={(menu) => (
-                              <Button variant="ghost" size="icon-sm" onClick={menu.toggle} aria-label="More">
+                              <Button variant="ghost" size="icon-sm" onClick={menu.toggle} aria-label={t('More')}>
                                 <MoreHorizontal size={15} />
                               </Button>
                             )}
@@ -133,7 +135,7 @@ function RuleEditor(props: { rule: Rule | null; open: boolean; onClose: () => vo
   const save = async () => {
     if (!props.rule || saving()) return;
     if (!form().text?.trim()) {
-      setError('Rule text is required.');
+      setError(t('Rule text is required.'));
       return;
     }
     setSaving(true);
@@ -142,7 +144,7 @@ function RuleEditor(props: { rule: Rule | null; open: boolean; onClose: () => vo
       props.onSaved();
       props.onClose();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not save.');
+      setError(err instanceof ApiError ? err.message : t('Could not save.'));
     } finally {
       setSaving(false);
     }
@@ -152,14 +154,14 @@ function RuleEditor(props: { rule: Rule | null; open: boolean; onClose: () => vo
     <Drawer
       open={props.open}
       onClose={props.onClose}
-      title="Rule"
+      title={t('Rule')}
       footer={
         <>
           <Button variant="ghost" onClick={props.onClose}>
-            Cancel
+            {t('Cancel')}
           </Button>
           <Button onClick={save} loading={saving()}>
-            Save
+            {t('Save')}
           </Button>
         </>
       }
@@ -169,13 +171,13 @@ function RuleEditor(props: { rule: Rule | null; open: boolean; onClose: () => vo
           reset();
           return (
             <div class={styles.form}>
-              <Field label="Rule" required error={error()}>
+              <Field label={t('Rule')} required error={error()}>
                 <Input value={form().text ?? ''} onInput={(e) => setForm((f) => ({ ...f, text: e.currentTarget.value }))} autofocus />
               </Field>
-              <Field label="Why" hint="A sentence about the reason makes rules stick.">
+              <Field label={t('Why')} hint={t('A sentence about the reason makes rules stick.')}>
                 <Textarea rows={4} value={form().description ?? ''} onInput={(e) => setForm((f) => ({ ...f, description: e.currentTarget.value }))} />
               </Field>
-              <Checkbox label="Enabled" checked={form().is_enabled ?? true} onChange={(e) => setForm((f) => ({ ...f, is_enabled: e.currentTarget.checked }))} />
+              <Checkbox label={t('Enabled')} checked={form().is_enabled ?? true} onChange={(e) => setForm((f) => ({ ...f, is_enabled: e.currentTarget.checked }))} />
             </div>
           );
         })()}

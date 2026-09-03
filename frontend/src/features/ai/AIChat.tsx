@@ -5,6 +5,7 @@ import { ApiError } from '~/api/client';
 import { Button } from '~/components/ui/Button';
 import { AIActionPreview, ToolTrace } from '~/features/ai/AIActionPreview';
 import { aiApi, type ChatTurn } from '~/features/ai/api';
+import { t } from '~/i18n';
 import { toast } from '~/stores/ui';
 import type { AIPending, AIToolCall, ID } from '~/types';
 import styles from './AIChat.module.css';
@@ -92,14 +93,14 @@ export function AIChat(props: { prefill?: string; compact?: boolean; autofocus?:
         {
           id: nextId++,
           role: 'assistant',
-          text: result.reply || (result.changed ? 'Done.' : ''),
+          text: result.reply || (result.changed ? t('Done.') : ''),
           toolCalls: result.tool_calls,
           pending: result.pending,
           pendingActionId: result.pending_action_id,
         },
       ]);
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'AI is unavailable right now.';
+      const message = err instanceof ApiError ? err.message : t('AI is unavailable right now.');
       setMessages((list) => [...list, { id: nextId++, role: 'assistant', text: message, error: true }]);
     } finally {
       setBusy(false);
@@ -116,9 +117,9 @@ export function AIChat(props: { prefill?: string; compact?: boolean; autofocus?:
     setConfirming(message.pendingActionId);
     try {
       const result = await aiApi.confirm(message.pendingActionId);
-      resolvePending(message.id, result.reply || 'Confirmed.');
+      resolvePending(message.id, result.reply || t('Confirmed.'));
     } catch (err) {
-      toast(err instanceof ApiError ? err.message : 'Could not confirm.');
+      toast(err instanceof ApiError ? err.message : t('Could not confirm.'));
     } finally {
       setConfirming(null);
     }
@@ -127,7 +128,7 @@ export function AIChat(props: { prefill?: string; compact?: boolean; autofocus?:
   const reject = async (message: ChatMessage) => {
     if (!message.pendingActionId) return;
     await aiApi.reject(message.pendingActionId).catch(() => undefined);
-    resolvePending(message.id, 'Cancelled.');
+    resolvePending(message.id, t('Cancelled.'));
   };
 
   const onKey = (event: KeyboardEvent) => {
@@ -180,9 +181,9 @@ export function AIChat(props: { prefill?: string; compact?: boolean; autofocus?:
           <span class={styles.heroIcon} aria-hidden="true">
             <Sparkles size={18} />
           </span>
-          <h2 class={styles.heroTitle}>What can I do for you?</h2>
+          <h2 class={styles.heroTitle}>{t('What can I do for you?')}</h2>
           <p class={styles.heroText}>
-            Add, complete, reschedule and find tasks, start timers, create projects or plan the day — in plain language.
+            {t('Add, complete, reschedule and find tasks, start timers, create projects or plan the day — in plain language.')}
           </p>
         </div>
       </Show>
@@ -199,7 +200,7 @@ export function AIChat(props: { prefill?: string; compact?: boolean; autofocus?:
             ref={textarea}
             class={styles.input}
             rows={1}
-            placeholder="Ask or instruct…"
+            placeholder={t('Ask or instruct…')}
             value={input()}
             onInput={(e) => {
               setInput(e.currentTarget.value);
@@ -207,7 +208,7 @@ export function AIChat(props: { prefill?: string; compact?: boolean; autofocus?:
             }}
             onKeyDown={onKey}
             disabled={busy()}
-            aria-label="AI command"
+            aria-label={t('AI command')}
           />
           <Button
             type="submit"
@@ -215,14 +216,14 @@ export function AIChat(props: { prefill?: string; compact?: boolean; autofocus?:
             size="icon-sm"
             class={styles.sendBtn}
             disabled={!input().trim() || busy()}
-            title="Send"
-            aria-label="Send"
+            title={t('Send')}
+            aria-label={t('Send')}
           >
             <ArrowUp size={15} />
           </Button>
         </div>
         <p class={styles.hint}>
-          <kbd>Enter</kbd> to send · <kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line · destructive actions ask first
+          <kbd>Enter</kbd> {t('to send')} · <kbd>Shift</kbd>+<kbd>Enter</kbd> {t('for a new line')} · {t('destructive actions ask first')}
         </p>
       </form>
 
@@ -230,9 +231,9 @@ export function AIChat(props: { prefill?: string; compact?: boolean; autofocus?:
         <div class={styles.suggestions}>
           <For each={SUGGESTIONS}>
             {(s) => (
-              <button type="button" class={styles.suggestion} onClick={() => void send(s.text)}>
+              <button type="button" class={styles.suggestion} onClick={() => void send(t(s.text))}>
                 <span class={styles.suggestionIcon}>{s.icon()}</span>
-                <span class={styles.suggestionText}>{s.text}</span>
+                <span class={styles.suggestionText}>{t(s.text)}</span>
               </button>
             )}
           </For>

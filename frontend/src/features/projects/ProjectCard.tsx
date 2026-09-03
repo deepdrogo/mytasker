@@ -3,7 +3,9 @@ import { Clock, Users } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
 import { Badge, Meta, PriorityMark, ProgressBar, VisibilityMark } from '~/components/shared/Indicators';
-import type { Project } from '~/types';
+import { t } from '~/i18n';
+import { tx } from '~/stores/translations';
+import type { Project, Role } from '~/types';
 import { formatDate, formatDuration } from '~/utils/format';
 import styles from './ProjectCard.module.css';
 
@@ -15,6 +17,8 @@ const STATUS_LABEL: Record<Project['status'], string> = {
   archived: 'Archived',
 };
 
+const ROLE_LABEL: Record<Role, string> = { owner: 'Owner', admin: 'Admin', member: 'Member', viewer: 'Viewer' };
+
 export function ProjectCard(props: { project: Project }): JSX.Element {
   const p = () => props.project;
   const deadlineSoon = () => {
@@ -24,38 +28,50 @@ export function ProjectCard(props: { project: Project }): JSX.Element {
   };
 
   return (
-    <A href={`/projects/${p().id}/overview`} class={styles.card}>
+    <A href={`/projects/${p().id}/tasks`} class={styles.card}>
       <div class={styles.head}>
         <div class={styles.titleRow}>
           <PriorityMark priority={p().priority} />
-          <span class={styles.name}>{p().name}</span>
+          <span class={styles.name}>{tx('project', p().id, 'name', p().name)}</span>
         </div>
         <div class={styles.badges}>
           <Show when={p().kind === 'active'}>
-            <Badge variant="solid">Active</Badge>
+            <Badge variant="solid">{t('Active')}</Badge>
+          </Show>
+          <Show when={p().category === 'startup'}>
+            <Badge variant="outline">{t('Startup')}</Badge>
           </Show>
           <Show when={p().mode !== 'private'}>
-            <Badge variant="outline">{p().mode === 'group_plus' ? 'Group+' : 'Group'}</Badge>
+            <Badge variant="outline">{p().mode === 'group_plus' ? t('Group+') : t('Group')}</Badge>
           </Show>
           <Show when={p().status !== 'active'}>
-            <Badge variant="dashed">{STATUS_LABEL[p().status]}</Badge>
+            <Badge variant="dashed">{t(STATUS_LABEL[p().status])}</Badge>
           </Show>
         </div>
       </div>
 
       <Show when={p().description}>
-        <p class={styles.description}>{p().description}</p>
+        <p class={styles.description}>{tx('project', p().id, 'description', p().description)}</p>
       </Show>
 
-      <ProgressBar value={p().task_done} max={p().task_total} label={`${p().task_done}/${p().task_total} tasks`} />
+      {/* Progress is only meaningful once there are tasks to measure; an empty project shows no bar or percentage. */}
+      <Show when={p().task_total > 0}>
+        <ProgressBar
+          value={p().task_done}
+          max={p().task_total}
+          label={t('{done}/{total} tasks', { done: p().task_done, total: p().task_total })}
+        />
+      </Show>
 
       <div class={styles.footer}>
-        <Meta>
-          <span class="mt-mono">{p().progress}%</span>
-        </Meta>
+        <Show when={p().progress !== null} fallback={<Meta><span class="mt-dim">{t('No tasks yet')}</span></Meta>}>
+          <Meta>
+            <span class="mt-mono">{p().progress}%</span>
+          </Meta>
+        </Show>
         <Show when={p().open_tasks > 0}>
           <Meta>
-            <span>{p().open_tasks} open</span>
+            <span>{t('{count} open', { count: p().open_tasks })}</span>
           </Meta>
         </Show>
         <Show when={p().tracked_seconds > 0}>
@@ -72,13 +88,13 @@ export function ProjectCard(props: { project: Project }): JSX.Element {
         </Show>
         <Show when={p().deadline}>
           <Meta>
-            <span class={deadlineSoon() ? styles.deadlineSoon : ''}>Due {formatDate(p().deadline)}</span>
+            <span class={deadlineSoon() ? styles.deadlineSoon : ''}>{t('Due {date}', { date: formatDate(p().deadline) })}</span>
           </Meta>
         </Show>
         <Show when={p().role && p().role !== 'owner'}>
           <Meta>
             <VisibilityMark visibility="group" mode={p().mode} />
-            <span>{p().role}</span>
+            <span>{t(ROLE_LABEL[p().role as Role])}</span>
           </Meta>
         </Show>
       </div>

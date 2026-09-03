@@ -103,6 +103,15 @@ class Task(TimeStampedModel, SoftDeleteModel):
         DONE = "done", "Done"
         CANCELLED = "cancelled", "Cancelled"
 
+    class Origin(models.TextChoices):
+        """
+        Where the task was created from. `list` tasks belong to the Personal/Business lists (and may
+        additionally be linked to a project); `project` tasks live only inside their project.
+        """
+
+        LIST = "list", "Task list"
+        PROJECT = "project", "Project"
+
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="tasks")
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="created_tasks"
@@ -117,6 +126,7 @@ class Task(TimeStampedModel, SoftDeleteModel):
     depth = models.PositiveSmallIntegerField(default=0)
 
     kind = models.CharField(max_length=10, choices=Kind.choices, default=Kind.PERSONAL, db_index=True)
+    origin = models.CharField(max_length=10, choices=Origin.choices, default=Origin.LIST, db_index=True)
     title = models.CharField(max_length=300)
     description = models.TextField(blank=True)
     notes = models.TextField(blank=True)

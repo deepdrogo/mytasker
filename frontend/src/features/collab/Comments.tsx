@@ -7,6 +7,8 @@ import { EmptyState, ErrorNote, Skeleton } from '~/components/ui/Feedback';
 import { Textarea } from '~/components/ui/Input';
 import { collabApi } from '~/features/collab/api';
 import { createQuery } from '~/hooks/createQuery';
+import { t } from '~/i18n';
+import { tx } from '~/stores/translations';
 import { toast } from '~/stores/ui';
 import type { Comment, ID } from '~/types';
 import { formatRelative } from '~/utils/format';
@@ -40,7 +42,7 @@ export function Comments(props: CommentsProps): JSX.Element {
       setDraft('');
       query.refetch();
     } catch (err) {
-      toast(err instanceof ApiError ? err.message : 'Could not post the comment.');
+      toast(err instanceof ApiError ? err.message : t('Could not post the comment.'));
     } finally {
       setBusy(false);
     }
@@ -54,7 +56,7 @@ export function Comments(props: CommentsProps): JSX.Element {
       setEditing(null);
       query.refetch();
     } catch (err) {
-      toast(err instanceof ApiError ? err.message : 'Could not save.');
+      toast(err instanceof ApiError ? err.message : t('Could not save.'));
     }
   };
 
@@ -63,18 +65,18 @@ export function Comments(props: CommentsProps): JSX.Element {
       await collabApi.deleteComment(comment.id);
       query.refetch();
     } catch {
-      toast('Could not delete the comment.');
+      toast(t('Could not delete the comment.'));
     }
   };
 
   return (
     <div class={styles.wrap}>
-      <Show when={!query.error()} fallback={<ErrorNote message="Could not load comments." onRetry={query.refetch} />}>
+      <Show when={!query.error()} fallback={<ErrorNote message={t('Could not load comments.')} onRetry={query.refetch} />}>
         <Show when={query.data()} fallback={<Skeleton rows={2} height={44} />}>
           {(comments) => (
             <Show
               when={comments().length > 0}
-              fallback={<EmptyState compact icon={<MessageSquare size={18} />} title="No comments yet" />}
+              fallback={<EmptyState compact icon={<MessageSquare size={18} />} title={t('No comments yet')} />}
             >
               <ul class={styles.list}>
                 <For each={comments()}>
@@ -84,7 +86,7 @@ export function Comments(props: CommentsProps): JSX.Element {
                         <span class={styles.author}>{comment.author.display_name}</span>
                         <span class={styles.time}>
                           {formatRelative(comment.created_at)}
-                          <Show when={comment.edited_at}> · edited</Show>
+                          <Show when={comment.edited_at}> · {t('edited')}</Show>
                         </span>
                         <span class={styles.actions}>
                           <Show when={comment.can_edit}>
@@ -96,12 +98,12 @@ export function Comments(props: CommentsProps): JSX.Element {
                                 setEditBody(comment.body);
                               }}
                             >
-                              Edit
+                              {t('Edit')}
                             </button>
                           </Show>
                           <Show when={comment.can_delete}>
                             <button type="button" class={styles.linkBtn} onClick={() => void remove(comment)}>
-                              Delete
+                              {t('Delete')}
                             </button>
                           </Show>
                         </span>
@@ -113,16 +115,16 @@ export function Comments(props: CommentsProps): JSX.Element {
                             <Textarea rows={3} value={editBody()} onInput={(e) => setEditBody(e.currentTarget.value)} />
                             <div class={styles.editActions}>
                               <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>
-                                Cancel
+                                {t('Cancel')}
                               </Button>
                               <Button size="sm" onClick={saveEdit}>
-                                Save
+                                {t('Save')}
                               </Button>
                             </div>
                           </div>
                         }
                       >
-                        <p class={styles.body}>{comment.body}</p>
+                        <p class={styles.body}>{tx('comment', comment.id, 'body', comment.body)}</p>
                       </Show>
                     </li>
                   )}
@@ -137,7 +139,7 @@ export function Comments(props: CommentsProps): JSX.Element {
         <form class={styles.composer} onSubmit={submit}>
           <Textarea
             rows={2}
-            placeholder="Write a comment… (Ctrl+Enter to send)"
+            placeholder={t('Write a comment… (Ctrl+Enter to send)')}
             value={draft()}
             onInput={(e) => setDraft(e.currentTarget.value)}
             onKeyDown={(e) => {
@@ -146,7 +148,7 @@ export function Comments(props: CommentsProps): JSX.Element {
           />
           <Button type="submit" size="sm" loading={busy()} disabled={!draft().trim()}>
             <Send size={13} />
-            Send
+            {t('Send')}
           </Button>
         </form>
       </Show>

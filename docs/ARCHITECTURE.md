@@ -106,6 +106,29 @@ validates input with pydantic, resolves the actor, checks permissions, calls the
 REST API uses, and records an `AIAction` + `AuditLog`. Destructive or bulk operations become
 `proposed` actions that require an explicit confirm call.
 
+## 8a. Languages and background translation
+
+The UI ships in Georgian and English (`frontend/src/i18n`, English strings are the keys, `ka/*.ts`
+hold the Georgian). The choice is stored in the browser and on `User.locale`.
+
+User-written text (task title/description/notes, project name, ideas, prompt title/description,
+comments, routine items, rules) is translated by Claude in the background - `apps/translations`:
+
+```
+create/update → domain event → schedule_translation → Celery translate_object
+                                                       → Translation row (one per object)
+                                                       → WS {"type": "translation", key, translations}
+frontend tx('task', id, 'title', original) → batches unknown keys → POST /translations/lookup/
+                                           → missing rows are queued on the spot (lazy backfill)
+```
+
+`Translation.source_hash` (sha256 of the source fields) makes jobs idempotent: unchanged text is
+never re-sent, stale rows are never served. The detected `source_lang` row serves the original in
+that language and the translated fields in the other. Lookups go through the same `visible_to`
+rules as everything else. Prompt bodies are deliberately never translated. `TRANSLATION_MODEL`
+optionally points background jobs at a cheaper model; `TRANSLATIONS_ENABLED=false` switches the
+feature off. `manage.py translate_backfill [--user EMAIL]` queues existing content.
+
 ## 9. Timers
 
 `TimeEntry` is authoritative. A partial unique index (`owner` where `ended_at IS NULL`) guarantees

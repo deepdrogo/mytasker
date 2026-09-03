@@ -9,26 +9,26 @@ import { Drawer } from '~/components/ui/Drawer';
 import { Dropdown } from '~/components/ui/Dropdown';
 import { EmptyState, ErrorNote, Skeleton } from '~/components/ui/Feedback';
 import { Checkbox, Field, Input, Textarea } from '~/components/ui/Input';
-import {
-  describeRepeat,
-  routinesApi,
-  toggleWeekday,
-  WEEKDAYS,
-  weekdayEnabled,
-  type RoutineItemInput,
-} from '~/features/routines/api';
+import { routinesApi, toggleWeekday, WEEKDAYS, weekdayEnabled, type RoutineItemInput } from '~/features/routines/api';
 import { createQuery } from '~/hooks/createQuery';
+import { t } from '~/i18n';
 import { startTimer, stopTimer, timerStore } from '~/stores/timer';
+import { tx } from '~/stores/translations';
 import { toast } from '~/stores/ui';
 import type { RoutineItem, RoutineKind } from '~/types';
 import { formatClock, formatMinutes } from '~/utils/format';
 import styles from './RoutinePage.module.css';
 
-export const ROUTINE_TABS = [
+const ROUTINE_TAB_DEFS = [
   { label: 'Personal', href: '/routine/personal' },
   { label: 'Business', href: '/routine/business' },
   { label: 'Rules', href: '/routine/rules' },
 ];
+
+/** Tabs shared by the routine pages. Call inside JSX so labels follow the UI language. */
+export function routineTabs(): Array<{ label: string; href: string }> {
+  return ROUTINE_TAB_DEFS.map((tab) => ({ label: t(tab.label), href: tab.href }));
+}
 
 interface RoutinePageProps {
   kind: RoutineKind;
@@ -38,8 +38,17 @@ interface RoutinePageProps {
 
 function formatTimeRange(item: RoutineItem): string {
   if (!item.start_time && !item.end_time) return '';
-  const trim = (t: string | null) => (t ? t.slice(0, 5) : '');
+  const trim = (value: string | null) => (value ? value.slice(0, 5) : '');
   return `${trim(item.start_time)}${item.end_time ? ` – ${trim(item.end_time)}` : ''}`;
+}
+
+/** Localised counterpart of `describeRepeat` - weekday abbreviations go through t() one by one. */
+function describeRepeatLabel(mask: number): string {
+  if (mask === 127) return t('Every day');
+  if (mask === 31) return t('Weekdays');
+  if (mask === 96) return t('Weekends');
+  const days = WEEKDAYS.filter((_, i) => weekdayEnabled(mask, i)).map((day) => t(day));
+  return days.join(', ') || t('Never');
 }
 
 export function RoutinePage(props: RoutinePageProps): JSX.Element {
@@ -61,7 +70,7 @@ export function RoutinePage(props: RoutinePageProps): JSX.Element {
       await routinesApi.complete(item.id, !item.today_completed);
       query.refetch();
     } catch (err) {
-      toast(err instanceof ApiError ? err.message : 'Could not update.');
+      toast(err instanceof ApiError ? err.message : t('Could not update.'));
     }
   };
 
@@ -72,7 +81,7 @@ export function RoutinePage(props: RoutinePageProps): JSX.Element {
       if (isTracking(item)) await stopTimer();
       else await startTimer({ routine_item_id: item.id, category: item.counts_as_business ? 'business' : 'personal' });
     } catch {
-      toast('Could not change the timer.');
+      toast(t('Could not change the timer.'));
     }
   };
 
@@ -91,7 +100,7 @@ export function RoutinePage(props: RoutinePageProps): JSX.Element {
       await routinesApi.remove(item.id);
       query.refetch();
     } catch {
-      toast('Could not delete.');
+      toast(t('Could not delete.'));
     }
   };
 
@@ -100,15 +109,15 @@ export function RoutinePage(props: RoutinePageProps): JSX.Element {
       <Page
         title={props.title}
         subtitle={props.subtitle}
-        tabs={ROUTINE_TABS}
+        tabs={routineTabs()}
         actions={
           <div class={styles.actions}>
             <Button variant="ghost" size="sm" onClick={() => setShowAll((v) => !v)}>
-              {showAll() ? 'Today only' : 'All items'}
+              {showAll() ? t('Today only') : t('All items')}
             </Button>
             <Button size="sm" onClick={() => setEditing('new')}>
               <Plus size={14} />
-              Add
+              {t('Add')}
             </Button>
           </div>
         }
@@ -117,7 +126,7 @@ export function RoutinePage(props: RoutinePageProps): JSX.Element {
           <Show when={items().length > 0}>
             <div class={styles.summary}>
               <span>
-                <strong>{completedCount()}</strong> / {items().length} done today
+                <strong>{completedCount()}</strong> / {t('{total} done today', { total: items().length })}
               </span>
               <span class="mt-mono">
                 {formatMinutes(totalDone())} / {formatMinutes(totalTarget())}
@@ -125,18 +134,18 @@ export function RoutinePage(props: RoutinePageProps): JSX.Element {
             </div>
           </Show>
 
-          <Show when={!query.error()} fallback={<ErrorNote message="Could not load the routine." onRetry={query.refetch} />}>
+          <Show when={!query.error()} fallback={<ErrorNote message={t('Could not load the routine.')} onRetry={query.refetch} />}>
             <Show when={query.data()} fallback={<Skeleton rows={5} height={56} />}>
               <Show
                 when={items().length > 0}
                 fallback={
                   <EmptyState
                     icon={<ListChecks size={22} />}
-                    title={showAll() ? 'No routine items yet' : 'Nothing scheduled today'}
-                    hint="A routine is the shape of your day: blocks with a time window and a target."
+                    title={showAll() ? t('No routine items yet') : t('Nothing scheduled today')}
+                    hint={t('A routine is the shape of your day: blocks with a time window and a target.')}
                     action={
                       <Button size="sm" onClick={() => setEditing('new')}>
-                        Add the first block
+                        {t('Add the first block')}
                       </Button>
                     }
                   />
@@ -156,7 +165,7 @@ export function RoutinePage(props: RoutinePageProps): JSX.Element {
                         <button
                           type="button"
                           class={styles.check}
-                          aria-label={item.today_completed ? 'Mark not done' : 'Mark done'}
+                          aria-label={item.today_completed ? t('Mark not done') : t('Mark done')}
                           aria-pressed={item.today_completed}
                           onClick={() => void toggle(item)}
                         >
@@ -165,7 +174,7 @@ export function RoutinePage(props: RoutinePageProps): JSX.Element {
                           </Show>
                         </button>
                         <button type="button" class={styles.main} onClick={() => setEditing(item)}>
-                          <span class={styles.name}>{item.name}</span>
+                          <span class={styles.name}>{tx('routine_item', item.id, 'name', item.name)}</span>
                           <span class={styles.meta}>
                             <Show when={formatTimeRange(item)}>
                               <span class="mt-mono">{formatTimeRange(item)}</span>
@@ -174,13 +183,13 @@ export function RoutinePage(props: RoutinePageProps): JSX.Element {
                               <Clock size={11} /> {formatMinutes(item.today_minutes)} / {formatMinutes(item.target_minutes)}
                             </span>
                             <Show when={item.repeat_days !== 127}>
-                              <span>{describeRepeat(item.repeat_days)}</span>
+                              <span>{describeRepeatLabel(item.repeat_days)}</span>
                             </Show>
                             <Show when={item.counts_as_business && props.kind === 'personal'}>
-                              <Badge variant="outline">Business time</Badge>
+                              <Badge variant="outline">{t('Business time')}</Badge>
                             </Show>
                             <Show when={query.data()?.current_item_id === item.id}>
-                              <Badge variant="solid">Now</Badge>
+                              <Badge variant="solid">{t('Now')}</Badge>
                             </Show>
                           </span>
                         </button>
@@ -191,7 +200,7 @@ export function RoutinePage(props: RoutinePageProps): JSX.Element {
                           <Button
                             variant={isTracking(item) ? 'primary' : 'ghost'}
                             size="icon-sm"
-                            aria-label={isTracking(item) ? 'Stop timer' : 'Start timer'}
+                            aria-label={isTracking(item) ? t('Stop timer') : t('Start timer')}
                             onClick={() => void track(item)}
                             loading={timerStore.busy()}
                           >
@@ -200,15 +209,15 @@ export function RoutinePage(props: RoutinePageProps): JSX.Element {
                             </Show>
                           </Button>
                           <Dropdown
-                            label="Item actions"
+                            label={t('Item actions')}
                             items={[
-                              { label: 'Edit', onSelect: () => setEditing(item) },
-                              { label: 'Move up', icon: <ChevronUp size={14} />, disabled: index() === 0, onSelect: () => void move(item, -1) },
-                              { label: 'Move down', icon: <ChevronDown size={14} />, disabled: index() === items().length - 1, onSelect: () => void move(item, 1) },
-                              { label: 'Delete', danger: true, separatorBefore: true, onSelect: () => void remove(item) },
+                              { label: t('Edit'), onSelect: () => setEditing(item) },
+                              { label: t('Move up'), icon: <ChevronUp size={14} />, disabled: index() === 0, onSelect: () => void move(item, -1) },
+                              { label: t('Move down'), icon: <ChevronDown size={14} />, disabled: index() === items().length - 1, onSelect: () => void move(item, 1) },
+                              { label: t('Delete'), danger: true, separatorBefore: true, onSelect: () => void remove(item) },
                             ]}
                             trigger={(menu) => (
-                              <Button variant="ghost" size="icon-sm" onClick={menu.toggle} aria-label="More">
+                              <Button variant="ghost" size="icon-sm" onClick={menu.toggle} aria-label={t('More')}>
                                 <MoreHorizontal size={15} />
                               </Button>
                             )}
@@ -271,7 +280,7 @@ function RoutineItemEditor(props: {
     event?.preventDefault();
     if (saving()) return;
     if (!form().name?.trim()) {
-      setError('Name is required.');
+      setError(t('Name is required.'));
       return;
     }
     setSaving(true);
@@ -286,7 +295,7 @@ function RoutineItemEditor(props: {
       props.onSaved();
       props.onClose();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not save.');
+      setError(err instanceof ApiError ? err.message : t('Could not save.'));
     } finally {
       setSaving(false);
     }
@@ -296,27 +305,27 @@ function RoutineItemEditor(props: {
     <Drawer
       open={props.open}
       onClose={props.onClose}
-      title={props.item ? 'Edit block' : 'New routine block'}
+      title={props.item ? t('Edit block') : t('New routine block')}
       footer={
         <>
           <Button variant="ghost" onClick={props.onClose}>
-            Cancel
+            {t('Cancel')}
           </Button>
           <Button onClick={save} loading={saving()}>
-            Save
+            {t('Save')}
           </Button>
         </>
       }
     >
       <form class={styles.form} onSubmit={save}>
-        <Field label="Name" required error={error()}>
-          <Input value={form().name ?? ''} onInput={(e) => update('name', e.currentTarget.value)} autofocus placeholder="Deep work" />
+        <Field label={t('Name')} required error={error()}>
+          <Input value={form().name ?? ''} onInput={(e) => update('name', e.currentTarget.value)} autofocus placeholder={t('Deep work')} />
         </Field>
-        <Field label="Description">
+        <Field label={t('Description')}>
           <Textarea rows={2} value={form().description ?? ''} onInput={(e) => update('description', e.currentTarget.value)} />
         </Field>
         <div class={styles.grid}>
-          <Field label="Target (minutes)">
+          <Field label={t('Target (minutes)')}>
             <Input
               type="number"
               min={0}
@@ -325,14 +334,14 @@ function RoutineItemEditor(props: {
               onInput={(e) => update('target_minutes', Number(e.currentTarget.value))}
             />
           </Field>
-          <Field label="Start">
+          <Field label={t('Start')}>
             <Input type="time" value={form().start_time ?? ''} onInput={(e) => update('start_time', e.currentTarget.value)} />
           </Field>
-          <Field label="End">
+          <Field label={t('End')}>
             <Input type="time" value={form().end_time ?? ''} onInput={(e) => update('end_time', e.currentTarget.value)} />
           </Field>
         </div>
-        <Field label="Repeat">
+        <Field label={t('Repeat')}>
           <div class={styles.days}>
             <For each={WEEKDAYS}>
               {(day, i) => (
@@ -342,18 +351,18 @@ function RoutineItemEditor(props: {
                   aria-pressed={weekdayEnabled(form().repeat_days ?? 127, i())}
                   onClick={() => update('repeat_days', toggleWeekday(form().repeat_days ?? 127, i()))}
                 >
-                  {day}
+                  {t(day)}
                 </button>
               )}
             </For>
           </div>
         </Field>
         <Checkbox
-          label="Time on this block counts as business time"
+          label={t('Time on this block counts as business time')}
           checked={form().counts_as_business ?? false}
           onChange={(e) => update('counts_as_business', e.currentTarget.checked)}
         />
-        <Checkbox label="Active" checked={form().is_active ?? true} onChange={(e) => update('is_active', e.currentTarget.checked)} />
+        <Checkbox label={t('Active')} checked={form().is_active ?? true} onChange={(e) => update('is_active', e.currentTarget.checked)} />
       </form>
     </Drawer>
   );

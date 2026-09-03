@@ -3,6 +3,7 @@ import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { EmptyState, ErrorNote, Skeleton } from '~/components/ui/Feedback';
 import { TaskRow } from '~/features/tasks/TaskRow';
+import { t } from '~/i18n';
 import type { Task } from '~/types';
 import styles from './TaskList.module.css';
 
@@ -28,7 +29,7 @@ export function TaskList(props: TaskListProps): JSX.Element {
   return (
     <Show
       when={!props.error}
-      fallback={<ErrorNote message="Could not load tasks." onRetry={props.onRetry} />}
+      fallback={<ErrorNote message={t('Could not load tasks.')} onRetry={props.onRetry} />}
     >
       <Show
         when={props.tasks}
@@ -40,7 +41,7 @@ export function TaskList(props: TaskListProps): JSX.Element {
             fallback={
               <EmptyState
                 icon={<ListTodo size={20} />}
-                title={props.emptyTitle ?? 'No tasks here.'}
+                title={props.emptyTitle ?? t('No tasks here.')}
                 hint={props.emptyHint}
                 action={props.emptyAction}
                 compact

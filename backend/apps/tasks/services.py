@@ -76,6 +76,16 @@ def _resolve_project(project_id: int | None, user, *, capability: str = Capabili
     return project
 
 
+def _resolve_origin(requested: str | None, project: Project | None) -> str:
+    """
+    Explicit origin wins; otherwise a task created with a project comes from that project's page
+    and stays out of the Business list, while a project-less task belongs to a list.
+    """
+    if requested in dict(Task.Origin.choices):
+        return requested
+    return Task.Origin.PROJECT if project is not None else Task.Origin.LIST
+
+
 def _normalise_visibility(project: Project | None, requested: str | None, owner_is_actor: bool) -> str:
     """Private visibility only makes sense for the owner inside private / group_plus projects."""
     if project is None:
@@ -144,6 +154,7 @@ def create_task(
     visibility: str | None = None,
     recurrence: dict | None = None,
     owner=None,
+    origin: str | None = None,
     **fields,
 ) -> Task:
     user = actor.user
@@ -164,12 +175,14 @@ def create_task(
         kind = parent.kind
         task_owner = parent.owner
         resolved_visibility = parent.visibility
+        resolved_origin = parent.origin
     else:
         project = _resolve_project(project_id, user)
         task_owner = owner or (project.owner if project is not None else user)
         if project is not None and kind == Task.Kind.PERSONAL:
             kind = Task.Kind.BUSINESS
         resolved_visibility = _normalise_visibility(project, visibility, task_owner == user)
+        resolved_origin = _resolve_origin(origin, project)
 
     payload = {key: value for key, value in fields.items() if key in EDITABLE_FIELDS}
     payload.pop("kind", None)
@@ -185,6 +198,7 @@ def create_task(
         parent=parent,
         depth=1 if parent is not None else 0,
         kind=kind,
+        origin=resolved_origin,
         title=title,
         visibility=resolved_visibility,
         recurrence=rule,
@@ -244,6 +258,10 @@ def update_task(actor: Actor, task_id: int, *, expected_version: int | None = No
         task.kind = Task.Kind.BUSINESS if project is not None else task.kind
         task.visibility = _normalise_visibility(project, task.visibility, task.owner_id == user.pk)
         changed += ["project", "kind", "visibility"]
+        # A project-only task detached from its project must land back in a list, or it would vanish.
+        if project is None and task.origin == Task.Origin.PROJECT:
+            task.origin = Task.Origin.LIST
+            changed.append("origin")
 
     if "assignee_id" in fields:
         assignee_id = fields.pop("assignee_id")
@@ -475,6 +493,7 @@ def duplicate_task(actor: Actor, task_id: int) -> Task:
         parent=original.parent,
         depth=original.depth,
         kind=original.kind,
+        origin=original.origin,
         title=f"{original.title} (copy)"[:300],
         description=original.description,
         notes=original.notes,
@@ -525,6 +544,7 @@ def _spawn_next_recurrence(task: Task, actor: Actor) -> None:
         assignee=task.assignee,
         project=task.project,
         kind=task.kind,
+        origin=task.origin,
         title=task.title,
         description=task.description,
         notes=task.notes,
@@ -584,13 +604,40 @@ def _next_occurrence(rule: RecurrenceRule, after: datetime) -> datetime | None:
 # --------------------------------------------------------------------------- bulk
 
 
-@transaction.atomic
-def bulk_reschedule(actor: Actor, task_ids: list[int], *, due_at: datetime | None) -> int:
-    count = 0
-    for task_id in task_ids:
-        update_task(actor, task_id, due_at=due_at)
-        count += 1
-    return count
+BULK_MAX_TASKS = 200
+
+
+def bulk_reschedule(
+    actor: Actor, task_ids: list[int], *, due_at: datetime | None, due_has_time: bool = False
+) -> dict[str, list[int]]:
+    """
+    Give several tasks the same deadline (or clear it with ``due_at=None``). Tasks the user cannot edit
+    are reported as skipped instead of failing the whole batch, so a mixed selection still gets through.
+    """
+    ids: list[int] = []
+    for raw in task_ids:
+        try:
+            value = int(raw)
+        except (TypeError, ValueError):
+            continue
+        if value not in ids:
+            ids.append(value)
+    if not ids:
+        raise ValidationFailed("Pick at least one task.")
+    if len(ids) > BULK_MAX_TASKS:
+        raise ValidationFailed(f"Reschedule at most {BULK_MAX_TASKS} tasks at once.")
+
+    updated: list[int] = []
+    skipped: list[int] = []
+    for task_id in ids:
+        try:
+            with transaction.atomic():
+                update_task(actor, task_id, due_at=due_at, due_has_time=bool(due_at) and due_has_time)
+        except (NotFound, Forbidden, Conflict, ValidationFailed):
+            skipped.append(task_id)
+        else:
+            updated.append(task_id)
+    return {"updated": updated, "skipped": skipped}
 
 
 def move_to_date(actor: Actor, task_id: int, target: date, *, keep_time: bool = True) -> Task:

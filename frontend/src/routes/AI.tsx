@@ -9,9 +9,10 @@ import { EmptyState } from '~/components/ui/Feedback';
 import { AIChat } from '~/features/ai/AIChat';
 import { aiApi, type PlanDayResult } from '~/features/ai/api';
 import { createQuery } from '~/hooks/createQuery';
+import { t, tn } from '~/i18n';
 import { authStore } from '~/stores/auth';
 import { toast } from '~/stores/ui';
-import type { AIAction } from '~/types';
+import type { AIAction, AIActionStatus } from '~/types';
 import { formatRelative } from '~/utils/format';
 import styles from './AI.module.css';
 
@@ -27,7 +28,7 @@ export default function AIPage(): JSX.Element {
     try {
       setPlan(await aiApi.planDay());
     } catch (err) {
-      toast(err instanceof ApiError ? err.message : 'Could not plan the day.');
+      toast(err instanceof ApiError ? err.message : t('Could not plan the day.'));
     } finally {
       setPlanning(false);
     }
@@ -35,16 +36,16 @@ export default function AIPage(): JSX.Element {
 
   return (
     <Page
-      title="AI"
-      subtitle="Talk to your workspace. Safe actions run instantly; destructive ones ask first."
+      title={t('AI')}
+      subtitle={t('Talk to your workspace. Safe actions run instantly; destructive ones ask first.')}
       actions={
         <Show when={configured()}>
           <div class={styles.actions}>
             <Button variant="secondary" size="sm" loading={planning()} onClick={() => void planDay()}>
-              <CalendarClock size={14} /> Plan my day
+              <CalendarClock size={14} /> {t('Plan my day')}
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setHistoryOpen(true)}>
-              <History size={14} /> History
+              <History size={14} /> {t('History')}
             </Button>
           </div>
         </Show>
@@ -58,14 +59,14 @@ export default function AIPage(): JSX.Element {
             when={authStore.isAdmin()}
             fallback={
               <EmptyState
-                title="Administrators only"
-                hint="The AI assistant is available to administrator accounts. Ask an administrator if you need access."
+                title={t('Administrators only')}
+                hint={t('The AI assistant is available to administrator accounts. Ask an administrator if you need access.')}
               />
             }
           >
             <EmptyState
-              title="AI is not configured"
-              hint="Set ANTHROPIC_API_KEY in the backend environment and restart the API to enable the assistant."
+              title={t('AI is not configured')}
+              hint={t('Set ANTHROPIC_API_KEY in the backend environment and restart the API to enable the assistant.')}
             />
           </Show>
         }
@@ -78,9 +79,9 @@ export default function AIPage(): JSX.Element {
             {(p) => (
               <aside class={styles.plan}>
                 <div class={styles.planHead}>
-                  <h2>Plan for today</h2>
+                  <h2>{t('Plan for today')}</h2>
                   <Button variant="ghost" size="sm" onClick={() => setPlan(null)}>
-                    Close
+                    {t('Close')}
                   </Button>
                 </div>
                 <p class={styles.planSummary}>{p().summary}</p>
@@ -97,7 +98,7 @@ export default function AIPage(): JSX.Element {
                             <div class={styles.blockReason}>{b.reason}</div>
                           </Show>
                           <Show when={b.task_ids.length}>
-                            <div class={styles.blockTasks}>{b.task_ids.length} task(s)</div>
+                            <div class={styles.blockTasks}>{tn(b.task_ids.length, 'task')}</div>
                           </Show>
                         </div>
                       </li>
@@ -106,7 +107,7 @@ export default function AIPage(): JSX.Element {
                 </ol>
                 <Show when={p().defer?.length}>
                   <div class={styles.defer}>
-                    <h3>Suggested to defer</h3>
+                    <h3>{t('Suggested to defer')}</h3>
                     <ul>
                       <For each={p().defer}>{(d) => <li>{d.reason}</li>}</For>
                     </ul>
@@ -123,18 +124,35 @@ export default function AIPage(): JSX.Element {
   );
 }
 
+function statusLabel(status: AIActionStatus): string {
+  switch (status) {
+    case 'pending':
+      return t('pending');
+    case 'proposed':
+      return t('proposed');
+    case 'executed':
+      return t('executed');
+    case 'rejected':
+      return t('rejected');
+    case 'failed':
+      return t('failed');
+    default:
+      return status;
+  }
+}
+
 function HistoryDrawer(props: { open: boolean; onClose: () => void }): JSX.Element {
   const query = createQuery<AIAction[]>(() => (props.open ? 'ai:history' : null), () => aiApi.history());
   return (
-    <Drawer open={props.open} onClose={props.onClose} title="AI history" width="420px">
-      <Show when={query.data()?.length} fallback={<EmptyState title="No AI actions yet." compact />}>
+    <Drawer open={props.open} onClose={props.onClose} title={t('AI history')} width="420px">
+      <Show when={query.data()?.length} fallback={<EmptyState title={t('No AI actions yet.')} compact />}>
         <ul class={styles.history}>
           <For each={query.data()}>
             {(a) => (
               <li class={styles.historyItem}>
                 <div class={styles.historyHead}>
                   <span class={styles.status} data-status={a.status}>
-                    {a.status}
+                    {statusLabel(a.status)}
                   </span>
                   <span class={styles.when}>{formatRelative(a.created_at)}</span>
                 </div>

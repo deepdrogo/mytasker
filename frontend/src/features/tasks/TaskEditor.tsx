@@ -11,6 +11,8 @@ import { Comments } from '~/features/collab/Comments';
 import { ProjectSelector } from '~/features/projects/ProjectSelector';
 import { tasksApi, type TaskInput } from '~/features/tasks/api';
 import { TaskComposer } from '~/features/tasks/TaskComposer';
+import { intlLocale, t } from '~/i18n';
+import { isTranslated, tx } from '~/stores/translations';
 import { startTimer, stopTimer, timerStore } from '~/stores/timer';
 import { toast } from '~/stores/ui';
 import type { Priority, Task } from '~/types';
@@ -26,6 +28,7 @@ interface TaskEditorProps {
 }
 
 const PRIORITIES: Priority[] = ['critical', 'high', 'normal', 'low'];
+const PRIORITY_LABEL: Record<Priority, string> = { critical: 'Critical', high: 'High', normal: 'Normal', low: 'Low' };
 const RECURRENCE_OPTIONS = [
   { value: '', label: 'Does not repeat' },
   { value: 'daily', label: 'Daily' },
@@ -105,12 +108,12 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
       await tasksApi.update(task.id, payload);
       setDirty(false);
       props.onChanged?.();
-      toast('Saved');
+      toast(t('Saved'));
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(err.isConflict ? 'This task changed elsewhere. Close and reopen to get the latest.' : err.message);
+        setError(err.isConflict ? t('This task changed elsewhere. Close and reopen to get the latest.') : err.message);
       } else {
-        setError('Could not save the task.');
+        setError(t('Could not save the task.'));
       }
     } finally {
       setSaving(false);
@@ -124,7 +127,7 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
     setConfirmDelete(false);
     props.onChanged?.();
     props.onClose();
-    toast('Task deleted');
+    toast(t('Task deleted'));
   };
 
   const toggleComplete = async () => {
@@ -140,20 +143,20 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
       <Drawer
         open={props.open}
         onClose={props.onClose}
-        title="Task"
+        title={t('Task')}
         footer={
           <>
             <Show when={props.task?.can_delete}>
-              <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(true)} aria-label="Delete task">
+              <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(true)} aria-label={t('Delete task')}>
                 <Trash2 size={14} />
               </Button>
             </Show>
             <div class={styles.footerSpacer} />
             <Button variant="ghost" onClick={props.onClose}>
-              Close
+              {t('Close')}
             </Button>
             <Button variant="primary" onClick={save} loading={saving()} disabled={!dirty() || !props.task?.can_edit}>
-              Save
+              {t('Save')}
             </Button>
           </>
         }
@@ -167,7 +170,7 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
 
               <div class={styles.quickBar}>
                 <Button variant={task().status === 'done' ? 'secondary' : 'primary'} size="sm" onClick={toggleComplete}>
-                  {task().status === 'done' ? 'Reopen' : 'Complete'}
+                  {task().status === 'done' ? t('Reopen') : t('Complete')}
                 </Button>
                 <Button
                   variant="secondary"
@@ -184,34 +187,38 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
                   <Show when={isRunning()} fallback={<Play size={14} />}>
                     <Square size={14} />
                   </Show>
-                  {isRunning() ? 'Stop' : 'Timer'}
+                  {isRunning() ? t('Stop') : t('Timer')}
                 </Button>
                 <Button variant="secondary" size="sm" onClick={() => props.onShare?.(task())}>
                   <Share2 size={14} />
-                  Share
+                  {t('Share')}
                 </Button>
               </div>
 
               <Show when={task().tracked_seconds > 0}>
                 <p class={styles.tracked}>
-                  Tracked <span class="mt-mono">{formatDuration(task().tracked_seconds)}</span>
-                  <Show when={task().estimated_minutes}>
-                    {' '}
-                    of <span class="mt-mono">{formatDuration((task().estimated_minutes ?? 0) * 60)}</span> estimated
-                  </Show>
+                  {task().estimated_minutes
+                    ? t('Tracked {tracked} of {estimate} estimated', {
+                        tracked: formatDuration(task().tracked_seconds),
+                        estimate: formatDuration((task().estimated_minutes ?? 0) * 60),
+                      })
+                    : t('Tracked {tracked}', { tracked: formatDuration(task().tracked_seconds) })}
                 </p>
               </Show>
 
-              <Field label="Title">
+              <Field label={t('Title')}>
                 <Input
                   value={title()}
                   onInput={(e) => mark(setTitle)(e.currentTarget.value)}
                   disabled={!task().can_edit}
                   maxLength={300}
                 />
+                <Show when={isTranslated('task', task().id, 'title')}>
+                  <p class={styles.hint}>{tx('task', task().id, 'title', task().title)}</p>
+                </Show>
               </Field>
 
-              <Field label="Description">
+              <Field label={t('Description')}>
                 <Textarea
                   value={description()}
                   onInput={(e) => mark(setDescription)(e.currentTarget.value)}
@@ -231,19 +238,17 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
               />
 
               <div class={styles.grid}>
-                <Field label="Priority">
+                <Field label={t('Priority')}>
                   <Select
                     value={priority()}
                     onChange={(e) => mark(setPriority)(e.currentTarget.value as Priority)}
                     disabled={!task().can_edit}
                   >
-                    <For each={PRIORITIES}>
-                      {(value) => <option value={value}>{value[0]!.toUpperCase() + value.slice(1)}</option>}
-                    </For>
+                    <For each={PRIORITIES}>{(value) => <option value={value}>{t(PRIORITY_LABEL[value])}</option>}</For>
                   </Select>
                 </Field>
 
-                <Field label="Estimate (min)">
+                <Field label={t('Estimate (min)')}>
                   <Input
                     type="number"
                     min="1"
@@ -253,7 +258,7 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
                   />
                 </Field>
 
-                <Field label="Due">
+                <Field label={t('Due')}>
                   <Input
                     type={hasTime() ? 'datetime-local' : 'date'}
                     value={hasTime() ? dueAt() : dueAt().slice(0, 10)}
@@ -262,7 +267,7 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
                   />
                 </Field>
 
-                <Field label="Reminder">
+                <Field label={t('Reminder')}>
                   <Input
                     type="datetime-local"
                     value={reminderAt()}
@@ -273,13 +278,13 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
               </div>
 
               <Checkbox
-                label="Due at a specific time"
+                label={t('Due at a specific time')}
                 checked={hasTime()}
                 onChange={(e) => mark(setHasTime)(e.currentTarget.checked)}
                 disabled={!task().can_edit}
               />
 
-              <Field label="Project">
+              <Field label={t('Project')}>
                 <ProjectSelector
                   value={projectId()}
                   onChange={(value) => mark(setProjectId)(value)}
@@ -288,35 +293,35 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
               </Field>
 
               <Show when={projectId() !== null}>
-                <Field label="Visibility" hint="Private tasks in a Group Plus project stay invisible to members.">
+                <Field label={t('Visibility')} hint={t('Private tasks in a Group Plus project stay invisible to members.')}>
                   <Select
                     value={visibility()}
                     onChange={(e) => mark(setVisibility)(e.currentTarget.value as 'private' | 'group')}
                     disabled={!task().can_edit}
                   >
-                    <option value="group">Visible to project members</option>
-                    <option value="private">Private to me</option>
+                    <option value="group">{t('Visible to project members')}</option>
+                    <option value="private">{t('Private to me')}</option>
                   </Select>
                 </Field>
               </Show>
 
-              <Field label="Repeat">
+              <Field label={t('Repeat')}>
                 <Select
                   value={recurrence()}
                   onChange={(e) => mark(setRecurrence)(e.currentTarget.value)}
                   disabled={!task().can_edit || task().parent !== null}
                 >
-                  <For each={RECURRENCE_OPTIONS}>{(opt) => <option value={opt.value}>{opt.label}</option>}</For>
+                  <For each={RECURRENCE_OPTIONS}>{(opt) => <option value={opt.value}>{t(opt.label)}</option>}</For>
                 </Select>
               </Field>
 
               <Show when={recurrence()}>
                 <p class={styles.hint}>
-                  <Repeat size={12} /> The next occurrence is created when you complete this task.
+                  <Repeat size={12} /> {t('The next occurrence is created when you complete this task.')}
                 </p>
               </Show>
 
-              <Field label="Notes">
+              <Field label={t('Notes')}>
                 <Textarea
                   value={notes()}
                   onInput={(e) => mark(setNotes)(e.currentTarget.value)}
@@ -328,7 +333,7 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
               <Show when={task().parent === null}>
                 <section class={styles.section}>
                   <h3 class={styles.sectionTitle}>
-                    Subtasks
+                    {t('Subtasks')}
                     <Show when={subtasks().length > 0}>
                       <span class="mt-mono">
                         {subtasks().filter((s) => s.status === 'done').length}/{subtasks().length}
@@ -351,7 +356,7 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
                             }}
                           />
                           <span class={subtask.status === 'done' ? styles.subtaskDone : undefined}>
-                            {subtask.title}
+                            {tx('task', subtask.id, 'title', subtask.title)}
                           </span>
                         </label>
                       )}
@@ -359,7 +364,7 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
                   </div>
                   <TaskComposer
                     parentId={task().id}
-                    placeholder="Add a subtask…"
+                    placeholder={t('Add a subtask…')}
                     onCreated={async () => {
                       setSubtasks(await tasksApi.subtasks(task().id));
                       props.onChanged?.();
@@ -370,16 +375,16 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
 
               <Show when={task().project}>
                 <section class={styles.section}>
-                  <h3 class={styles.sectionTitle}>Comments</h3>
+                  <h3 class={styles.sectionTitle}>{t('Comments')}</h3>
                   <Comments task={task().id} canComment />
                 </section>
               </Show>
 
               <p class={styles.footnote}>
-                <Sparkles size={11} /> Created {new Date(task().created_at).toLocaleString()}
+                <Sparkles size={11} />{' '}
+                {t('Created {date}', { date: new Date(task().created_at).toLocaleString(intlLocale()) })}
                 <Show when={task().completed_by_name}>
-                  {' '}
-                  · Completed by {task().completed_by_name}
+                  {(name) => <> · {t('Completed by {name}', { name: name() })}</>}
                 </Show>
               </p>
             </div>
@@ -389,9 +394,9 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
 
       <ConfirmDialog
         open={confirmDelete()}
-        title="Delete task?"
-        message="The task and its subtasks will be removed."
-        confirmLabel="Delete"
+        title={t('Delete task?')}
+        message={t('The task and its subtasks will be removed.')}
+        confirmLabel={t('Delete')}
         destructive
         onConfirm={remove}
         onCancel={() => setConfirmDelete(false)}

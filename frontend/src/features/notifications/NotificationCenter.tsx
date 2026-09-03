@@ -5,6 +5,7 @@ import { For, Show, createEffect, createSignal } from 'solid-js';
 import { Button } from '~/components/ui/Button';
 import { Drawer } from '~/components/ui/Drawer';
 import { EmptyState, Skeleton } from '~/components/ui/Feedback';
+import { t } from '~/i18n';
 import {
   clearRead,
   loadMoreNotifications,
@@ -21,6 +22,7 @@ import { cx } from '~/utils/cx';
 
 type Filter = 'all' | 'unread';
 
+/** English labels (i18n keys) - wrapped with `t()` at render time. */
 const CATEGORY_LABEL: Record<string, string> = {
   reminder: 'Reminder',
   deadline: 'Deadline',
@@ -32,6 +34,11 @@ const CATEGORY_LABEL: Record<string, string> = {
   summary: 'Review',
   system: 'System',
 };
+
+function categoryLabel(category: string): string {
+  const label = CATEGORY_LABEL[category];
+  return label ? t(label) : category;
+}
 
 export function NotificationCenter(): JSX.Element {
   const navigate = useNavigate();
@@ -55,7 +62,7 @@ export function NotificationCenter(): JSX.Element {
   };
 
   return (
-    <Drawer open={uiStore.notificationsOpen()} onClose={uiStore.closeNotifications} title="Notifications" width="400px">
+    <Drawer open={uiStore.notificationsOpen()} onClose={uiStore.closeNotifications} title={t('Notifications')} width="400px">
       <div class={styles.toolbar}>
         <div class={styles.filters} role="tablist">
           <button
@@ -65,7 +72,7 @@ export function NotificationCenter(): JSX.Element {
             aria-selected={filter() === 'all'}
             onClick={() => setFilter('all')}
           >
-            All
+            {t('All')}
           </button>
           <button
             type="button"
@@ -74,17 +81,17 @@ export function NotificationCenter(): JSX.Element {
             aria-selected={filter() === 'unread'}
             onClick={() => setFilter('unread')}
           >
-            Unread
+            {t('Unread')}
             <Show when={notificationStore.unread() > 0}>
               <span class={styles.count}>{notificationStore.unread()}</span>
             </Show>
           </button>
         </div>
         <div class={styles.actions}>
-          <Button variant="ghost" size="sm" onClick={() => void markAllRead()} disabled={notificationStore.unread() === 0} title="Mark all read">
+          <Button variant="ghost" size="sm" onClick={() => void markAllRead()} disabled={notificationStore.unread() === 0} title={t('Mark all read')}>
             <CheckCheck size={14} />
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => void clearRead()} title="Clear read">
+          <Button variant="ghost" size="sm" onClick={() => void clearRead()} title={t('Clear read')}>
             <Trash2 size={14} />
           </Button>
         </div>
@@ -96,8 +103,8 @@ export function NotificationCenter(): JSX.Element {
           fallback={
             <EmptyState
               icon={<Bell size={20} />}
-              title={filter() === 'unread' ? 'All caught up' : 'No notifications yet'}
-              hint="Team activity, guest completions, reminders and reviews land here."
+              title={filter() === 'unread' ? t('All caught up') : t('No notifications yet')}
+              hint={t('Team activity, guest completions, reminders and reviews land here.')}
               compact
             />
           }
@@ -114,7 +121,7 @@ export function NotificationCenter(): JSX.Element {
                         <span class={styles.text}>{n.body}</span>
                       </Show>
                       <span class={styles.meta}>
-                        <span class={styles.category}>{CATEGORY_LABEL[n.category] ?? n.category}</span>
+                        <span class={styles.category}>{categoryLabel(n.category)}</span>
                         <span>{formatRelative(n.created_at)}</span>
                       </span>
                     </span>
@@ -126,7 +133,7 @@ export function NotificationCenter(): JSX.Element {
           <Show when={notificationStore.hasMore()}>
             <div class={styles.more}>
               <Button variant="ghost" size="sm" loading={notificationStore.loading()} onClick={() => void loadMoreNotifications()}>
-                Load more
+                {t('Load more')}
               </Button>
             </div>
           </Show>

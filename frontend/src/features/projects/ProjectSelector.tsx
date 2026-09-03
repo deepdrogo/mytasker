@@ -3,6 +3,8 @@ import { For, Show } from 'solid-js';
 import { Select } from '~/components/ui/Input';
 import { projectsApi } from '~/features/projects/api';
 import { createQuery } from '~/hooks/createQuery';
+import { t } from '~/i18n';
+import { tx } from '~/stores/translations';
 import type { ID, Project } from '~/types';
 
 interface ProjectSelectorProps {
@@ -33,11 +35,11 @@ export function ProjectSelector(props: ProjectSelectorProps): JSX.Element {
         props.onChange(raw ? Number(raw) : null);
       }}
     >
-      <option value="">No project</option>
+      <option value="">{t('No project')}</option>
       <Show when={missingCurrent()}>
-        <option value={String(props.value)}>Current project</option>
+        <option value={String(props.value)}>{t('Current project')}</option>
       </Show>
-      <For each={projects()}>{(p) => <option value={String(p.id)}>{p.name}</option>}</For>
+      <For each={projects()}>{(p) => <option value={String(p.id)}>{tx('project', p.id, 'name', p.name)}</option>}</For>
     </Select>
   );
 }

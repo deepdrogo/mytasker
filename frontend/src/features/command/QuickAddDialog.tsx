@@ -11,7 +11,9 @@ import { quickParse } from '~/features/command/quickParse';
 import { projectsApi } from '~/features/projects/api';
 import { tasksApi } from '~/features/tasks/api';
 import { createQuery } from '~/hooks/createQuery';
+import { t } from '~/i18n';
 import { authStore } from '~/stores/auth';
+import { tx } from '~/stores/translations';
 import { toast, uiStore } from '~/stores/ui';
 import type { TaskKind } from '~/types';
 import { formatDueDate } from '~/utils/format';
@@ -67,7 +69,7 @@ export function QuickAddDialog(): JSX.Element {
         project_id: project,
         tags: p.tags,
       });
-      toast(`Added “${p.title}”`);
+      toast(t('Added “{title}”', { title: p.title }));
       if (keepOpen) {
         setText('');
         input?.focus();
@@ -75,7 +77,7 @@ export function QuickAddDialog(): JSX.Element {
         uiStore.closeQuickAdd();
       }
     } catch (err) {
-      toast(err instanceof ApiError ? err.message : 'Could not create the task.');
+      toast(err instanceof ApiError ? err.message : t('Could not create the task.'));
     } finally {
       setBusy(false);
     }
@@ -87,7 +89,7 @@ export function QuickAddDialog(): JSX.Element {
         <input
           ref={input}
           class={styles.input}
-          placeholder="What needs to happen?"
+          placeholder={t('What needs to happen?')}
           value={text()}
           onInput={(e) => setText(e.currentTarget.value)}
           onKeyDown={(e) => {
@@ -96,23 +98,23 @@ export function QuickAddDialog(): JSX.Element {
               void submit(e.shiftKey);
             }
           }}
-          aria-label="Task"
+          aria-label={t('Task')}
           autocomplete="off"
         />
 
         <div class={styles.controls}>
-          <Select sizeVariant="sm" value={parsed().kind ?? kind()} onChange={(e) => setKind(e.currentTarget.value as TaskKind)} aria-label="Type">
-            <option value="personal">Personal</option>
-            <option value="business">Business</option>
+          <Select sizeVariant="sm" value={parsed().kind ?? kind()} onChange={(e) => setKind(e.currentTarget.value as TaskKind)} aria-label={t('Type')}>
+            <option value="personal">{t('Personal')}</option>
+            <option value="business">{t('Business')}</option>
           </Select>
           <Select
             sizeVariant="sm"
             value={projectFromHint()?.id ?? projectId() ?? ''}
             onChange={(e) => setProjectId(e.currentTarget.value ? Number(e.currentTarget.value) : null)}
-            aria-label="Project"
+            aria-label={t('Project')}
           >
-            <option value="">No project</option>
-            <For each={projects.data()?.results ?? []}>{(p) => <option value={p.id}>{p.name}</option>}</For>
+            <option value="">{t('No project')}</option>
+            <For each={projects.data()?.results ?? []}>{(p) => <option value={p.id}>{tx('project', p.id, 'name', p.name)}</option>}</For>
           </Select>
           <span class={styles.spacer} />
           <Show when={authStore.aiEnabled()}>
@@ -124,14 +126,14 @@ export function QuickAddDialog(): JSX.Element {
                 uiStore.closeQuickAdd();
                 uiStore.openAI(message);
               }}
-              title="Let the AI plan this"
+              title={t('Let the AI plan this')}
             >
               <Sparkles size={13} />
-              AI
+              {t('AI')}
             </Button>
           </Show>
           <Button size="sm" onClick={() => void submit(false)} loading={busy()} disabled={!parsed().title}>
-            Add
+            {t('Add')}
           </Button>
         </div>
 
@@ -145,11 +147,11 @@ export function QuickAddDialog(): JSX.Element {
             <Badge variant="outline">{formatDueDate(parsed().due_at, parsed().due_has_time)}</Badge>
           </Show>
           <Show when={projectFromHint()}>
-            <Badge variant="outline">#{projectFromHint()?.name}</Badge>
+            <Badge variant="outline">#{tx('project', projectFromHint()?.id, 'name', projectFromHint()?.name ?? '')}</Badge>
           </Show>
           <For each={parsed().tags}>{(tag) => <Badge variant="dashed">~{tag}</Badge>}</For>
           <span class={styles.hint}>
-            <kbd>tomorrow 15:00</kbd> <kbd>!!</kbd> <kbd>#project</kbd> <kbd>@business</kbd> <kbd>~tag</kbd> · Shift+Enter adds another
+            <kbd>tomorrow 15:00</kbd> <kbd>!!</kbd> <kbd>#project</kbd> <kbd>@business</kbd> <kbd>~tag</kbd> · {t('Shift+Enter adds another')}
           </span>
         </div>
       </div>

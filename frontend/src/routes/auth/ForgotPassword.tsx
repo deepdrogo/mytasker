@@ -5,6 +5,7 @@ import { api, ApiError } from '~/api/client';
 import { Button } from '~/components/ui/Button';
 import { ErrorNote } from '~/components/ui/Feedback';
 import { Field, Input, nextId } from '~/components/ui/Input';
+import { t } from '~/i18n';
 import styles from './auth.module.css';
 
 export default function ForgotPassword(): JSX.Element {
@@ -22,7 +23,7 @@ export default function ForgotPassword(): JSX.Element {
       await api.post('/auth/password/reset/', { email: email().trim() });
       setSent(true);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong.');
+      setError(err instanceof ApiError ? err.message : t('Something went wrong.'));
     } finally {
       setBusy(false);
     }
@@ -33,21 +34,23 @@ export default function ForgotPassword(): JSX.Element {
       when={!sent()}
       fallback={
         <div class={styles.form}>
-          <h1 class={styles.heading}>Check your inbox</h1>
-          <p class={styles.success}>If an account exists for {email()}, a reset link is on its way.</p>
+          <h1 class={styles.heading}>{t('Check your inbox')}</h1>
+          <p class={styles.success}>
+            {t('If an account exists for {email}, a reset link is on its way.', { email: email() })}
+          </p>
           <A href="/auth/login" class={styles.link} style={{ 'text-align': 'center' }}>
-            Back to sign in
+            {t('Back to sign in')}
           </A>
         </div>
       }
     >
       <form class={styles.form} onSubmit={submit} novalidate>
-        <h1 class={styles.heading}>Reset password</h1>
-        <p class={styles.note}>Enter your email and we'll send a reset link.</p>
+        <h1 class={styles.heading}>{t('Reset password')}</h1>
+        <p class={styles.note}>{t("Enter your email and we'll send a reset link.")}</p>
 
         {error() && <ErrorNote message={error()} />}
 
-        <Field label="Email" id={emailId}>
+        <Field label={t('Email')} id={emailId}>
           <Input
             id={emailId}
             type="email"
@@ -60,12 +63,12 @@ export default function ForgotPassword(): JSX.Element {
         </Field>
 
         <Button type="submit" variant="primary" size="lg" block loading={busy()}>
-          Send reset link
+          {t('Send reset link')}
         </Button>
 
         <div class={styles.links}>
           <A href="/auth/login" class={styles.link}>
-            Back to sign in
+            {t('Back to sign in')}
           </A>
         </div>
       </form>

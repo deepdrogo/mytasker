@@ -24,6 +24,7 @@ from common.permissions import Capability
 
 class ProjectFilter(filters.FilterSet):
     kind = filters.CharFilter(field_name="kind")
+    category = filters.CharFilter(field_name="category")
     mode = filters.CharFilter(field_name="mode")
     status = filters.BaseInFilter(field_name="status")
     priority = filters.BaseInFilter(field_name="priority")

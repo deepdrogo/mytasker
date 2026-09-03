@@ -57,6 +57,7 @@ class TaskSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "kind",
+            "origin",
             "title",
             "description",
             "notes",
@@ -138,6 +139,7 @@ class TaskWithSubtasksSerializer(TaskSerializer):
 class TaskCreateSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=300)
     kind = serializers.ChoiceField(choices=Task.Kind.choices, required=False, default=Task.Kind.PERSONAL)
+    origin = serializers.ChoiceField(choices=Task.Origin.choices, required=False, allow_null=True)
     description = serializers.CharField(required=False, allow_blank=True, default="")
     notes = serializers.CharField(required=False, allow_blank=True, default="")
     priority = serializers.ChoiceField(choices=Priority.choices, required=False, default=Priority.NORMAL)
@@ -173,3 +175,9 @@ class TaskUpdateSerializer(serializers.Serializer):
     sort_order = serializers.IntegerField(required=False)
     recurrence = RecurrenceInputSerializer(required=False, allow_null=True)
     version = serializers.IntegerField(required=False, write_only=True)
+
+
+class BulkRescheduleSerializer(serializers.Serializer):
+    task_ids = serializers.ListField(child=serializers.IntegerField(), allow_empty=False, max_length=200)
+    due_at = serializers.DateTimeField(allow_null=True)
+    due_has_time = serializers.BooleanField(required=False, default=False)

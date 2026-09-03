@@ -2,6 +2,7 @@ import { A, useLocation } from '@solidjs/router';
 import { BookText, FolderKanban, Home, ListTodo, Sparkles, TrendingUp } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For } from 'solid-js';
+import { t } from '~/i18n';
 import { authStore } from '~/stores/auth';
 import styles from './MobileNav.module.css';
 
@@ -31,7 +32,7 @@ export function MobileNav(): JSX.Element {
   };
 
   return (
-    <nav class={styles.nav} aria-label="Primary">
+    <nav class={styles.nav} aria-label={t('Primary')}>
       <For each={items()}>
         {(item) => (
           <A
@@ -40,7 +41,7 @@ export function MobileNav(): JSX.Element {
             aria-current={isActive(item) ? 'page' : undefined}
           >
             <span class={styles.icon}>{item.icon()}</span>
-            <span class={styles.label}>{item.label}</span>
+            <span class={styles.label}>{t(item.label)}</span>
           </A>
         )}
       </For>

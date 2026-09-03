@@ -5,8 +5,11 @@ export type ISODate = string;
 export type Priority = 'critical' | 'high' | 'normal' | 'low';
 export type Visibility = 'private' | 'group';
 export type TaskKind = 'personal' | 'business';
+/** `list` tasks belong to the Personal/Business lists (optionally linked to a project); `project` tasks live only in their project. */
+export type TaskOrigin = 'list' | 'project';
 export type TaskStatus = 'todo' | 'in_progress' | 'done' | 'cancelled';
 export type ProjectKind = 'project' | 'active';
+export type ProjectCategory = 'general' | 'startup';
 export type ProjectMode = 'private' | 'group' | 'group_plus';
 export type ProjectStatus = 'planned' | 'active' | 'paused' | 'completed' | 'archived';
 export type Role = 'owner' | 'admin' | 'member' | 'viewer';
@@ -102,6 +105,7 @@ export interface ProjectRef {
 export interface Task {
   id: ID;
   kind: TaskKind;
+  origin: TaskOrigin;
   title: string;
   description: string;
   notes: string;
@@ -150,6 +154,7 @@ export interface Project {
   name: string;
   description: string;
   kind: ProjectKind;
+  category: ProjectCategory;
   mode: ProjectMode;
   status: ProjectStatus;
   priority: Priority;
@@ -158,7 +163,8 @@ export interface Project {
   notes: string;
   owner: UserRef;
   role: Role | null;
-  progress: number;
+  /** Percent of top-level tasks done; `null` until the project has at least one task. */
+  progress: number | null;
   task_total: number;
   task_done: number;
   open_tasks: number;

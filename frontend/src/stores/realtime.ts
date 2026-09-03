@@ -8,6 +8,7 @@ import { createSignal } from 'solid-js';
 import { invalidate } from '~/hooks/createQuery';
 import { loadTimerState } from '~/stores/timer';
 import { pushNotification } from '~/stores/notifications';
+import { markStale, receiveTranslation, type TranslationEntry } from '~/stores/translations';
 import type { AppNotification } from '~/types';
 
 export type ConnectionState = 'connecting' | 'open' | 'offline';
@@ -27,6 +28,7 @@ type ServerMessage =
   | { type: 'pong'; t?: number }
   | { type: 'resynced'; projects: number[] }
   | { type: 'notification.new'; notification: AppNotification; unread: number }
+  | ({ type: 'translation'; key: string } & TranslationEntry)
   | {
       type: 'event';
       id: number;
@@ -75,14 +77,27 @@ function handle(message: ServerMessage): void {
       pushNotification(message.notification, message.unread);
       invalidate('notifications');
       break;
+    case 'translation':
+      receiveTranslation(message);
+      break;
     case 'event':
       invalidate('activity', ...scopesFor(message.name));
       if (message.name.startsWith('timer.') || message.name.startsWith('sleep.')) void loadTimerState();
       if (message.name === 'project.member_joined' || message.name === 'project.member_removed') resyncRealtime();
+      forgetTranslationsFor(message);
       break;
     default:
       break;
   }
+}
+
+/** Text edits make cached translations stale; the next render asks the server again. */
+function forgetTranslationsFor(message: Extract<ServerMessage, { type: 'event' }>): void {
+  if (message.name.startsWith('comment.')) {
+    markStale('comment', Number(message.payload.comment_id));
+    return;
+  }
+  if (/\.(created|updated)$/.test(message.name)) markStale(message.target_type, message.target_id);
 }
 
 export function connectRealtime(): void {

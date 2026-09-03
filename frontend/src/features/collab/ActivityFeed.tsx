@@ -6,6 +6,7 @@ import { Button } from '~/components/ui/Button';
 import { EmptyState, ErrorNote, Skeleton } from '~/components/ui/Feedback';
 import { collabApi, describeActivity } from '~/features/collab/api';
 import { createQuery } from '~/hooks/createQuery';
+import { t } from '~/i18n';
 import type { ActivityItem, ID } from '~/types';
 import { formatRelative } from '~/utils/format';
 import styles from './ActivityFeed.module.css';
@@ -62,11 +63,11 @@ export function ActivityFeed(props: ActivityFeedProps): JSX.Element {
   const items = () => [...(query.data()?.results ?? []), ...extra()];
 
   return (
-    <Show when={!query.error()} fallback={<ErrorNote message="Could not load activity." onRetry={query.refetch} />}>
+    <Show when={!query.error()} fallback={<ErrorNote message={t('Could not load activity.')} onRetry={query.refetch} />}>
       <Show when={query.data()} fallback={<Skeleton rows={5} height={30} />}>
         <Show
           when={items().length > 0}
-          fallback={<EmptyState compact icon={<Activity size={18} />} title="No activity yet" />}
+          fallback={<EmptyState compact icon={<Activity size={18} />} title={t('No activity yet')} />}
         >
           <ol class={[styles.list, props.compact ? styles.compact : ''].join(' ')}>
             <For each={items()}>
@@ -75,9 +76,9 @@ export function ActivityFeed(props: ActivityFeedProps): JSX.Element {
                   <span class={styles.dot} aria-hidden="true" />
                   <div class={styles.body}>
                     <p class={styles.line}>
-                      <span class={styles.actor}>{item.actor_display || 'Someone'}</span>
+                      <span class={styles.actor}>{item.actor_display || t('Someone')}</span>
                       <Show when={ACTOR_GLYPH[item.actor_kind]}>
-                        <span class={styles.kind}>{ACTOR_GLYPH[item.actor_kind]}</span>
+                        <span class={styles.kind}>{t(ACTOR_GLYPH[item.actor_kind])}</span>
                       </Show>{' '}
                       {describeActivity(item)}
                     </p>
@@ -100,7 +101,7 @@ export function ActivityFeed(props: ActivityFeedProps): JSX.Element {
           <Show when={nextCursor() && !props.compact}>
             <div class={styles.more}>
               <Button variant="ghost" size="sm" onClick={() => void loadMore()} loading={loadingMore()}>
-                Load more
+                {t('Load more')}
               </Button>
             </div>
           </Show>

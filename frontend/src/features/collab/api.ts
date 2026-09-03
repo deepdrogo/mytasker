@@ -1,5 +1,6 @@
 import { api, type CursorPage, type QueryParams } from '~/api/client';
 import { invalidate } from '~/hooks/createQuery';
+import { t } from '~/i18n';
 import type { ActivityItem, Comment, ID } from '~/types';
 
 export const collabApi = {
@@ -22,69 +23,82 @@ export const collabApi = {
     api.get<CursorPage<ActivityItem>>('/activity/', { params }),
 };
 
-/** Human sentence for an activity event. Keeps payload shape knowledge in one place. */
+/**
+ * Human sentence for an activity event. Keeps payload shape knowledge in one place.
+ * Reactive (calls `t()`) - evaluate it inside JSX so it re-renders on locale change.
+ * Titles/names come from the event payload snapshot, so they are quoted verbatim and never translated.
+ */
 export function describeActivity(item: ActivityItem): string {
   const p = item.payload as Record<string, string | number | undefined>;
-  const title = (p.title as string) || (p.task_title as string) || '';
-  const q = (s: string) => (s ? `“${s}”` : '');
-  switch (item.name) {
-    case 'task.created':
-      return `created task ${q(title)}`;
-    case 'task.completed':
-      return `completed ${q(title)}`;
-    case 'task.reopened':
-      return `reopened ${q(title)}`;
-    case 'task.deleted':
-      return `deleted ${q(title)}`;
-    case 'task.updated':
-      return `updated ${q(title)}`;
-    case 'task.deadline_changed':
-      return `changed the deadline of ${q(title)}`;
-    case 'task.assigned':
-      return `assigned ${q(title)}${p.assignee ? ` to ${p.assignee}` : ''}`;
-    case 'subtask.created':
-      return `added subtask ${q(title)}`;
-    case 'subtask.completed':
-      return `completed subtask ${q(title)}`;
-    case 'subtask.reopened':
-      return `reopened subtask ${q(title)}`;
-    case 'comment.created':
-      return `commented on ${q(title || (p.project_name as string))}`;
-    case 'project.created':
-      return `created project ${q(p.name as string)}`;
-    case 'project.updated':
-      return `updated project ${q(p.name as string)}`;
-    case 'project.mode_changed':
-      return `switched the project to ${String(p.mode ?? '').replace('_', ' ')}`;
-    case 'project.member_invited':
-      return `invited ${p.email}`;
-    case 'project.member_joined':
-      return `joined the project`;
-    case 'project.member_removed':
-      return `removed ${p.member ?? 'a member'}`;
-    case 'project.member_role_changed':
-      return `changed ${p.member ?? 'a member'} to ${p.role}`;
-    case 'prompt.created':
-      return `added prompt ${q(title)}`;
-    case 'prompt.updated':
-      return `edited prompt ${q(title)}`;
-    case 'prompt.visibility_changed':
-      return `changed visibility of prompt ${q(title)}`;
-    case 'timer.started':
-      return `started a timer${title ? ` on ${q(title)}` : ''}`;
-    case 'timer.stopped':
-      return `stopped a timer${title ? ` on ${q(title)}` : ''}`;
-    case 'share.created':
-      return `shared ${p.task_count ?? ''} task(s)`;
-    case 'share.opened':
-      return `opened a shared link`;
-    case 'share.guest_identified':
-      return `identified as a guest`;
-    case 'share.task_completed':
-      return `completed ${q(title)} via share link`;
-    case 'share.task_reopened':
-      return `reopened ${q(title)} via share link`;
-    default:
-      return item.name.replace('.', ' ');
-  }
+  const rawTitle = (p.title as string) || (p.task_title as string) || '';
+  const q = (s: unknown) => (s ? `“${String(s)}”` : '');
+  const title = q(rawTitle);
+  const name = q(p.name);
+  const member = p.member ? String(p.member) : t('a member');
+
+  const line = (): string => {
+    switch (item.name) {
+      case 'task.created':
+        return t('created task {title}', { title });
+      case 'task.completed':
+        return t('completed {title}', { title });
+      case 'task.reopened':
+        return t('reopened {title}', { title });
+      case 'task.deleted':
+        return t('deleted {title}', { title });
+      case 'task.updated':
+        return t('updated {title}', { title });
+      case 'task.deadline_changed':
+        return t('changed the deadline of {title}', { title });
+      case 'task.assigned':
+        return p.assignee ? t('assigned {title} to {assignee}', { title, assignee: String(p.assignee) }) : t('assigned {title}', { title });
+      case 'subtask.created':
+        return t('added subtask {title}', { title });
+      case 'subtask.completed':
+        return t('completed subtask {title}', { title });
+      case 'subtask.reopened':
+        return t('reopened subtask {title}', { title });
+      case 'comment.created':
+        return t('commented on {title}', { title: q(rawTitle || p.project_name) });
+      case 'project.created':
+        return t('created project {name}', { name });
+      case 'project.updated':
+        return t('updated project {name}', { name });
+      case 'project.mode_changed':
+        return t('switched the project to {mode}', { mode: String(p.mode ?? '').replace('_', ' ') });
+      case 'project.member_invited':
+        return t('invited {email}', { email: String(p.email ?? '') });
+      case 'project.member_joined':
+        return t('joined the project');
+      case 'project.member_removed':
+        return t('removed {member}', { member });
+      case 'project.member_role_changed':
+        return t('changed {member} to {role}', { member, role: String(p.role ?? '') });
+      case 'prompt.created':
+        return t('added prompt {title}', { title });
+      case 'prompt.updated':
+        return t('edited prompt {title}', { title });
+      case 'prompt.visibility_changed':
+        return t('changed visibility of prompt {title}', { title });
+      case 'timer.started':
+        return title ? t('started a timer on {title}', { title }) : t('started a timer');
+      case 'timer.stopped':
+        return title ? t('stopped a timer on {title}', { title }) : t('stopped a timer');
+      case 'share.created':
+        return t('shared {count} task(s)', { count: p.task_count ?? '' });
+      case 'share.opened':
+        return t('opened a shared link');
+      case 'share.guest_identified':
+        return t('identified as a guest');
+      case 'share.task_completed':
+        return t('completed {title} via share link', { title });
+      case 'share.task_reopened':
+        return t('reopened {title} via share link', { title });
+      default:
+        return item.name.replace('.', ' ');
+    }
+  };
+
+  // A missing title leaves a dangling separator ("created task ") - tidy the whitespace.
+  return line().replace(/\s{2,}/g, ' ').trim();
 }

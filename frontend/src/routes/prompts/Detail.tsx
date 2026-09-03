@@ -12,7 +12,9 @@ import { aiApi } from '~/features/ai/api';
 import { projectsApi } from '~/features/projects/api';
 import { copyToClipboard, promptsApi, type PromptInput } from '~/features/prompts/api';
 import { createQuery } from '~/hooks/createQuery';
+import { t } from '~/i18n';
 import { authStore } from '~/stores/auth';
+import { tx } from '~/stores/translations';
 import { toast } from '~/stores/ui';
 import type { PromptVersion, Visibility } from '~/types';
 import { formatRelative } from '~/utils/format';
@@ -79,11 +81,11 @@ export default function PromptDetail(): JSX.Element {
   const save = async () => {
     if (saving()) return;
     if (!title().trim()) {
-      setError('Title is required.');
+      setError(t('Title is required.'));
       return;
     }
     if (!body().trim()) {
-      setError('Prompt body is required.');
+      setError(t('Prompt body is required.'));
       return;
     }
     setSaving(true);
@@ -103,19 +105,19 @@ export default function PromptDetail(): JSX.Element {
     try {
       if (isNew()) {
         const created = await promptsApi.create(payload);
-        toast('Prompt saved');
+        toast(t('Prompt saved'));
         navigate(`/prompts/${created.id}`, { replace: true });
       } else {
         await promptsApi.update(id(), { ...payload, version: loaded()?.version });
         setDirty(false);
         prompt.refetch();
-        toast('Saved');
+        toast(t('Saved'));
       }
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(err.isConflict ? 'This prompt changed elsewhere. Reload to get the latest version.' : err.message);
+        setError(err.isConflict ? t('This prompt changed elsewhere. Reload to get the latest version.') : err.message);
       } else {
-        setError('Could not save.');
+        setError(t('Could not save.'));
       }
     } finally {
       setSaving(false);
@@ -124,16 +126,16 @@ export default function PromptDetail(): JSX.Element {
 
   const copy = async () => {
     const ok = await copyToClipboard(body());
-    toast(ok ? 'Prompt copied' : 'Copy failed');
+    toast(ok ? t('Prompt copied') : t('Copy failed'));
   };
 
   const remove = async () => {
     try {
       await promptsApi.remove(id());
-      toast('Prompt deleted');
+      toast(t('Prompt deleted'));
       navigate('/prompts');
     } catch {
-      toast('Could not delete.');
+      toast(t('Could not delete.'));
     } finally {
       setConfirmDelete(false);
     }
@@ -142,7 +144,7 @@ export default function PromptDetail(): JSX.Element {
   const improve = async () => {
     if (improving() || !body().trim()) return;
     if (isNew() || dirty()) {
-      toast('Save the prompt first, then improve it - so the original stays in version history.');
+      toast(t('Save the prompt first, then improve it - so the original stays in version history.'));
       return;
     }
     setImproving(true);
@@ -151,11 +153,11 @@ export default function PromptDetail(): JSX.Element {
       if (result.body) {
         setBody(result.body);
         setDirty(true);
-        const changes = result.changes?.length ? ` Changes: ${result.changes.slice(0, 2).join('; ')}` : '';
-        toast(`Improved version applied. Save to keep it.${changes}`, { ms: 6000 });
+        const changes = result.changes?.length ? ` ${t('Changes: {changes}', { changes: result.changes.slice(0, 2).join('; ') })}` : '';
+        toast(`${t('Improved version applied. Save to keep it.')}${changes}`, { ms: 6000 });
       }
     } catch (err) {
-      toast(err instanceof ApiError ? err.message : 'AI is unavailable right now.');
+      toast(err instanceof ApiError ? err.message : t('AI is unavailable right now.'));
     } finally {
       setImproving(false);
     }
@@ -177,46 +179,46 @@ export default function PromptDetail(): JSX.Element {
       await promptsApi.restore(id(), version.number);
       prompt.refetch();
       setHistoryOpen(false);
-      toast(`Restored version ${version.number}`);
+      toast(t('Restored version {number}', { number: version.number }));
     } catch {
-      toast('Could not restore.');
+      toast(t('Could not restore.'));
     }
   };
 
   return (
-    <Show when={!prompt.error()} fallback={<ErrorNote message="This prompt does not exist or you cannot access it." />}>
+    <Show when={!prompt.error()} fallback={<ErrorNote message={t('This prompt does not exist or you cannot access it.')} />}>
       <Show when={isNew() || loaded()} fallback={<Skeleton rows={8} height={40} />}>
         <div class={[styles.editor, fullscreen() ? styles.fullscreen : ''].join(' ')}>
           <header class={styles.bar}>
-            <A href="/prompts" class={styles.back} aria-label="Back to library">
+            <A href="/prompts" class={styles.back} aria-label={t('Back to library')}>
               <ArrowLeft size={15} />
             </A>
             <input
               class={styles.titleInput}
-              placeholder="Prompt title"
+              placeholder={t('Prompt title')}
               value={title()}
               onInput={(e) => mark(setTitle)(e.currentTarget.value)}
               readOnly={!canEdit()}
-              aria-label="Title"
+              aria-label={t('Title')}
             />
             <div class={styles.barActions}>
               <Show when={!isNew()}>
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  aria-label={loaded()?.is_favorite ? 'Unfavorite' : 'Favorite'}
+                  aria-label={loaded()?.is_favorite ? t('Unfavorite') : t('Favorite')}
                   onClick={() => void promptsApi.toggleFavorite(id()).then(() => prompt.refetch())}
                 >
                   <Star size={15} fill={loaded()?.is_favorite ? 'currentColor' : 'none'} />
                 </Button>
-                <Button variant="ghost" size="icon-sm" aria-label="Version history" onClick={() => setHistoryOpen(true)}>
+                <Button variant="ghost" size="icon-sm" aria-label={t('Version history')} onClick={() => setHistoryOpen(true)}>
                   <History size={15} />
                 </Button>
               </Show>
-              <Button variant="ghost" size="icon-sm" aria-label="Copy prompt" onClick={() => void copy()}>
+              <Button variant="ghost" size="icon-sm" aria-label={t('Copy prompt')} onClick={() => void copy()}>
                 <Copy size={15} />
               </Button>
-              <Button variant="ghost" size="icon-sm" aria-label={fullscreen() ? 'Exit fullscreen' : 'Fullscreen'} onClick={() => setFullscreen((v) => !v)}>
+              <Button variant="ghost" size="icon-sm" aria-label={fullscreen() ? t('Exit fullscreen') : t('Fullscreen')} onClick={() => setFullscreen((v) => !v)}>
                 <Show when={fullscreen()} fallback={<Maximize2 size={15} />}>
                   <Minimize2 size={15} />
                 </Show>
@@ -224,7 +226,7 @@ export default function PromptDetail(): JSX.Element {
               <Show when={canEdit()}>
                 <Button size="sm" onClick={save} loading={saving()} disabled={!isNew() && !dirty()}>
                   <Save size={13} />
-                  Save
+                  {t('Save')}
                 </Button>
               </Show>
             </div>
@@ -241,31 +243,31 @@ export default function PromptDetail(): JSX.Element {
               <textarea
                 ref={textarea}
                 class={styles.body}
-                placeholder="Write or paste the prompt. There is no length limit."
+                placeholder={t('Write or paste the prompt. There is no length limit.')}
                 value={body()}
                 onInput={(e) => mark(setBody)(e.currentTarget.value)}
                 readOnly={!canEdit()}
                 spellcheck={false}
-                aria-label="Prompt body"
+                aria-label={t('Prompt body')}
               />
               <div class={styles.bodyMeta}>
-                <span class="mt-mono">{body().length.toLocaleString()} chars</span>
-                <span class="mt-mono">{body().split(/\s+/).filter(Boolean).length.toLocaleString()} words</span>
+                <span class="mt-mono">{t('{count} chars', { count: body().length.toLocaleString() })}</span>
+                <span class="mt-mono">{t('{count} words', { count: body().split(/\s+/).filter(Boolean).length.toLocaleString() })}</span>
                 <Show when={loaded()}>
                   <span>v{loaded()?.version}</span>
-                  <span>edited {formatRelative(loaded()?.updated_at)}</span>
+                  <span>{t('edited {time}', { time: formatRelative(loaded()?.updated_at) })}</span>
                   <Show when={loaded()?.last_edited_by}>
-                    <span>by {loaded()?.last_edited_by?.display_name}</span>
+                    <span>{t('by {name}', { name: loaded()?.last_edited_by?.display_name ?? '' })}</span>
                   </Show>
                 </Show>
                 <Show when={dirty()}>
-                  <Badge variant="dashed">Unsaved</Badge>
+                  <Badge variant="dashed">{t('Unsaved')}</Badge>
                 </Show>
                 <Show when={authStore.aiEnabled() && canEdit()}>
                   <span class={styles.spacer} />
                   <Button variant="ghost" size="sm" onClick={() => void improve()} loading={improving()}>
                     <Sparkles size={13} />
-                    Improve with AI
+                    {t('Improve with AI')}
                   </Button>
                 </Show>
               </div>
@@ -273,49 +275,49 @@ export default function PromptDetail(): JSX.Element {
 
             <Show when={!fullscreen()}>
               <aside class={styles.side}>
-                <Field label="Description" hint="Shown in the list instead of the body.">
+                <Field label={t('Description')} hint={t('Shown in the list instead of the body.')}>
                   <Input value={description()} onInput={(e) => mark(setDescription)(e.currentTarget.value)} readOnly={!canEdit()} />
                 </Field>
-                <Field label="Category">
-                  <Input value={category()} onInput={(e) => mark(setCategory)(e.currentTarget.value)} readOnly={!canEdit()} placeholder="e.g. Sales" />
+                <Field label={t('Category')}>
+                  <Input value={category()} onInput={(e) => mark(setCategory)(e.currentTarget.value)} readOnly={!canEdit()} placeholder={t('e.g. Sales')} />
                 </Field>
-                <Field label="Tags" hint="Comma separated.">
-                  <Input value={tags()} onInput={(e) => mark(setTags)(e.currentTarget.value)} readOnly={!canEdit()} placeholder="email, outreach" />
+                <Field label={t('Tags')} hint={t('Comma separated.')}>
+                  <Input value={tags()} onInput={(e) => mark(setTags)(e.currentTarget.value)} readOnly={!canEdit()} placeholder={t('email, outreach')} />
                 </Field>
-                <Field label="Project" hint={selectedProject() && selectedProject()?.mode !== 'private' ? 'Linked to a shared project.' : undefined}>
+                <Field label={t('Project')} hint={selectedProject() && selectedProject()?.mode !== 'private' ? t('Linked to a shared project.') : undefined}>
                   <Select
                     value={projectId() ?? ''}
                     onChange={(e) => mark(setProjectId)(e.currentTarget.value ? Number(e.currentTarget.value) : null)}
                     disabled={!canEdit() || (!isNew() && !loaded()?.is_owner)}
                   >
-                    <option value="">No project</option>
-                    <For each={projects.data()?.results ?? []}>{(p) => <option value={p.id}>{p.name}</option>}</For>
+                    <option value="">{t('No project')}</option>
+                    <For each={projects.data()?.results ?? []}>{(p) => <option value={p.id}>{tx('project', p.id, 'name', p.name)}</option>}</For>
                   </Select>
                 </Field>
                 <Show when={selectedProject()?.mode === 'group_plus'}>
-                  <Field label="Visibility" hint={visibility() === 'private' ? 'Only you, even inside the project.' : 'All project members can read it.'}>
+                  <Field label={t('Visibility')} hint={visibility() === 'private' ? t('Only you, even inside the project.') : t('All project members can read it.')}>
                     <Select
                       value={visibility()}
                       onChange={(e) => mark(setVisibility)(e.currentTarget.value as Visibility)}
                       disabled={!canEdit() || (!isNew() && !loaded()?.is_owner)}
                     >
-                      <option value="group">Shared with project</option>
-                      <option value="private">Private</option>
+                      <option value="group">{t('Shared with project')}</option>
+                      <option value="private">{t('Private')}</option>
                     </Select>
                   </Field>
                 </Show>
                 <Show when={selectedProject()?.mode === 'group'}>
-                  <p class={styles.note}>Group projects share every prompt with all members.</p>
+                  <p class={styles.note}>{t('Group projects share every prompt with all members.')}</p>
                 </Show>
 
                 <Show when={!isNew() && loaded()?.is_owner}>
                   <div class={styles.sideActions}>
                     <Button variant="ghost" size="sm" onClick={() => void promptsApi.toggleArchive(id()).then(() => prompt.refetch())}>
-                      {loaded()?.is_archived ? 'Unarchive' : 'Archive'}
+                      {loaded()?.is_archived ? t('Unarchive') : t('Archive')}
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(true)}>
                       <Trash2 size={13} />
-                      Delete
+                      {t('Delete')}
                     </Button>
                   </div>
                 </Show>
@@ -330,9 +332,9 @@ export default function PromptDetail(): JSX.Element {
 
         <ConfirmDialog
           open={confirmDelete()}
-          title="Delete this prompt?"
-          message="Version history is deleted with it."
-          confirmLabel="Delete"
+          title={t('Delete this prompt?')}
+          message={t('Version history is deleted with it.')}
+          confirmLabel={t('Delete')}
           destructive
           onConfirm={remove}
           onCancel={() => setConfirmDelete(false)}
@@ -361,10 +363,10 @@ function VersionHistory(props: {
   };
 
   return (
-    <Drawer open={props.open} onClose={props.onClose} title="Version history" width="560px">
+    <Drawer open={props.open} onClose={props.onClose} title={t('Version history')} width="560px">
       <Show when={versions.data()} fallback={<Skeleton rows={4} height={44} />}>
         {(list) => (
-          <Show when={list().length > 0} fallback={<p class="mt-dim">No previous versions. Each save of the title or body creates one.</p>}>
+          <Show when={list().length > 0} fallback={<p class="mt-dim">{t('No previous versions. Each save of the title or body creates one.')}</p>}>
             <ul class={styles.versions}>
               <For each={list()}>
                 {(v) => (
@@ -380,7 +382,7 @@ function VersionHistory(props: {
                     </button>
                     <Show when={props.canEdit}>
                       <Button variant="ghost" size="sm" onClick={() => props.onRestore(v)}>
-                        Restore
+                        {t('Restore')}
                       </Button>
                     </Show>
                   </li>
@@ -394,10 +396,10 @@ function VersionHistory(props: {
         {(p) => (
           <div class={styles.preview}>
             <div class={styles.previewHead}>
-              <span>Version {p().number}</span>
-              <Button variant="ghost" size="sm" onClick={() => void copyToClipboard(p().body).then(() => toast('Copied'))}>
+              <span>{t('Version {number}', { number: p().number })}</span>
+              <Button variant="ghost" size="sm" onClick={() => void copyToClipboard(p().body).then(() => toast(t('Copied')))}>
                 <Copy size={13} />
-                Copy
+                {t('Copy')}
               </Button>
             </div>
             <pre class={styles.previewBody}>{p().body}</pre>

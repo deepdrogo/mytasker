@@ -6,6 +6,7 @@ import { authStore } from '~/stores/auth';
 import { loadNotifications, resetNotifications } from '~/stores/notifications';
 import { connectRealtime, disconnectRealtime } from '~/stores/realtime';
 import { loadTimerState } from '~/stores/timer';
+import { resetTranslations } from '~/stores/translations';
 import { registerGlobalShortcuts } from '~/hooks/useShortcuts';
 
 /**
@@ -24,6 +25,7 @@ export function ProtectedLayout(props: RouteSectionProps): JSX.Element {
       dispose();
       disconnectRealtime();
       resetNotifications();
+      resetTranslations();
     });
   });
 

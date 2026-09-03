@@ -4,6 +4,7 @@ import { ApiError } from '~/api/client';
 import { Button } from '~/components/ui/Button';
 import { Checkbox, Field, Input, Select } from '~/components/ui/Input';
 import { settingsApi } from '~/features/settings/api';
+import { t } from '~/i18n';
 import { authStore } from '~/stores/auth';
 import { toast } from '~/stores/ui';
 import type { UserPreferences } from '~/types';
@@ -36,9 +37,9 @@ export default function PreferencesSection(): JSX.Element {
     setBusy(true);
     try {
       await settingsApi.updatePreferences(form());
-      toast('Preferences saved');
+      toast(t('Preferences saved'));
     } catch (err) {
-      toast(err instanceof ApiError ? err.message : 'Could not save.');
+      toast(err instanceof ApiError ? err.message : t('Could not save.'));
     } finally {
       setBusy(false);
     }
@@ -47,8 +48,8 @@ export default function PreferencesSection(): JSX.Element {
   return (
     <section class={styles.section}>
       <header class={styles.sectionHead}>
-        <h2>Preferences</h2>
-        <p>Targets feed the Today meters and Insights. Summary times are in your timezone.</p>
+        <h2>{t('Preferences')}</h2>
+        <p>{t('Targets feed the Today meters and Insights. Summary times are in your timezone.')}</p>
       </header>
       <form
         class={styles.form}
@@ -58,7 +59,7 @@ export default function PreferencesSection(): JSX.Element {
         }}
       >
         <div class={styles.grid}>
-          <Field label="Business hours target / day">
+          <Field label={t('Business hours target / day')}>
             <Input
               type="number"
               min={0}
@@ -68,7 +69,7 @@ export default function PreferencesSection(): JSX.Element {
               onInput={(e) => set('business_hours_target_minutes', Math.round(Number(e.currentTarget.value) * 60))}
             />
           </Field>
-          <Field label="Sleep target / night (hours)">
+          <Field label={t('Sleep target / night (hours)')}>
             <Input
               type="number"
               min={0}
@@ -78,31 +79,31 @@ export default function PreferencesSection(): JSX.Element {
               onInput={(e) => set('sleep_target_minutes', Math.round(Number(e.currentTarget.value) * 60))}
             />
           </Field>
-          <Field label="Planned bedtime">
+          <Field label={t('Planned bedtime')}>
             <Input type="time" value={form().planned_bedtime ?? ''} onInput={(e) => set('planned_bedtime', e.currentTarget.value || null)} />
           </Field>
-          <Field label="Planned wake time">
+          <Field label={t('Planned wake time')}>
             <Input type="time" value={form().planned_wake_time ?? ''} onInput={(e) => set('planned_wake_time', e.currentTarget.value || null)} />
           </Field>
-          <Field label="Default task type">
+          <Field label={t('Default task type')}>
             <Select value={form().default_task_type} onChange={(e) => set('default_task_type', e.currentTarget.value as UserPreferences['default_task_type'])}>
-              <option value="personal">Personal</option>
-              <option value="business">Business</option>
+              <option value="personal">{t('Personal')}</option>
+              <option value="business">{t('Business')}</option>
             </Select>
           </Field>
-          <Field label="Default reminder (minutes before)">
+          <Field label={t('Default reminder (minutes before)')}>
             <Input type="number" min={0} max={1440} value={form().default_reminder_minutes} onInput={(e) => set('default_reminder_minutes', Number(e.currentTarget.value))} />
           </Field>
-          <Field label="First day of week">
+          <Field label={t('First day of week')}>
             <Select value={String(form().first_day_of_week)} onChange={(e) => set('first_day_of_week', Number(e.currentTarget.value))}>
-              <option value="0">Monday</option>
-              <option value="6">Sunday</option>
+              <option value="0">{t('Monday')}</option>
+              <option value="6">{t('Sunday')}</option>
             </Select>
           </Field>
-          <Field label="Time format">
+          <Field label={t('Time format')}>
             <Select value={form().time_format} onChange={(e) => set('time_format', e.currentTarget.value as '24h' | '12h')}>
-              <option value="24h">24-hour</option>
-              <option value="12h">12-hour</option>
+              <option value="24h">{t('24-hour')}</option>
+              <option value="12h">{t('12-hour')}</option>
             </Select>
           </Field>
         </div>
@@ -110,23 +111,23 @@ export default function PreferencesSection(): JSX.Element {
         <hr class={styles.divider} />
 
         <div class={styles.row}>
-          <Checkbox label="Morning summary" checked={form().morning_summary_enabled} onChange={(e) => set('morning_summary_enabled', e.currentTarget.checked)} />
+          <Checkbox label={t('Morning summary')} checked={form().morning_summary_enabled} onChange={(e) => set('morning_summary_enabled', e.currentTarget.checked)} />
           <Input type="time" sizeVariant="sm" value={hhmm(form().morning_summary_time)} onInput={(e) => set('morning_summary_time', e.currentTarget.value)} style={{ width: '110px' }} />
         </div>
         <div class={styles.row}>
-          <Checkbox label="Evening summary" checked={form().evening_summary_enabled} onChange={(e) => set('evening_summary_enabled', e.currentTarget.checked)} />
+          <Checkbox label={t('Evening summary')} checked={form().evening_summary_enabled} onChange={(e) => set('evening_summary_enabled', e.currentTarget.checked)} />
           <Input type="time" sizeVariant="sm" value={hhmm(form().evening_summary_time)} onInput={(e) => set('evening_summary_time', e.currentTarget.value)} style={{ width: '110px' }} />
         </div>
         <div class={styles.row}>
-          <Checkbox label="Weekly review (Sunday evening)" checked={form().weekly_review_enabled} onChange={(e) => set('weekly_review_enabled', e.currentTarget.checked)} />
+          <Checkbox label={t('Weekly review (Sunday evening)')} checked={form().weekly_review_enabled} onChange={(e) => set('weekly_review_enabled', e.currentTarget.checked)} />
         </div>
         <div class={styles.row}>
-          <Checkbox label="Monthly review (last day of month)" checked={form().monthly_review_enabled} onChange={(e) => set('monthly_review_enabled', e.currentTarget.checked)} />
+          <Checkbox label={t('Monthly review (last day of month)')} checked={form().monthly_review_enabled} onChange={(e) => set('monthly_review_enabled', e.currentTarget.checked)} />
         </div>
 
         <div class={styles.actions}>
           <Button variant="primary" type="submit" loading={busy()}>
-            Save
+            {t('Save')}
           </Button>
         </div>
       </form>

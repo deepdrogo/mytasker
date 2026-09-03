@@ -6,9 +6,9 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.routines.models import Routine, RoutineCompletion, RoutineItem, Rule
+from apps.translations.services import request_translation
 from common.exceptions import NotFound, ValidationFailed
 from common.tz import now_for, today_for
-from apps.translations.services import request_translation
 
 ITEM_FIELDS = {
     "name",

@@ -200,3 +200,9 @@
     border-top: 1px solid var(--c-border);
   }
 }
+
+.langRow {
+  display: flex;
+  justify-content: center;
+  padding: var(--s-3) var(--s-4);
+}

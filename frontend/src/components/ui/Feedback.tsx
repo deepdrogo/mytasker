@@ -1,6 +1,7 @@
 import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { Portal } from 'solid-js/web';
+import { t } from '~/i18n';
 import { dismissToast, uiStore } from '~/stores/ui';
 import { Button } from './Button';
 import { Modal } from './Modal';
@@ -64,7 +65,7 @@ export function ErrorNote(props: { message: string; onRetry?: () => void }): JSX
       <span>{props.message}</span>
       <Show when={props.onRetry}>
         <Button variant="link" size="sm" onClick={props.onRetry}>
-          Retry
+          {t('Retry')}
         </Button>
       </Show>
     </div>
@@ -124,7 +125,7 @@ export function ConfirmDialog(props: ConfirmDialogProps): JSX.Element {
       footer={
         <>
           <Button variant="ghost" onClick={props.onCancel}>
-            {props.cancelLabel ?? 'Cancel'}
+            {props.cancelLabel ?? t('Cancel')}
           </Button>
           <Button
             variant={props.destructive ? 'danger' : 'primary'}
@@ -132,7 +133,7 @@ export function ConfirmDialog(props: ConfirmDialogProps): JSX.Element {
             loading={props.busy}
             data-autofocus
           >
-            {props.confirmLabel ?? 'Confirm'}
+            {props.confirmLabel ?? t('Confirm')}
           </Button>
         </>
       }

@@ -1,9 +1,10 @@
 import { api, type Paginated, type QueryParams } from '~/api/client';
 import { invalidate } from '~/hooks/createQuery';
-import type { ID, Priority, RecurrenceRule, Task, TaskKind, Visibility } from '~/types';
+import type { ID, Priority, RecurrenceRule, Task, TaskKind, TaskOrigin, Visibility } from '~/types';
 
 export interface TaskListParams extends QueryParams {
   kind?: TaskKind;
+  origin?: TaskOrigin;
   view?: 'today' | 'tomorrow' | 'week' | 'upcoming' | 'overdue' | 'no_date' | 'completed';
   project?: ID;
   parent?: ID;
@@ -25,6 +26,8 @@ export interface TaskListParams extends QueryParams {
 export interface TaskInput {
   title?: string;
   kind?: TaskKind;
+  /** Create only. Defaults to `project` when a project is given, `list` otherwise. */
+  origin?: TaskOrigin;
   description?: string;
   notes?: string;
   priority?: Priority;
@@ -41,6 +44,11 @@ export interface TaskInput {
   sort_order?: number;
   recurrence?: Omit<RecurrenceRule, 'id'> | null;
   version?: number;
+}
+
+export interface BulkRescheduleResult {
+  updated: ID[];
+  skipped: ID[];
 }
 
 export interface TaskCounts {
@@ -95,6 +103,17 @@ export const tasksApi = {
     const task = await api.post<Task>(`/tasks/${id}/snooze/`, { minutes });
     invalidate(...TASK_SCOPES);
     return task;
+  },
+
+  /** Same deadline for many tasks; `dueAt: null` clears it. */
+  bulkReschedule: async (taskIds: ID[], dueAt: string | null, dueHasTime = false): Promise<BulkRescheduleResult> => {
+    const result = await api.post<BulkRescheduleResult>('/tasks/bulk-reschedule/', {
+      task_ids: taskIds,
+      due_at: dueAt,
+      due_has_time: dueHasTime,
+    });
+    invalidate(...TASK_SCOPES);
+    return result;
   },
 
   remove: async (id: ID): Promise<void> => {

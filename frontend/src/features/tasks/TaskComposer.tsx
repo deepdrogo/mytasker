@@ -4,9 +4,11 @@ import { createSignal, Show } from 'solid-js';
 import { ApiError } from '~/api/client';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
+import { ProjectSelector } from '~/features/projects/ProjectSelector';
 import { tasksApi, type TaskInput } from '~/features/tasks/api';
+import { t } from '~/i18n';
 import { toast } from '~/stores/ui';
-import type { Task } from '~/types';
+import type { ID, Task } from '~/types';
 import styles from './TaskComposer.module.css';
 
 interface TaskComposerProps {
@@ -15,6 +17,8 @@ interface TaskComposerProps {
   parentId?: number;
   onCreated?: (task: Task) => void;
   autofocus?: boolean;
+  /** Show an optional project dropdown; the chosen project sticks between entries. */
+  projectPicker?: boolean;
 }
 
 /**
@@ -24,7 +28,14 @@ export function TaskComposer(props: TaskComposerProps): JSX.Element {
   const [title, setTitle] = createSignal('');
   const [busy, setBusy] = createSignal(false);
   const [error, setError] = createSignal('');
+  const [projectId, setProjectId] = createSignal<ID | null>(null);
   let input: HTMLInputElement | undefined;
+
+  const payload = (value: string): TaskInput => {
+    const base: TaskInput = { ...props.defaults, title: value };
+    if (props.projectPicker && projectId() !== null) base.project_id = projectId();
+    return base;
+  };
 
   const submit = async (event?: Event) => {
     event?.preventDefault();
@@ -34,13 +45,13 @@ export function TaskComposer(props: TaskComposerProps): JSX.Element {
     setError('');
     try {
       const task = props.parentId
-        ? await tasksApi.addSubtask(props.parentId, { ...props.defaults, title: value })
-        : await tasksApi.create({ ...props.defaults, title: value });
+        ? await tasksApi.addSubtask(props.parentId, payload(value))
+        : await tasksApi.create(payload(value));
       setTitle('');
       props.onCreated?.(task);
       input?.focus();
     } catch (err) {
-      const message = err instanceof ApiError ? (err.fieldError('title') ?? err.message) : 'Could not create the task.';
+      const message = err instanceof ApiError ? (err.fieldError('title') ?? err.message) : t('Could not create the task.');
       setError(message);
       toast(message);
     } finally {
@@ -64,15 +75,20 @@ export function TaskComposer(props: TaskComposerProps): JSX.Element {
             (e.currentTarget as HTMLInputElement).blur();
           }
         }}
-        placeholder={props.placeholder ?? 'Add a task…'}
-        aria-label={props.placeholder ?? 'Add a task'}
+        placeholder={props.placeholder ?? t('Add a task…')}
+        aria-label={props.placeholder ?? t('Add a task')}
         autofocus={props.autofocus}
         invalid={!!error()}
         maxLength={300}
       />
+      <Show when={props.projectPicker}>
+        <div class={styles.project} title={t('Also file this task under a project')}>
+          <ProjectSelector value={projectId()} onChange={setProjectId} />
+        </div>
+      </Show>
       <Show when={title().trim()}>
         <Button type="submit" variant="primary" size="sm" loading={busy()}>
-          Add
+          {t('Add')}
         </Button>
       </Show>
     </form>

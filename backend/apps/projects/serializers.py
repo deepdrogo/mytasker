@@ -38,6 +38,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             "name",
             "description",
             "kind",
+            "category",
             "mode",
             "status",
             "priority",
@@ -76,9 +77,10 @@ class ProjectSerializer(serializers.ModelSerializer):
     def get_open_tasks(self, obj) -> int:
         return max(0, self.get_task_total(obj) - self.get_task_done(obj))
 
-    def get_progress(self, obj) -> int:
+    def get_progress(self, obj) -> int | None:
+        """Progress only exists once there is something to measure; no tasks → null, not 0%."""
         total = self.get_task_total(obj)
-        return round(self.get_task_done(obj) / total * 100) if total else 0
+        return round(self.get_task_done(obj) / total * 100) if total else None
 
     def get_capabilities(self, obj) -> dict[str, bool]:
         access = self._access(obj)
@@ -89,6 +91,9 @@ class ProjectCreateSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=200)
     description = serializers.CharField(required=False, allow_blank=True, default="")
     kind = serializers.ChoiceField(choices=Project.Kind.choices, required=False, default=Project.Kind.PROJECT)
+    category = serializers.ChoiceField(
+        choices=Project.Category.choices, required=False, default=Project.Category.GENERAL
+    )
     mode = serializers.ChoiceField(choices=Project.Mode.choices, required=False, default=Project.Mode.PRIVATE)
     status = serializers.ChoiceField(choices=Project.Status.choices, required=False, default=Project.Status.ACTIVE)
     priority = serializers.ChoiceField(choices=Priority.choices, required=False, default=Priority.NORMAL)
@@ -101,6 +106,7 @@ class ProjectUpdateSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=200, required=False)
     description = serializers.CharField(required=False, allow_blank=True)
     kind = serializers.ChoiceField(choices=Project.Kind.choices, required=False)
+    category = serializers.ChoiceField(choices=Project.Category.choices, required=False)
     status = serializers.ChoiceField(choices=Project.Status.choices, required=False)
     priority = serializers.ChoiceField(choices=Priority.choices, required=False)
     start_date = serializers.DateField(required=False, allow_null=True)

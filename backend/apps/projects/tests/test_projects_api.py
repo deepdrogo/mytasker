@@ -11,6 +11,9 @@ def test_create_project_and_progress(auth_client):
     res = auth_client.post(BASE, {"name": "Launch", "mode": "private"}, format="json")
     assert res.status_code == 201, res.content
     pid = res.data["id"]
+    # Nothing to measure yet: progress is absent rather than a misleading 0%.
+    assert res.data["progress"] is None
+    assert res.data["task_total"] == 0
     t1 = auth_client.post("/api/v1/tasks/", {"title": "A", "kind": "business", "project_id": pid}, format="json").data
     auth_client.post("/api/v1/tasks/", {"title": "B", "kind": "business", "project_id": pid}, format="json")
     auth_client.post(f"/api/v1/tasks/{t1['id']}/complete/")
@@ -24,6 +27,21 @@ def test_create_project_and_progress(auth_client):
     overview = auth_client.get(f"{BASE}{pid}/overview/")
     assert overview.status_code == 200
     assert overview.data["stats"]["total"] == 2
+
+
+def test_startup_category_is_stored_and_filterable(auth_client):
+    startup = auth_client.post(BASE, {"name": "Hyperblast", "category": "startup"}, format="json")
+    assert startup.status_code == 201, startup.content
+    assert startup.data["category"] == "startup"
+    plain = auth_client.post(BASE, {"name": "House"}, format="json")
+    assert plain.data["category"] == "general"
+
+    startups = auth_client.get(f"{BASE}?category=startup").data["results"]
+    assert [p["name"] for p in startups] == ["Hyperblast"]
+
+    moved = auth_client.patch(f"{BASE}{plain.data['id']}/", {"category": "startup"}, format="json")
+    assert moved.status_code == 200
+    assert moved.data["category"] == "startup"
 
 
 def test_invite_join_and_group_visibility(client_for, user, other_user, stranger):

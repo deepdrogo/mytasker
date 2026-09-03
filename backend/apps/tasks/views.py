@@ -9,6 +9,7 @@ from apps.tasks import selectors, services
 from apps.tasks.filters import TaskFilter
 from apps.tasks.models import Task
 from apps.tasks.serializers import (
+    BulkRescheduleSerializer,
     TaskCreateSerializer,
     TaskSerializer,
     TaskUpdateSerializer,
@@ -111,6 +112,17 @@ class TaskViewSet(viewsets.ModelViewSet):
         items = self.get_queryset().filter(parent_id=int(pk)).order_by("sort_order", "id")
         return Response(TaskSerializer(items, many=True, context=self.get_serializer_context()).data)
 
+    @action(detail=False, methods=["post"], url_path="bulk-reschedule")
+    def bulk_reschedule(self, request):
+        """Same deadline for many tasks at once (``due_at: null`` clears it)."""
+        serializer = BulkRescheduleSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        result = services.bulk_reschedule(
+            self._actor(), data["task_ids"], due_at=data["due_at"], due_has_time=data["due_has_time"]
+        )
+        return Response(result)
+
     @action(detail=False, methods=["get"])
     def counts(self, request):
         """Sidebar/tab counters in a single query per bucket."""
@@ -124,7 +136,10 @@ class TaskViewSet(viewsets.ModelViewSet):
         base = selectors.base_queryset(request.user).top_level()
         data = base.aggregate(
             personal=Count("id", filter=Q(kind=Task.Kind.PERSONAL) & ~Q(status__in=["done", "cancelled"])),
-            business=Count("id", filter=Q(kind=Task.Kind.BUSINESS) & ~Q(status__in=["done", "cancelled"])),
+            business=Count(
+                "id",
+                filter=Q(kind=Task.Kind.BUSINESS, origin=Task.Origin.LIST) & ~Q(status__in=["done", "cancelled"]),
+            ),
             today=Count("id", filter=Q(due_at__lt=end_of_today) & ~Q(status__in=["done", "cancelled"])),
             overdue=Count("id", filter=Q(due_at__lt=now) & ~Q(status__in=["done", "cancelled"])),
             upcoming=Count("id", filter=Q(due_at__gte=end_of_today) & ~Q(status__in=["done", "cancelled"])),

@@ -22,7 +22,7 @@ def translate_object(self, target_type: str, target_id: int) -> str:
         row = run_translation(target_type, target_id)
     except RetryLater as exc:
         # 20s, 40s, 80s - enough to ride out a rate-limit burst without hammering the provider.
-        raise self.retry(exc=exc, countdown=20 * (2**self.request.retries))
+        raise self.retry(exc=exc, countdown=20 * (2**self.request.retries)) from exc
     return row.status if row is not None else "skipped"
 
 

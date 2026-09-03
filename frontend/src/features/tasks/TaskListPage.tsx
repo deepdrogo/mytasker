@@ -1,15 +1,17 @@
-import { Share2, X } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { createSignal, Show } from 'solid-js';
 import { Page } from '~/components/shared/Page';
 import { Button } from '~/components/ui/Button';
 import { Select } from '~/components/ui/Input';
+import { PolishButton } from '~/features/ai/PolishButton';
 import { ShareDialog } from '~/features/sharing/ShareDialog';
 import { tasksApi, taskListKey, type TaskInput, type TaskListParams } from '~/features/tasks/api';
 import { TaskComposer } from '~/features/tasks/TaskComposer';
 import { TaskEditor } from '~/features/tasks/TaskEditor';
 import { TaskList } from '~/features/tasks/TaskList';
+import { TaskSelectionBar } from '~/features/tasks/TaskSelectionBar';
 import { createQuery } from '~/hooks/createQuery';
+import { t } from '~/i18n';
 import type { Task } from '~/types';
 import styles from './TaskListPage.module.css';
 
@@ -21,6 +23,8 @@ interface TaskListPageProps {
   composerDefaults?: TaskInput;
   composerPlaceholder?: string;
   hideComposer?: boolean;
+  /** Let the composer attach the new task to a project (Business list). */
+  composerProjectPicker?: boolean;
   showProject?: boolean;
   emptyTitle?: string;
   emptyHint?: string;
@@ -67,6 +71,9 @@ export function TaskListPage(props: TaskListPageProps): JSX.Element {
   };
 
   const selectedTasks = () => (query.data()?.results ?? []).filter((t) => selected().has(t.id));
+  // Whole-page polish covers what is on screen (one page = up to 50 tasks, the server-side cap).
+  const pageTaskIds = () =>
+    (query.data()?.results ?? []).filter((task) => task.can_edit && task.status !== 'done').map((task) => task.id);
 
   return (
     <>
@@ -75,19 +82,22 @@ export function TaskListPage(props: TaskListPageProps): JSX.Element {
         subtitle={props.subtitle}
         tabs={props.tabs}
         actions={
-          <Select
-            sizeVariant="sm"
-            value={ordering()}
-            onChange={(e) => {
-              setOrdering(e.currentTarget.value);
-              setPage(1);
-            }}
-            aria-label="Sort tasks"
-          >
-            {SORTS.map((sort) => (
-              <option value={sort.value}>{sort.label}</option>
-            ))}
-          </Select>
+          <div class={styles.headActions}>
+            <PolishButton taskIds={pageTaskIds} label={t('Polish all with AI')} onChanged={() => query.refetch()} />
+            <Select
+              sizeVariant="sm"
+              value={ordering()}
+              onChange={(e) => {
+                setOrdering(e.currentTarget.value);
+                setPage(1);
+              }}
+              aria-label={t('Sort tasks')}
+            >
+              {SORTS.map((sort) => (
+                <option value={sort.value}>{t(sort.label)}</option>
+              ))}
+            </Select>
+          </div>
         }
       >
         <div class={styles.wrap}>
@@ -95,24 +105,17 @@ export function TaskListPage(props: TaskListPageProps): JSX.Element {
             <TaskComposer
               defaults={props.composerDefaults}
               placeholder={props.composerPlaceholder}
+              projectPicker={props.composerProjectPicker}
               onCreated={() => query.refetch()}
             />
           </Show>
 
-          <Show when={selected().size > 0}>
-            <div class={styles.selectionBar}>
-              <span class="mt-mono">{selected().size} selected</span>
-              <div class={styles.selectionActions}>
-                <Button variant="secondary" size="sm" onClick={() => setShareTasks(selectedTasks())}>
-                  <Share2 size={13} />
-                  Share
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => setSelected(new Set())} aria-label="Clear selection">
-                  <X size={13} />
-                </Button>
-              </div>
-            </div>
-          </Show>
+          <TaskSelectionBar
+            tasks={selectedTasks}
+            onChanged={() => query.refetch()}
+            onClear={() => setSelected(new Set<number>())}
+            onShare={setShareTasks}
+          />
 
           <TaskList
             tasks={query.data()?.results}
@@ -133,7 +136,7 @@ export function TaskListPage(props: TaskListPageProps): JSX.Element {
           <Show when={(query.data()?.count ?? 0) > 50}>
             <div class={styles.pager}>
               <Button variant="ghost" size="sm" disabled={page() === 1} onClick={() => setPage((p) => p - 1)}>
-                Previous
+                {t('Previous')}
               </Button>
               <span class="mt-mono mt-dim">
                 {page()} / {Math.ceil((query.data()?.count ?? 0) / 50)}
@@ -144,7 +147,7 @@ export function TaskListPage(props: TaskListPageProps): JSX.Element {
                 disabled={!query.data()?.next}
                 onClick={() => setPage((p) => p + 1)}
               >
-                Next
+                {t('Next')}
               </Button>
             </div>
           </Show>

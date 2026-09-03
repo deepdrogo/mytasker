@@ -1,5 +1,6 @@
 import { A } from '@solidjs/router';
 import type { JSX } from 'solid-js';
+import { t } from '~/i18n';
 
 export default function NotFound(): JSX.Element {
   return (
@@ -16,9 +17,9 @@ export default function NotFound(): JSX.Element {
       }}
     >
       <span style={{ 'font-family': 'var(--font-mono)', 'font-size': 'var(--fs-2xl)', color: 'var(--c-text)' }}>404</span>
-      <p>This page does not exist.</p>
+      <p>{t('This page does not exist.')}</p>
       <A href="/today" style={{ color: 'var(--c-text)' }}>
-        Back to Today
+        {t('Back to Today')}
       </A>
     </div>
   );

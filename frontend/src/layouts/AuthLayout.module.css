@@ -70,6 +70,17 @@
   transform: translateX(-2px);
 }
 
+/* Language switch - pinned top-right, mirrors .back */
+.lang {
+  position: absolute;
+  top: var(--s-7);
+  right: var(--s-7);
+  display: flex;
+  align-items: center;
+  height: 38px;
+  color: var(--c-text-dim);
+}
+
 .grid {
   width: 100%;
   max-width: 980px;
@@ -224,6 +235,10 @@
   .back {
     top: var(--s-5);
     left: var(--s-5);
+  }
+  .lang {
+    top: var(--s-5);
+    right: var(--s-5);
   }
   .grid {
     grid-template-columns: 1fr;
