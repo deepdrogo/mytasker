@@ -83,3 +83,20 @@ class Rule(TimeStampedModel, SoftDeleteModel):
 
     def __str__(self) -> str:
         return self.text
+
+
+class RuleCompletion(models.Model):
+    """Daily self-check for a rule: did I keep it today? One row per rule per local day."""
+
+    rule = models.ForeignKey(Rule, on_delete=models.CASCADE, related_name="completions")
+    date = models.DateField()
+    kept = models.BooleanField(default=True)
+    marked_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "routines_rule_completion"
+        constraints = [models.UniqueConstraint(fields=["rule", "date"], name="uniq_rule_completion")]
+        indexes = [models.Index(fields=["rule", "-date"], name="rule_completion_lookup")]
+
+    def __str__(self) -> str:
+        return f"RuleCompletion({self.rule_id}, {self.date}, {self.kept})"

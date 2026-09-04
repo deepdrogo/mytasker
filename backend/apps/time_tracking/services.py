@@ -15,7 +15,7 @@ from common.actors import Actor
 from common.events import DomainEvent, EventName, emit
 from common.exceptions import Conflict, NotFound, ValidationFailed
 from common.models import Visibility
-from common.permissions import can_view_object
+from common.permissions import Capability, can_view_object, project_access
 from common.tz import day_bounds, today_for
 
 MAX_ENTRY_SECONDS = 24 * 3600
@@ -34,15 +34,17 @@ def _resolve_targets(user, *, task_id: int | None, project_id: int | None, routi
     if task_id is not None:
         task = Task.objects.select_related("project").filter(pk=task_id).first()
         if task is None or not can_view_object(
-            user, owner_id=task.owner_id, project=task.project, visibility=task.visibility
+            user,
+            owner_id=task.owner_id,
+            project=task.project,
+            visibility=task.visibility,
+            created_by_id=task.created_by_id,
         ):
             raise NotFound("Task not found.")
         project = task.project
     if project_id is not None and project is None:
         project = Project.objects.filter(pk=project_id).first()
-        if project is None or not can_view_object(
-            user, owner_id=project.owner_id, project=project, visibility=Visibility.GROUP
-        ):
+        if project is None or not project_access(user, project).can(Capability.TRACK_TIME):
             raise NotFound("Project not found.")
     if routine_item_id is not None:
         routine_item = RoutineItem.objects.filter(pk=routine_item_id, routine__owner=user).first()
@@ -57,7 +59,10 @@ def _category_for(task, project, routine_item, requested: str | None) -> str:
     if routine_item is not None:
         return TimeEntry.Category.BUSINESS if routine_item.counts_as_business else TimeEntry.Category.PERSONAL
     if task is not None:
-        return TimeEntry.Category.BUSINESS if task.kind == Task.Kind.BUSINESS else TimeEntry.Category.PERSONAL
+        # Any task that belongs to a project / startup is business work, whatever its kind says.
+        if task.project_id is not None or task.kind == Task.Kind.BUSINESS:
+            return TimeEntry.Category.BUSINESS
+        return TimeEntry.Category.PERSONAL
     if project is not None:
         return TimeEntry.Category.BUSINESS
     return TimeEntry.Category.BUSINESS

@@ -20,6 +20,8 @@ interface TaskListProps {
   onChanged?: () => void;
   showProject?: boolean;
   compact?: boolean;
+  /** Narrow-column mode: titles wrap to two lines, badges hidden (see TaskRow). */
+  dense?: boolean;
   selectable?: boolean;
   selectedIds?: Set<number>;
   onToggleSelect?: (task: Task) => void;
@@ -58,6 +60,7 @@ export function TaskList(props: TaskListProps): JSX.Element {
                     onChanged={props.onChanged}
                     showProject={props.showProject}
                     compact={props.compact}
+                    dense={props.dense}
                     selectable={props.selectable}
                     selected={props.selectedIds?.has(task.id)}
                     onToggleSelect={props.onToggleSelect}

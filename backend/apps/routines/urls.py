@@ -10,4 +10,5 @@ urlpatterns = [
     path("rules/", views.rules, name="rules"),
     path("rules/reorder/", views.rules_reorder, name="rules-reorder"),
     path("rules/<int:pk>/", views.rule_detail, name="rule-detail"),
+    path("rules/<int:pk>/kept/", views.rule_kept, name="rule-kept"),
 ]

@@ -12,9 +12,15 @@ from common.models import Priority, SoftDeleteManager, SoftDeleteModel, SoftDele
 
 class ProjectQuerySet(SoftDeleteQuerySet):
     def visible_to(self, user):
-        """Projects the user owns or is an accepted member of. Private projects: owner only."""
+        """
+        Projects the user owns or is an accepted member of. Private projects: owner only.
+        Assistant accounts see every project of their principal (names only matter to them;
+        task counts are scoped separately in `with_progress(user)`).
+        """
         if user is None or not getattr(user, "is_authenticated", False):
             return self.none()
+        if getattr(user, "assistant_for_id", None) is not None:
+            return self.filter(owner_id=user.assistant_for_id)
         return self.filter(
             Q(owner=user)
             | Q(
@@ -24,10 +30,13 @@ class ProjectQuerySet(SoftDeleteQuerySet):
             )
         ).distinct()
 
-    def with_progress(self):
+    def with_progress(self, user=None):
+        """Annotate task_total / task_done / task_open. For assistants only their own tasks count."""
         from apps.tasks.models import Task
 
         base = Task.objects.filter(project=models.OuterRef("pk"), parent__isnull=True, deleted_at__isnull=True)
+        if user is not None and getattr(user, "assistant_for_id", None) is not None:
+            base = base.filter(created_by=user)
         return self.annotate(
             task_total=models.Subquery(
                 base.values("project").annotate(c=models.Count("*")).values("c")[:1],
@@ -35,6 +44,13 @@ class ProjectQuerySet(SoftDeleteQuerySet):
             ),
             task_done=models.Subquery(
                 base.filter(status=Task.Status.DONE).values("project").annotate(c=models.Count("*")).values("c")[:1],
+                output_field=models.IntegerField(),
+            ),
+            task_open=models.Subquery(
+                base.exclude(status__in=[Task.Status.DONE, Task.Status.CANCELLED])
+                .values("project")
+                .annotate(c=models.Count("*"))
+                .values("c")[:1],
                 output_field=models.IntegerField(),
             ),
         )

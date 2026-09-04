@@ -109,7 +109,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["get", "post"])
     def members(self, request, pk=None):
-        project = services.get_project_for_user(int(pk), request.user)
+        project = services.get_project_for_user(int(pk), request.user, capability=Capability.VIEW_ACTIVITY)
         if request.method == "POST":
             serializer = InviteSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
@@ -152,7 +152,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         from apps.tasks.models import Task
         from apps.time_tracking.models import TimeEntry
 
-        project = services.get_project_for_user(int(pk), request.user, capability=Capability.VIEW)
+        project = services.get_project_for_user(int(pk), request.user, capability=Capability.VIEW_ACTIVITY)
         tasks = task_selectors.base_queryset(request.user).filter(project=project, parent__isnull=True)
         now = timezone.now()
         stats = tasks.aggregate(

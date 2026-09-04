@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, MoreHorizontal, Plus, ScrollText } from 'lucide-solid';
+import { Check, ChevronDown, ChevronUp, Flame, MoreHorizontal, Plus, ScrollText, X } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { createSignal, For, Show } from 'solid-js';
 import { ApiError } from '~/api/client';
@@ -15,6 +15,7 @@ import { t } from '~/i18n';
 import { tx } from '~/stores/translations';
 import { toast } from '~/stores/ui';
 import type { Rule } from '~/types';
+import { cx } from '~/utils/cx';
 import styles from './Rules.module.css';
 
 export default function Rules(): JSX.Element {
@@ -58,6 +59,23 @@ export default function Rules(): JSX.Element {
     query.refetch();
   };
 
+  // Daily self-check. Clicking the active state again clears today's mark.
+  const [marking, setMarking] = createSignal<number | null>(null);
+  const mark = async (rule: Rule, value: boolean) => {
+    setMarking(rule.id);
+    try {
+      await rulesApi.markKept(rule.id, rule.today_kept === value ? null : value);
+      query.refetch();
+    } catch {
+      toast(t('Could not update the rule.'));
+    } finally {
+      setMarking(null);
+    }
+  };
+  const enabled = () => (query.data() ?? []).filter((r) => r.is_enabled);
+  const keptCount = () => enabled().filter((r) => r.today_kept === true).length;
+  const uncheckedCount = () => enabled().filter((r) => r.today_kept === null).length;
+
   return (
     <>
       <Page title={t('Rules')} subtitle={t('Principles you have decided to live by. Not tasks.')} tabs={routineTabs()}>
@@ -73,6 +91,27 @@ export default function Rules(): JSX.Element {
             />
           </form>
 
+          <Show when={enabled().length > 0}>
+            <div class={styles.todayCard}>
+              <div class={styles.todayHead}>
+                <span class={styles.todayLabel}>{t('Today')}</span>
+                <span class={styles.todayCount}>
+                  {keptCount()}/{enabled().length} {t('kept')}
+                </span>
+              </div>
+              <div class={styles.segments} aria-hidden="true">
+                <For each={enabled()}>
+                  {(rule) => <span class={cx(styles.seg, rule.today_kept === true && styles.segKept, rule.today_kept === false && styles.segBroken)} />}
+                </For>
+              </div>
+              <p class={styles.todayHint}>
+                <Show when={uncheckedCount() > 0} fallback={t('All rules checked for today.')}>
+                  {t('{count} still to check today', { count: uncheckedCount() })}
+                </Show>
+              </p>
+            </div>
+          </Show>
+
           <Show when={!query.error()} fallback={<ErrorNote message={t('Could not load rules.')} onRetry={query.refetch} />}>
             <Show when={query.data()} fallback={<Skeleton rows={4} height={48} />}>
               {(rules) => (
@@ -83,14 +122,47 @@ export default function Rules(): JSX.Element {
                   <ol class={styles.list}>
                     <For each={rules()}>
                       {(rule, index) => (
-                        <li class={[styles.row, rule.is_enabled ? '' : styles.disabled].join(' ')}>
+                        <li class={cx(styles.row, !rule.is_enabled && styles.disabled, rule.today_kept === true && styles.kept, rule.today_kept === false && styles.broken)}>
                           <span class={styles.index}>{index() + 1}</span>
                           <button type="button" class={styles.main} onClick={() => setEditing(rule)}>
-                            <span class={styles.text}>{tx('rule', rule.id, 'text', rule.text)}</span>
+                            <span class={styles.textLine}>
+                              <span class={styles.text}>{tx('rule', rule.id, 'text', rule.text)}</span>
+                              <Show when={rule.streak > 1}>
+                                <span class={styles.streak} title={t('{count} days in a row', { count: rule.streak })}>
+                                  <Flame size={11} /> {rule.streak}
+                                </span>
+                              </Show>
+                            </span>
                             <Show when={rule.description}>
                               <span class={styles.description}>{tx('rule', rule.id, 'description', rule.description)}</span>
                             </Show>
                           </button>
+                          <Show when={rule.is_enabled}>
+                            <div class={styles.check} role="group" aria-label={t('Today')}>
+                              <button
+                                type="button"
+                                class={cx(styles.checkBtn, rule.today_kept === true && styles.checkKept)}
+                                disabled={marking() === rule.id}
+                                onClick={() => void mark(rule, true)}
+                                aria-pressed={rule.today_kept === true}
+                                title={t('Kept today')}
+                                aria-label={t('Kept today')}
+                              >
+                                <Check size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                class={cx(styles.checkBtn, rule.today_kept === false && styles.checkBroken)}
+                                disabled={marking() === rule.id}
+                                onClick={() => void mark(rule, false)}
+                                aria-pressed={rule.today_kept === false}
+                                title={t('Broken today')}
+                                aria-label={t('Broken today')}
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          </Show>
                           <Dropdown
                             label={t('Rule actions')}
                             items={[

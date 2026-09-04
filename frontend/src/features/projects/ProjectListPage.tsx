@@ -17,6 +17,7 @@ const PROJECT_TABS = [
   { label: 'Active', href: '/projects/active' },
   { label: 'Startups', href: '/projects/startups' },
   { label: 'All', href: '/projects/all' },
+  { label: 'Canvas', href: '/projects/canvas' },
   { label: 'Ideas', href: '/projects/ideas' },
 ];
 

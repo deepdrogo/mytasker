@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from django.db.models import Count, IntegerField, OuterRef, Q, Subquery, Sum, Value
+from django.db.models import Count, Exists, IntegerField, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
-from apps.tasks.models import Task
+from apps.tasks.models import Task, TaskCheckin
 from common.models import PRIORITY_RANK
+from common.tz import today_for
 
 
 def base_queryset(user):
@@ -31,7 +32,16 @@ def base_queryset(user):
     )
     return (
         Task.objects.visible_to(user)
-        .select_related("project", "owner", "assignee", "completed_by", "completed_by_guest", "recurrence", "parent")
+        .select_related(
+            "project",
+            "owner",
+            "assignee",
+            "created_by",
+            "completed_by",
+            "completed_by_guest",
+            "recurrence",
+            "parent",
+        )
         .annotate(
             subtask_total=Coalesce(
                 Subquery(
@@ -48,6 +58,7 @@ def base_queryset(user):
             ),
             tracked_seconds=Coalesce(Subquery(tracked, output_field=IntegerField()), Value(0)),
             comment_count=Coalesce(Subquery(comments, output_field=IntegerField()), Value(0)),
+            today_checked=Exists(TaskCheckin.objects.filter(task=OuterRef("pk"), date=today_for(user))),
         )
     )
 

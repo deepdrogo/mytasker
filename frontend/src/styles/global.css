@@ -218,3 +218,31 @@ kbd {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
+
+/* ---- Mobile / iOS -------------------------------------------------------
+   Safari zooms the page when a focused control renders below 16px, which makes the whole
+   screen "shrink and grow" while typing. Force 16px on touch screens; layout scales fine.
+   `!important` is deliberate: component modules set their own sizes with higher specificity. */
+@media (max-width: 899px) and (pointer: coarse) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  select,
+  textarea,
+  [contenteditable='true'] {
+    font-size: 16px !important;
+  }
+}
+
+@media (max-width: 899px) {
+  html,
+  body {
+    overflow-x: hidden;
+    overscroll-behavior-y: none;
+  }
+}
+
+/* Set by MobileNav while the on-screen keyboard is open (visualViewport shrank). */
+html[data-keyboard='open'] .mt-hide-on-keyboard {
+  transform: translateY(140%);
+  opacity: 0;
+  pointer-events: none;
+}

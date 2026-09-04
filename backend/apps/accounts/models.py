@@ -42,6 +42,12 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     is_staff = models.BooleanField(default=False)
     email_verified_at = models.DateTimeField(null=True, blank=True)
     last_seen_at = models.DateTimeField(null=True, blank=True)
+    # Assistant accounts: a restricted login that works on behalf of a principal user. An assistant
+    # may add tasks to the principal's personal/business lists and projects but only ever sees the
+    # tasks it created itself (see `visible_to` scoping in each app + common.permissions).
+    assistant_for = models.ForeignKey(
+        "self", on_delete=models.CASCADE, null=True, blank=True, related_name="assistants"
+    )
 
     objects = UserManager()
 
@@ -62,6 +68,15 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     @property
     def is_email_verified(self) -> bool:
         return self.email_verified_at is not None
+
+    @property
+    def is_assistant(self) -> bool:
+        return self.assistant_for_id is not None
+
+    @property
+    def principal_id(self) -> int:
+        """The user whose data this account operates on: the principal for assistants, self otherwise."""
+        return self.assistant_for_id or self.pk
 
 
 class UserPreference(TimeStampedModel):

@@ -4,7 +4,8 @@ import { For, Show, createSignal } from 'solid-js';
 import { ApiError } from '~/api/client';
 import { Button } from '~/components/ui/Button';
 import { EmptyState } from '~/components/ui/Feedback';
-import { Field, Input, Select, Textarea } from '~/components/ui/Input';
+import { DateTimeInput } from '~/components/ui/DateTimeInput';
+import { Field, Select, Textarea } from '~/components/ui/Input';
 import { Modal } from '~/components/ui/Modal';
 import { Breakdown, Stat } from '~/features/insights/Charts';
 import { Block, InsightsPage, StatGrid, TwoCol, shortDate } from '~/features/insights/InsightsPage';
@@ -237,10 +238,10 @@ function ManualEntryDialog(props: { open: boolean; onClose: () => void }): JSX.E
       >
         <div class={styles.formGrid}>
           <Field label={t('Start')}>
-            <Input type="datetime-local" value={start()} onInput={(ev) => setStart(ev.currentTarget.value)} required />
+            <DateTimeInput value={start()} step={5} onChange={setStart} />
           </Field>
           <Field label={t('End')}>
-            <Input type="datetime-local" value={end()} onInput={(ev) => setEnd(ev.currentTarget.value)} required />
+            <DateTimeInput value={end()} step={5} onChange={setEnd} />
           </Field>
         </div>
         <div class={styles.formGrid}>

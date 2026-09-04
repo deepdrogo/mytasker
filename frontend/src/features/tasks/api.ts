@@ -40,6 +40,7 @@ export interface TaskInput {
   due_has_time?: boolean;
   reminder_at?: string | null;
   estimated_minutes?: number | null;
+  is_ongoing?: boolean;
   tags?: string[];
   sort_order?: number;
   recurrence?: Omit<RecurrenceRule, 'id'> | null;
@@ -93,6 +94,13 @@ export const tasksApi = {
     return task;
   },
 
+  /** Daily tick for a long-term task. `checked: false` removes today's tick. */
+  checkin: async (id: ID, checked = true): Promise<Task> => {
+    const task = await api.post<Task>(`/tasks/${id}/checkin/`, { checked });
+    invalidate(...TASK_SCOPES);
+    return task;
+  },
+
   duplicate: async (id: ID): Promise<Task> => {
     const task = await api.post<Task>(`/tasks/${id}/duplicate/`);
     invalidate(...TASK_SCOPES);
@@ -119,6 +127,18 @@ export const tasksApi = {
   remove: async (id: ID): Promise<void> => {
     await api.delete(`/tasks/${id}/`);
     invalidate(...TASK_SCOPES);
+  },
+
+  bulkComplete: async (taskIds: ID[]): Promise<BulkRescheduleResult> => {
+    const result = await api.post<BulkRescheduleResult>('/tasks/bulk-complete/', { task_ids: taskIds });
+    invalidate(...TASK_SCOPES);
+    return result;
+  },
+
+  bulkDelete: async (taskIds: ID[]): Promise<{ deleted: ID[]; skipped: ID[] }> => {
+    const result = await api.post<{ deleted: ID[]; skipped: ID[] }>('/tasks/bulk-delete/', { task_ids: taskIds });
+    invalidate(...TASK_SCOPES);
+    return result;
   },
 
   subtasks: (id: ID) => api.get<Task[]>(`/tasks/${id}/subtasks/`),

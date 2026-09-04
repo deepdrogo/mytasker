@@ -23,7 +23,21 @@ export const authStore = {
   aiEnabled: () => user()?.ai_enabled === true,
   /** Provider configured on the server, regardless of who is asking (for explanatory copy only). */
   aiConfigured: () => config()?.ai_enabled === true,
+  /**
+   * Assistant accounts only add tasks for their principal. The backend refuses everything else;
+   * the frontend mirrors that with a reduced navigation and route guard (see ASSISTANT_ROUTES).
+   */
+  isAssistant: () => user()?.is_assistant === true,
+  principal: () => user()?.principal ?? null,
 };
+
+/** Route prefixes an assistant may open. Anything else redirects to /tasks/personal. */
+export const ASSISTANT_ROUTES = ['/tasks', '/projects', '/settings'];
+
+export function assistantMayOpen(pathname: string): boolean {
+  if (pathname === '/projects/ideas' || pathname.startsWith('/projects/ideas/')) return false;
+  return ASSISTANT_ROUTES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+}
 
 export async function bootstrapAuth(): Promise<void> {
   const [me, cfg] = await Promise.allSettled([api.get<Me>('/auth/me/'), api.get<PublicConfig>('/auth/config/')]);

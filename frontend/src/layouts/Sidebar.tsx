@@ -3,11 +3,14 @@ import {
   BookText,
   Briefcase,
   CalendarClock,
+  CalendarOff,
   CheckCircle2,
   CircleDashed,
+  Columns3,
   Coins,
   FolderKanban,
   Home,
+  LayoutGrid,
   Lightbulb,
   ListChecks,
   Repeat,
@@ -48,7 +51,9 @@ const SECTIONS: NavSection[] = [
       { label: 'Personal', href: '/tasks/personal', icon: () => <User size={15} /> },
       { label: 'Business', href: '/tasks/business', icon: () => <Briefcase size={15} /> },
       { label: 'Upcoming', href: '/tasks/upcoming', icon: () => <CalendarClock size={15} /> },
+      { label: 'No date', href: '/tasks/no-date', icon: () => <CalendarOff size={15} /> },
       { label: 'Completed', href: '/tasks/completed', icon: () => <CheckCircle2 size={15} /> },
+      { label: 'All', href: '/tasks/all', icon: () => <LayoutGrid size={15} /> },
     ],
   },
   {
@@ -57,6 +62,7 @@ const SECTIONS: NavSection[] = [
       { label: 'Active', href: '/projects/active', icon: () => <CircleDashed size={15} /> },
       { label: 'Startups', href: '/projects/startups', icon: () => <Rocket size={15} /> },
       { label: 'All', href: '/projects/all', icon: () => <FolderKanban size={15} /> },
+      { label: 'Canvas', href: '/projects/canvas', icon: () => <Columns3 size={15} /> },
       { label: 'Ideas', href: '/projects/ideas', icon: () => <Lightbulb size={15} /> },
     ],
   },
@@ -82,16 +88,42 @@ const SECTIONS: NavSection[] = [
   },
 ];
 
-const AI_LINK: NavLink = { label: 'AI', href: '/ai', icon: () => <Sparkles size={15} /> };
-const FOOTER_LINKS: NavLink[] = [
-  { label: 'Donate', href: '/donate', icon: () => <Coins size={15} /> },
-  { label: 'Settings', href: '/settings', icon: () => <Settings size={15} /> },
+/** What an assistant login gets: the principal's task lists and projects, nothing else. */
+const ASSISTANT_SECTIONS: NavSection[] = [
+  {
+    label: 'Tasks',
+    links: [
+      { label: 'Personal', href: '/tasks/personal', icon: () => <User size={15} /> },
+      { label: 'Business', href: '/tasks/business', icon: () => <Briefcase size={15} /> },
+      { label: 'Upcoming', href: '/tasks/upcoming', icon: () => <CalendarClock size={15} /> },
+      { label: 'No date', href: '/tasks/no-date', icon: () => <CalendarOff size={15} /> },
+      { label: 'Completed', href: '/tasks/completed', icon: () => <CheckCircle2 size={15} /> },
+      { label: 'All', href: '/tasks/all', icon: () => <LayoutGrid size={15} /> },
+    ],
+  },
+  {
+    label: 'Projects',
+    links: [
+      { label: 'Active', href: '/projects/active', icon: () => <CircleDashed size={15} /> },
+      { label: 'Startups', href: '/projects/startups', icon: () => <Rocket size={15} /> },
+      { label: 'All', href: '/projects/all', icon: () => <FolderKanban size={15} /> },
+      { label: 'Canvas', href: '/projects/canvas', icon: () => <Columns3 size={15} /> },
+    ],
+  },
 ];
+
+const AI_LINK: NavLink = { label: 'AI', href: '/ai', icon: () => <Sparkles size={15} /> };
+const SETTINGS_LINK: NavLink = { label: 'Settings', href: '/settings', icon: () => <Settings size={15} /> };
+const FOOTER_LINKS: NavLink[] = [{ label: 'Donate', href: '/donate', icon: () => <Coins size={15} /> }, SETTINGS_LINK];
 
 export function Sidebar(props: { onNavigate?: () => void }): JSX.Element {
   const location = useLocation();
   const isActive = (href: string) => location.pathname === href || location.pathname.startsWith(`${href}/`);
-  const footerLinks = () => (authStore.isAdmin() ? [AI_LINK, ...FOOTER_LINKS] : FOOTER_LINKS);
+  const sections = () => (authStore.isAssistant() ? ASSISTANT_SECTIONS : SECTIONS);
+  const footerLinks = () => {
+    if (authStore.isAssistant()) return [SETTINGS_LINK];
+    return authStore.isAdmin() ? [AI_LINK, ...FOOTER_LINKS] : FOOTER_LINKS;
+  };
 
   return (
     <aside class={styles.sidebar} aria-label={t('Main navigation')}>
@@ -102,7 +134,14 @@ export function Sidebar(props: { onNavigate?: () => void }): JSX.Element {
       </div>
 
       <nav class={styles.nav}>
-        <For each={SECTIONS}>
+        <Show when={authStore.isAssistant() && authStore.principal()}>
+          {(principal) => (
+            <p class={styles.sectionLabel} title={t('You are adding tasks on behalf of {name}', { name: principal().display_name })}>
+              {t('Assistant of {name}', { name: principal().display_name })}
+            </p>
+          )}
+        </Show>
+        <For each={sections()}>
           {(section) => (
             <div class={styles.section}>
               <Show when={section.label}>

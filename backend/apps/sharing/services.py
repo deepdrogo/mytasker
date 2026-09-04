@@ -63,6 +63,7 @@ def create_share(
             project=task.project,
             visibility=task.visibility,
             capability=Capability.COMPLETE_TASK,
+            created_by_id=task.created_by_id,
         ):
             raise Forbidden(f"You cannot share “{task.title}”.")
     if expires_at is not None and expires_at <= timezone.now():

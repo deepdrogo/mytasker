@@ -34,6 +34,8 @@ class PromptQuerySet(SoftDeleteQuerySet):
         """
         if user is None or not getattr(user, "is_authenticated", False):
             return self.none()
+        if getattr(user, "assistant_for_id", None) is not None:
+            return self.none()
         from apps.projects.models import Project
 
         return self.filter(

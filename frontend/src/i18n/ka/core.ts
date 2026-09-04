@@ -20,6 +20,7 @@ export const core: Record<string, string> = {
   Weekly: 'კვირეული',
   Monthly: 'თვიური',
   Time: 'დრო',
+  Date: 'თარიღი',
   AI: 'AI',
   Donate: 'მხარდაჭერა',
   Settings: 'პარამეტრები',

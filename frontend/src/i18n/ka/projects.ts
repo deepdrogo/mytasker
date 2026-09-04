@@ -172,4 +172,14 @@ export const projects: Record<string, string> = {
   'Brain dump. Unstructured is fine.': 'ჩამოწერე ყველაფერი — სტრუქტურა არ არის საჭირო.',
   'Refined version': 'დახვეწილი ვერსია',
   'Use AI › Improve, or write it yourself.': 'გამოიყენე AI › გაუმჯობესება, ან თავად დაწერე.',
+
+  // Canvas view
+  Canvas: 'ტილო',
+  'Every project and its tasks, side by side.': 'ყველა პროექტი და მისი დავალებები, გვერდიგვერდ.',
+  'Show empty projects': 'ცარიელი პროექტების ჩვენება',
+  'No project has open tasks right now.': 'ახლა არცერთ პროექტს არ აქვს ღია დავალება.',
+  'Turn on "Show empty projects" to add tasks to a project.': 'ჩართე „ცარიელი პროექტების ჩვენება“, რომ პროექტს დავალება დაუმატო.',
+  'Open canvas view': 'ტილოს ხედის გახსნა',
+  'with open tasks': 'ღია დავალებებით',
+  'Time on this project counts as business time': 'ამ პროექტზე დახარჯული დრო ბიზნეს დროდ ითვლება',
 };

@@ -16,7 +16,7 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-height: calc(100vh - 2 * var(--s-6));
+  max-height: calc(100dvh - 2 * var(--s-6));
   background: var(--g-surface);
   border: 1px solid var(--c-border-strong);
   border-radius: var(--r-xl);
@@ -36,7 +36,7 @@
 }
 .full {
   max-width: min(1240px, 100%);
-  height: calc(100vh - 2 * var(--s-6));
+  height: calc(100dvh - 2 * var(--s-6));
 }
 
 .header {
@@ -128,8 +128,8 @@
     animation: slideUp var(--t-slow);
   }
   .full {
-    height: 100vh;
-    max-height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
     border-radius: 0;
   }
   .footer {

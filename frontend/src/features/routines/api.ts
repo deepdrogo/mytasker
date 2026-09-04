@@ -79,6 +79,12 @@ export const rulesApi = {
     await api.post('/rules/reorder/', { ids });
     invalidate('rules');
   },
+  /** Daily self-check: `true` kept, `false` broken, `null` clears today's mark. */
+  markKept: async (id: ID, kept: boolean | null) => {
+    const rule = await api.post<Rule>(`/rules/${id}/kept/`, { kept });
+    invalidate('rules', 'today');
+    return rule;
+  },
 };
 
 export type { TimeTotals } from '~/types';

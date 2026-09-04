@@ -200,4 +200,7 @@ def test_bulk_reschedule_sets_and_clears_deadline_and_skips_foreign_tasks(client
     assert cleared.status_code == 200
     assert client.get(f"/api/v1/tasks/{a}/").data["due_at"] is None
 
-    assert client.post("/api/v1/tasks/bulk-reschedule/", {"task_ids": [], "due_at": None}, format="json").status_code == 400
+    assert (
+        client.post("/api/v1/tasks/bulk-reschedule/", {"task_ids": [], "due_at": None}, format="json").status_code
+        == 400
+    )

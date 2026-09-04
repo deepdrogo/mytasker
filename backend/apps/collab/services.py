@@ -21,7 +21,11 @@ def _resolve_target(user, *, task_id: int | None, project_id: int | None) -> tup
     if task_id is not None:
         task = Task.objects.select_related("project").filter(pk=task_id).first()
         if task is None or not can_view_object(
-            user, owner_id=task.owner_id, project=task.project, visibility=task.visibility
+            user,
+            owner_id=task.owner_id,
+            project=task.project,
+            visibility=task.visibility,
+            created_by_id=task.created_by_id,
         ):
             raise NotFound("Task not found.")
         return task, None

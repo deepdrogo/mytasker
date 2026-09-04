@@ -14,9 +14,27 @@
   color: var(--c-text);
 }
 
+.count {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
 .actions {
   display: flex;
   align-items: center;
   gap: var(--s-3);
   flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .bar {
+    position: sticky;
+    bottom: calc(var(--dock-h, 56px) + var(--s-3) + env(safe-area-inset-bottom, 0px));
+    z-index: 5;
+    padding: var(--s-3) var(--s-4);
+  }
+  .actionLabel {
+    display: none;
+  }
 }

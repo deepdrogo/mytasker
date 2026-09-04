@@ -1,7 +1,7 @@
 import { api } from '~/api/client';
 import { invalidate } from '~/hooks/createQuery';
 import { applyMe } from '~/stores/auth';
-import type { Me, NotificationPreferences, TelegramStatus, UserPreferences } from '~/types';
+import type { Assistant, Me, NotificationPreferences, TelegramStatus, UserPreferences } from '~/types';
 
 export interface TelegramLinkStart {
   token: string;
@@ -39,6 +39,29 @@ export const settingsApi = {
   },
   changePassword: (current_password: string, new_password: string) => api.post('/auth/password/change/', { current_password, new_password }),
   resendVerification: () => api.post('/auth/email/resend/'),
+};
+
+export const assistantsApi = {
+  list: () => api.get<Assistant[]>('/auth/assistants/'),
+  create: async (input: { full_name: string; email?: string }) => {
+    const row = await api.post<Assistant>('/auth/assistants/', input);
+    invalidate('assistants');
+    return row;
+  },
+  update: async (id: number, input: { full_name?: string; is_active?: boolean }) => {
+    const row = await api.patch<Assistant>(`/auth/assistants/${id}/`, input);
+    invalidate('assistants');
+    return row;
+  },
+  resetPassword: async (id: number) => {
+    const row = await api.post<Assistant>(`/auth/assistants/${id}/reset-password/`);
+    invalidate('assistants');
+    return row;
+  },
+  remove: async (id: number) => {
+    await api.delete(`/auth/assistants/${id}/`);
+    invalidate('assistants');
+  },
 };
 
 export const telegramApi = {

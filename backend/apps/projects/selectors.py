@@ -31,7 +31,7 @@ def base_queryset(user):
     )
     return (
         Project.objects.visible_to(user)
-        .with_progress()
+        .with_progress(user)
         .select_related("owner")
         .annotate(
             member_count=Coalesce(Subquery(members, output_field=IntegerField()), Value(0)),
@@ -41,8 +41,11 @@ def base_queryset(user):
     )
 
 
-def active_projects(user):
-    return base_queryset(user).filter(
+def active_projects(user, *, with_open_tasks: bool = False):
+    qs = base_queryset(user).filter(
         Q(kind=Project.Kind.ACTIVE) | Q(status=Project.Status.ACTIVE),
         status__in=[Project.Status.ACTIVE, Project.Status.PAUSED],
     )
+    if with_open_tasks:
+        qs = qs.filter(task_open__gt=0)
+    return qs

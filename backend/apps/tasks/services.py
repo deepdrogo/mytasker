@@ -35,6 +35,7 @@ EDITABLE_FIELDS = {
     "due_has_time",
     "reminder_at",
     "estimated_minutes",
+    "is_ongoing",
     "tags",
     "sort_order",
     "visibility",
@@ -52,14 +53,25 @@ def get_task_for_user(task_id: int, user, *, for_update: bool = False) -> Task:
     task = qs.filter(pk=task_id).first()
     if task is None:
         raise NotFound("Task not found.")
-    if not can_view_object(user, owner_id=task.owner_id, project=task.project, visibility=task.visibility):
+    if not can_view_object(
+        user,
+        owner_id=task.owner_id,
+        project=task.project,
+        visibility=task.visibility,
+        created_by_id=task.created_by_id,
+    ):
         raise NotFound("Task not found.")
     return task
 
 
 def assert_can_edit(task: Task, user, capability: str = Capability.EDIT_TASK) -> None:
     if not can_edit_object(
-        user, owner_id=task.owner_id, project=task.project, visibility=task.visibility, capability=capability
+        user,
+        owner_id=task.owner_id,
+        project=task.project,
+        visibility=task.visibility,
+        capability=capability,
+        created_by_id=task.created_by_id,
     ):
         raise Forbidden("You cannot modify this task.")
 
@@ -178,7 +190,17 @@ def create_task(
         resolved_origin = parent.origin
     else:
         project = _resolve_project(project_id, user)
-        task_owner = owner or (project.owner if project is not None else user)
+        if owner is not None:
+            task_owner = owner
+        elif project is not None:
+            task_owner = project.owner
+        elif user.assistant_for_id is not None:
+            # Assistants file personal / business tasks into their principal's lists.
+            task_owner = user.assistant_for
+        else:
+            task_owner = user
+        if assignee_id is not None and user.assistant_for_id is not None:
+            assignee_id = None
         if project is not None and kind == Task.Kind.PERSONAL:
             kind = Task.Kind.BUSINESS
         resolved_visibility = _normalise_visibility(project, visibility, task_owner == user)
@@ -640,6 +662,52 @@ def bulk_reschedule(
     return {"updated": updated, "skipped": skipped}
 
 
+def _dedupe_ids(task_ids: list[int], *, verb: str) -> list[int]:
+    ids: list[int] = []
+    for raw in task_ids:
+        try:
+            value = int(raw)
+        except (TypeError, ValueError):
+            continue
+        if value not in ids:
+            ids.append(value)
+    if not ids:
+        raise ValidationFailed("Pick at least one task.")
+    if len(ids) > BULK_MAX_TASKS:
+        raise ValidationFailed(f"{verb} at most {BULK_MAX_TASKS} tasks at once.")
+    return ids
+
+
+def bulk_complete(actor: Actor, task_ids: list[int]) -> dict[str, list[int]]:
+    """Complete many tasks; unauthorised / missing ones are skipped rather than failing the batch."""
+    updated: list[int] = []
+    skipped: list[int] = []
+    for task_id in _dedupe_ids(task_ids, verb="Complete"):
+        try:
+            with transaction.atomic():
+                complete_task(actor, task_id)
+        except (NotFound, Forbidden, Conflict, ValidationFailed):
+            skipped.append(task_id)
+        else:
+            updated.append(task_id)
+    return {"updated": updated, "skipped": skipped}
+
+
+def bulk_delete(actor: Actor, task_ids: list[int]) -> dict[str, list[int]]:
+    """Soft-delete many tasks (subtasks go with their parent); unauthorised ones are skipped."""
+    deleted: list[int] = []
+    skipped: list[int] = []
+    for task_id in _dedupe_ids(task_ids, verb="Delete"):
+        try:
+            with transaction.atomic():
+                delete_task(actor, task_id)
+        except (NotFound, Forbidden, Conflict, ValidationFailed):
+            skipped.append(task_id)
+        else:
+            deleted.append(task_id)
+    return {"deleted": deleted, "skipped": skipped}
+
+
 def move_to_date(actor: Actor, task_id: int, target: date, *, keep_time: bool = True) -> Task:
     task = get_task_for_user(task_id, actor.user)
     from common.tz import combine_local, user_zone
@@ -656,3 +724,50 @@ def snooze(actor: Actor, task_id: int, *, minutes: int) -> Task:
     task = get_task_for_user(task_id, actor.user)
     base = task.due_at or timezone.now()
     return update_task(actor, task_id, due_at=base + timedelta(minutes=minutes), due_has_time=True)
+
+
+# --------------------------------------------------------------------------- ongoing check-ins
+
+
+def checkin_task(actor: Actor, task_id: int, *, checked: bool = True) -> Task:
+    """Tick (or untick) an ongoing task for today. Idempotent; only meaningful for `is_ongoing` tasks."""
+    from apps.tasks.models import TaskCheckin
+    from common.tz import today_for
+
+    user = actor.user
+    task = get_task_for_user(task_id, user)
+    assert_can_edit(task, user, Capability.COMPLETE_TASK)
+    if not task.is_ongoing:
+        raise ValidationFailed("Only long-term tasks have daily check-ins.")
+    day = today_for(user)
+    if checked:
+        TaskCheckin.objects.update_or_create(task=task, date=day, defaults={"checked_by": user})
+    else:
+        TaskCheckin.objects.filter(task=task, date=day).delete()
+    return task
+
+
+def checkin_streaks(task_ids: list[int], day) -> dict[int, int]:
+    """Consecutive checked days ending today or yesterday, per task (a missed day resets to 0)."""
+    from datetime import timedelta
+
+    from apps.tasks.models import TaskCheckin
+
+    if not task_ids:
+        return {}
+    since = day - timedelta(days=120)
+    days_by_task: dict[int, set] = {}
+    for task_id, checked_day in TaskCheckin.objects.filter(task_id__in=task_ids, date__gte=since).values_list(
+        "task_id", "date"
+    ):
+        days_by_task.setdefault(task_id, set()).add(checked_day)
+    result: dict[int, int] = {}
+    for task_id in task_ids:
+        days = days_by_task.get(task_id, set())
+        cursor = day if day in days else day - timedelta(days=1)
+        streak = 0
+        while cursor in days:
+            streak += 1
+            cursor -= timedelta(days=1)
+        result[task_id] = streak
+    return result

@@ -110,6 +110,9 @@
   .topbar {
     padding: 0 var(--s-5);
     gap: var(--s-3);
+    /* Installed PWA: keep controls clear of the notch / status bar. */
+    padding-top: env(safe-area-inset-top);
+    height: calc(var(--topbar-h) + env(safe-area-inset-top));
   }
   .search {
     height: 38px;

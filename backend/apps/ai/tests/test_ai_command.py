@@ -169,9 +169,13 @@ def _polished(*rows):
 
 
 def test_polish_rewrites_titles_retries_echoed_drafts_and_skips_foreign_tasks(auth_client, user, make_user, scripted):
-    terse = Task.objects.create(owner=user, created_by=user, title="ნინისთან შეხვედრა ხვალე ჰიპერბლასტის", kind="business")
+    terse = Task.objects.create(
+        owner=user, created_by=user, title="ნინისთან შეხვედრა ხვალე ჰიპერბლასტის", kind="business"
+    )
     sloppy = Task.objects.create(owner=user, created_by=user, title="fix site bugs lol", kind="business")
-    fine = Task.objects.create(owner=user, created_by=user, title="Pay rent", description="By the 5th.", kind="personal")
+    fine = Task.objects.create(
+        owner=user, created_by=user, title="Pay rent", description="By the 5th.", kind="personal"
+    )
     foreign = Task.objects.create(owner=make_user("x@example.com"), title="secret", kind="personal")
     fake = scripted(
         [

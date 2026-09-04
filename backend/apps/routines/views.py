@@ -14,6 +14,7 @@ from apps.routines.serializers import (
     RoutineItemInputSerializer,
     RoutineItemSerializer,
     RuleInputSerializer,
+    RuleKeptSerializer,
     RuleSerializer,
 )
 from apps.time_tracking.services import tracked_seconds_by_routine_item
@@ -101,14 +102,28 @@ def routine_reorder(request, kind: str):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+def _rule_context(user, day: date | None = None) -> dict:
+    return {
+        "rule_completions": services.rule_completions_for_day(user, day),
+        "rule_streaks": services.rule_streaks(user, day),
+    }
+
+
 @api_view(["GET", "POST"])
 def rules(request):
     if request.method == "POST":
         serializer = RuleInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         rule = services.create_rule(request.user, **serializer.validated_data)
-        return Response(RuleSerializer(rule).data, status=status.HTTP_201_CREATED)
-    return Response(RuleSerializer(Rule.objects.filter(owner=request.user), many=True).data)
+        return Response(
+            RuleSerializer(rule, context=_rule_context(request.user)).data, status=status.HTTP_201_CREATED
+        )
+    day = _parse_day(request)
+    return Response(
+        RuleSerializer(
+            Rule.objects.filter(owner=request.user), many=True, context=_rule_context(request.user, day)
+        ).data
+    )
 
 
 @api_view(["PATCH", "DELETE"])
@@ -119,7 +134,18 @@ def rule_detail(request, pk: int):
     serializer = RuleInputSerializer(data=request.data, partial=True)
     serializer.is_valid(raise_exception=True)
     rule = services.update_rule(request.user, int(pk), **serializer.validated_data)
-    return Response(RuleSerializer(rule).data)
+    return Response(RuleSerializer(rule, context=_rule_context(request.user)).data)
+
+
+@api_view(["POST"])
+def rule_kept(request, pk: int):
+    """Daily check: kept (true) / broken (false) / clear (null)."""
+    serializer = RuleKeptSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    data = serializer.validated_data
+    services.set_rule_kept(request.user, int(pk), kept=data["kept"], day=data.get("date"))
+    rule = Rule.objects.get(pk=pk, owner=request.user)
+    return Response(RuleSerializer(rule, context=_rule_context(request.user, data.get("date"))).data)
 
 
 @api_view(["POST"])

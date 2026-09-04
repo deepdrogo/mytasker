@@ -28,6 +28,33 @@
   padding: var(--s-4) var(--s-5);
 }
 
+/* Dense: canvas columns. Title wraps to two lines and the action cluster shrinks to the menu. */
+.dense {
+  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4);
+  gap: var(--s-3);
+  align-items: flex-start;
+}
+
+.dense .title {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  font-size: var(--fs-md);
+}
+
+.dense .actions {
+  opacity: 1;
+  transform: none;
+  margin-top: -3px;
+}
+
+.dense .iconAction {
+  width: 26px;
+  height: 26px;
+}
+
 .selected {
   background: var(--g-glass-active);
   border-color: var(--c-rim);
@@ -82,6 +109,33 @@
   border-color: #fff;
   color: var(--c-invert-text);
   box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+}
+
+/* Long-term tasks: the box is today's check-in, drawn dashed so it reads as "daily", not "done". */
+.checkinBox {
+  border-style: dashed;
+}
+
+.checkedToday {
+  border-style: solid;
+  background: rgba(255, 255, 255, 0.14);
+  border-color: #fff;
+  color: var(--c-text);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+.ongoingMark {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6px;
+  height: 16px;
+  border-radius: var(--r-full);
+  border: 1px dashed var(--c-border-strong);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--c-text-dim);
+  flex: none;
 }
 
 .main {
@@ -140,10 +194,17 @@
   text-underline-offset: 2px;
 }
 
-.commentCount {
+.commentCount,
+.addedBy {
   display: inline-flex;
   align-items: center;
   gap: 2px;
+}
+
+.addedBy {
+  padding: 0 var(--s-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-full);
 }
 
 .actions {
@@ -227,5 +288,10 @@
   }
   .title {
     font-size: var(--fs-base);
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-clamp: 2;
   }
 }

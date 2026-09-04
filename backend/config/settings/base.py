@@ -93,6 +93,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "common.middleware.RequestSourceMiddleware",
+    "common.middleware.AssistantScopeMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -218,7 +219,7 @@ PASSWORD_RESET_MAX_AGE = 60 * 60 * 2
 # ---------------------------------------------------------------------------
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"],
-    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+    "DEFAULT_PERMISSION_CLASSES": ["common.middleware.AssistantScopePermission"],
     "DEFAULT_PAGINATION_CLASS": "common.pagination.StandardPagination",
     "PAGE_SIZE": 50,
     "DEFAULT_FILTER_BACKENDS": [

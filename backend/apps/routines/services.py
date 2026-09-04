@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 
 from django.db import transaction
 from django.utils import timezone
 
-from apps.routines.models import Routine, RoutineCompletion, RoutineItem, Rule
+from apps.routines.models import Routine, RoutineCompletion, RoutineItem, Rule, RuleCompletion
 from apps.translations.services import request_translation
 from common.exceptions import NotFound, ValidationFailed
 from common.tz import now_for, today_for
@@ -177,6 +177,55 @@ def delete_rule(user, rule_id: int) -> None:
     if rule is None:
         raise NotFound("Rule not found.")
     rule.soft_delete()
+
+
+@transaction.atomic
+def set_rule_kept(user, rule_id: int, *, kept: bool | None, day: date | None = None) -> RuleCompletion | None:
+    """
+    Mark a rule as kept / broken for a day. `kept=None` clears the mark (back to "not checked").
+    """
+    rule = Rule.objects.filter(pk=rule_id, owner=user).first()
+    if rule is None:
+        raise NotFound("Rule not found.")
+    day = day or today_for(user)
+    if kept is None:
+        RuleCompletion.objects.filter(rule=rule, date=day).delete()
+        return None
+    completion, _ = RuleCompletion.objects.update_or_create(rule=rule, date=day, defaults={"kept": kept})
+    return completion
+
+
+def rule_completions_for_day(user, day: date | None = None) -> dict[int, RuleCompletion]:
+    day = day or today_for(user)
+    rows = RuleCompletion.objects.filter(rule__owner=user, date=day)
+    return {row.rule_id: row for row in rows}
+
+
+def rule_streaks(user, day: date | None = None) -> dict[int, int]:
+    """Consecutive days (ending today or yesterday) each rule was kept."""
+    day = day or today_for(user)
+    rows = (
+        RuleCompletion.objects.filter(rule__owner=user, date__lte=day, date__gte=day - timedelta(days=60))
+        .order_by("rule_id", "-date")
+        .values_list("rule_id", "date", "kept")
+    )
+    kept_by_rule: dict[int, set[date]] = {}
+    marked_by_rule: dict[int, set[date]] = {}
+    for rule_id, d, kept in rows:
+        marked_by_rule.setdefault(rule_id, set()).add(d)
+        if kept:
+            kept_by_rule.setdefault(rule_id, set()).add(d)
+    streaks: dict[int, int] = {}
+    for rule_id, marked in marked_by_rule.items():
+        kept_dates = kept_by_rule.get(rule_id, set())
+        # Today may simply not be checked yet - then the streak is counted from yesterday.
+        cursor = day if day in marked else day - timedelta(days=1)
+        count = 0
+        while cursor in kept_dates:
+            count += 1
+            cursor -= timedelta(days=1)
+        streaks[rule_id] = count
+    return streaks
 
 
 @transaction.atomic

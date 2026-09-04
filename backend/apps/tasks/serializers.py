@@ -40,6 +40,7 @@ class RecurrenceInputSerializer(serializers.Serializer):
 class TaskSerializer(serializers.ModelSerializer):
     owner = UserRefSerializer(read_only=True)
     assignee = UserRefSerializer(read_only=True)
+    created_by = UserRefSerializer(read_only=True)
     completed_by = UserRefSerializer(read_only=True)
     project = ProjectRefSerializer(read_only=True)
     recurrence = RecurrenceSerializer(read_only=True)
@@ -48,6 +49,8 @@ class TaskSerializer(serializers.ModelSerializer):
     tracked_seconds = serializers.IntegerField(read_only=True, default=0)
     comment_count = serializers.IntegerField(read_only=True, default=0)
     is_overdue = serializers.BooleanField(read_only=True)
+    today_checked = serializers.BooleanField(read_only=True, default=False)
+    checkin_streak = serializers.SerializerMethodField()
     completed_by_name = serializers.SerializerMethodField()
     can_edit = serializers.SerializerMethodField()
     can_delete = serializers.SerializerMethodField()
@@ -68,11 +71,15 @@ class TaskSerializer(serializers.ModelSerializer):
             "parent",
             "owner",
             "assignee",
+            "created_by",
             "start_at",
             "due_at",
             "due_has_time",
             "reminder_at",
             "estimated_minutes",
+            "is_ongoing",
+            "today_checked",
+            "checkin_streak",
             "tracked_seconds",
             "tags",
             "sort_order",
@@ -93,6 +100,12 @@ class TaskSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
+    def get_checkin_streak(self, obj: Task) -> int:
+        streaks = self.context.get("checkin_streaks")
+        if streaks is None:
+            return 0
+        return int(streaks.get(obj.pk, 0))
+
     def get_completed_by_name(self, obj: Task) -> str | None:
         if obj.completed_by_guest_id:
             return obj.completed_by_guest.display_name
@@ -105,7 +118,13 @@ class TaskSerializer(serializers.ModelSerializer):
         return getattr(request, "user", None)
 
     def get_can_edit(self, obj: Task) -> bool:
-        return can_edit_object(self._user(), owner_id=obj.owner_id, project=obj.project, visibility=obj.visibility)
+        return can_edit_object(
+            self._user(),
+            owner_id=obj.owner_id,
+            project=obj.project,
+            visibility=obj.visibility,
+            created_by_id=obj.created_by_id,
+        )
 
     def get_can_delete(self, obj: Task) -> bool:
         user = self._user()
@@ -119,6 +138,7 @@ class TaskSerializer(serializers.ModelSerializer):
             project=obj.project,
             visibility=obj.visibility,
             capability=Capability.DELETE_TASK,
+            created_by_id=obj.created_by_id,
         )
 
 
@@ -132,7 +152,9 @@ class TaskWithSubtasksSerializer(TaskSerializer):
     def get_subtasks(self, obj: Task) -> list[dict]:
         items = getattr(obj, "prefetched_subtasks", None)
         if items is None:
-            items = obj.subtasks.filter(deleted_at__isnull=True).select_related("assignee", "owner", "project")
+            items = obj.subtasks.filter(deleted_at__isnull=True).select_related(
+                "assignee", "owner", "project", "created_by"
+            )
         return TaskSerializer(items, many=True, context=self.context).data
 
 
@@ -152,6 +174,7 @@ class TaskCreateSerializer(serializers.Serializer):
     due_has_time = serializers.BooleanField(required=False, default=False)
     reminder_at = serializers.DateTimeField(required=False, allow_null=True)
     estimated_minutes = serializers.IntegerField(required=False, allow_null=True, min_value=1, max_value=100000)
+    is_ongoing = serializers.BooleanField(required=False, default=False)
     tags = serializers.ListField(child=serializers.CharField(max_length=40), required=False, default=list)
     recurrence = RecurrenceInputSerializer(required=False, allow_null=True)
 
@@ -171,13 +194,22 @@ class TaskUpdateSerializer(serializers.Serializer):
     due_has_time = serializers.BooleanField(required=False)
     reminder_at = serializers.DateTimeField(required=False, allow_null=True)
     estimated_minutes = serializers.IntegerField(required=False, allow_null=True, min_value=1, max_value=100000)
+    is_ongoing = serializers.BooleanField(required=False)
     tags = serializers.ListField(child=serializers.CharField(max_length=40), required=False)
     sort_order = serializers.IntegerField(required=False)
     recurrence = RecurrenceInputSerializer(required=False, allow_null=True)
     version = serializers.IntegerField(required=False, write_only=True)
 
 
+class BulkIdsSerializer(serializers.Serializer):
+    task_ids = serializers.ListField(child=serializers.IntegerField(), allow_empty=False, max_length=200)
+
+
 class BulkRescheduleSerializer(serializers.Serializer):
     task_ids = serializers.ListField(child=serializers.IntegerField(), allow_empty=False, max_length=200)
     due_at = serializers.DateTimeField(allow_null=True)
     due_has_time = serializers.BooleanField(required=False, default=False)
+
+
+class CheckinSerializer(serializers.Serializer):
+    checked = serializers.BooleanField(required=False, default=True)

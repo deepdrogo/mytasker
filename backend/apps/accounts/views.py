@@ -15,6 +15,9 @@ from rest_framework.response import Response
 
 from apps.accounts import services
 from apps.accounts.serializers import (
+    AssistantCreateSerializer,
+    AssistantSerializer,
+    AssistantUpdateSerializer,
     ChangePasswordSerializer,
     LoginSerializer,
     MeSerializer,
@@ -33,7 +36,7 @@ def _me_payload(user):
     # request.user is a SimpleLazyObject; resolve through the model class, not type(user).
     user = (
         get_user_model()
-        .objects.select_related("preferences", "notification_preferences", "telegram_connection")
+        .objects.select_related("preferences", "notification_preferences", "telegram_connection", "assistant_for")
         .get(pk=user.pk)
     )
     return MeSerializer(user).data
@@ -118,6 +121,11 @@ def notification_preferences(request: Request) -> Response:
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def change_password(request: Request) -> Response:
+    if request.user.is_assistant:
+        from common.exceptions import Forbidden
+
+        # The principal owns assistant credentials; they reset them from Settings → Assistants.
+        raise Forbidden("Ask the account owner to reset your password.")
     serializer = ChangePasswordSerializer(data=request.data, context={"user": request.user})
     serializer.is_valid(raise_exception=True)
     services.change_password(
@@ -167,6 +175,69 @@ def verify_email(request: Request) -> Response:
 def resend_verification(request: Request) -> Response:
     services.send_verification_email(request.user)
     return Response({"detail": "Verification email sent."})
+
+
+def _assistant_payload(assistant, *, password: str | None = None) -> dict:
+    from apps.tasks.models import Task
+
+    data = AssistantSerializer(assistant).data
+    data["tasks_created"] = Task.objects.filter(created_by=assistant).count()
+    if password is not None:
+        data["password"] = password
+    return data
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def assistants(request: Request) -> Response:
+    """Principal-side management of assistant logins. Assistants themselves get 403."""
+    from common.exceptions import Forbidden
+
+    if request.user.is_assistant:
+        raise Forbidden("Assistants cannot manage assistants.")
+    if request.method == "POST":
+        serializer = AssistantCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        assistant, password = services.create_assistant(
+            request.user,
+            full_name=serializer.validated_data["full_name"],
+            email=serializer.validated_data.get("email") or None,
+        )
+        return Response(_assistant_payload(assistant, password=password), status=status.HTTP_201_CREATED)
+
+    from django.db.models import Count, Q
+
+    rows = services.assistants_for(request.user).annotate(
+        tasks_created=Count("created_tasks", filter=Q(created_tasks__deleted_at__isnull=True))
+    )
+    return Response(AssistantSerializer(rows, many=True).data)
+
+
+@api_view(["PATCH", "DELETE"])
+@permission_classes([IsAuthenticated])
+def assistant_detail(request: Request, assistant_id: int) -> Response:
+    from common.exceptions import Forbidden
+
+    if request.user.is_assistant:
+        raise Forbidden("Assistants cannot manage assistants.")
+    if request.method == "DELETE":
+        services.remove_assistant(request.user, assistant_id)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    serializer = AssistantUpdateSerializer(data=request.data, partial=True)
+    serializer.is_valid(raise_exception=True)
+    assistant = services.update_assistant(request.user, assistant_id, **serializer.validated_data)
+    return Response(_assistant_payload(assistant))
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def assistant_reset_password(request: Request, assistant_id: int) -> Response:
+    from common.exceptions import Forbidden
+
+    if request.user.is_assistant:
+        raise Forbidden("Assistants cannot manage assistants.")
+    assistant, password = services.reset_assistant_password(request.user, assistant_id)
+    return Response(_assistant_payload(assistant, password=password))
 
 
 @api_view(["GET"])

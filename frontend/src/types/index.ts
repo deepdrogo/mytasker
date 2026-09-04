@@ -75,9 +75,25 @@ export interface Me {
   is_staff: boolean;
   /** Server-computed: provider configured AND this user is an administrator. */
   ai_enabled: boolean;
+  /** Restricted login that only adds tasks on behalf of `principal`. */
+  is_assistant: boolean;
+  principal: UserRef | null;
   created_at: ISODateTime;
   preferences: UserPreferences;
   notification_preferences: NotificationPreferences;
+}
+
+export interface Assistant {
+  id: ID;
+  email: string;
+  full_name: string;
+  display_name: string;
+  is_active: boolean;
+  last_seen_at: ISODateTime | null;
+  created_at: ISODateTime;
+  tasks_created: number;
+  /** Only present right after creation / password reset. Shown once, never stored. */
+  password?: string;
 }
 
 export interface PublicConfig {
@@ -116,11 +132,17 @@ export interface Task {
   parent: ID | null;
   assignee: UserRef | null;
   owner: UserRef;
+  /** Who added the task; differs from `owner` for assistant-created and member-created tasks. */
+  created_by: UserRef | null;
   start_at: ISODateTime | null;
   due_at: ISODateTime | null;
   due_has_time: boolean;
   reminder_at: ISODateTime | null;
   estimated_minutes: number | null;
+  /** Long-term work: ticked once a day, completed only when the whole thing is finished. */
+  is_ongoing: boolean;
+  today_checked: boolean;
+  checkin_streak: number;
   tracked_seconds: number;
   tags: string[];
   sort_order: number;
@@ -138,6 +160,8 @@ export interface Task {
   updated_at: ISODateTime;
   can_edit: boolean;
   can_delete: boolean;
+  /** Present when the list was requested with `include_subtasks=1` or on task detail. */
+  subtasks?: Task[];
 }
 
 export interface RecurrenceRule {
@@ -257,6 +281,10 @@ export interface Rule {
   description: string;
   order: number;
   is_enabled: boolean;
+  /** Daily self-check: null = not checked today, true = kept, false = broken. */
+  today_kept: boolean | null;
+  /** Consecutive days kept (counted from yesterday when today is not checked yet). */
+  streak: number;
 }
 
 export interface TimeEntry {
@@ -399,9 +427,33 @@ export interface TodayData {
   metrics: DayMetrics;
   streak: number;
   timer: { running: TimeEntry | null; sleep: SleepSession | null };
-  tasks: { overdue: Task[]; due_today: Task[]; focus: Task[]; completed: Task[] };
+  tasks: {
+    overdue: Task[];
+    due_today: Task[];
+    focus: Task[];
+    ongoing: Task[];
+    personal: Task[];
+    business: Task[];
+    upcoming: Task[];
+    completed: Task[];
+  };
   routine: { current_item_id: ID | null; business: RoutineItem[]; personal: RoutineItem[] };
-  active_projects: Array<{ id: ID; name: string; priority: Priority }>;
+  rules: Rule[];
+  active_projects: TodayProject[];
+}
+
+export interface TodayProject {
+  id: ID;
+  name: string;
+  priority: Priority;
+  kind: ProjectKind;
+  category: ProjectCategory;
+  status: ProjectStatus;
+  deadline: ISODate | null;
+  task_total: number | null;
+  task_done: number | null;
+  task_open: number | null;
+  next_tasks: Array<{ id: ID; title: string; priority: Priority; due_at: ISODateTime | null; status: TaskStatus }>;
 }
 
 export interface DailyReview {

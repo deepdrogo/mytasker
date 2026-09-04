@@ -182,6 +182,116 @@ def update_profile(user: User, **fields) -> User:
     return user
 
 
+# --------------------------------------------------------------------------- assistant accounts
+
+MAX_ASSISTANTS = 5
+_PASSWORD_ALPHABET = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789"  # no 0/O/1/l/I
+
+
+def generate_assistant_password() -> str:
+    """Readable one-time password: three groups of four unambiguous characters."""
+    groups = ["".join(secrets.choice(_PASSWORD_ALPHABET) for _ in range(4)) for _ in range(3)]
+    return "-".join(groups)
+
+
+def _assistant_domain() -> str:
+    host = settings.SITE_URL.split("//", 1)[-1].split("/", 1)[0].split(":", 1)[0] or "mytasker.io"
+    return f"assistants.{host}"
+
+
+def _generate_assistant_email(principal: User) -> str:
+    for _ in range(20):
+        candidate = f"assistant-{principal.pk}-{secrets.token_hex(3)}@{_assistant_domain()}"
+        if not User.objects.filter(email=candidate).exists():
+            return candidate
+    raise Conflict("Could not allocate an assistant login. Try again.")
+
+
+def assistants_for(principal: User):
+    return User.objects.filter(assistant_for=principal).order_by("-is_active", "created_at")
+
+
+def get_assistant(principal: User, assistant_id: int) -> User:
+    assistant = assistants_for(principal).filter(pk=assistant_id).first()
+    if assistant is None:
+        from common.exceptions import NotFound
+
+        raise NotFound("Assistant not found.")
+    return assistant
+
+
+@transaction.atomic
+def create_assistant(principal: User, *, full_name: str, email: str | None = None) -> tuple[User, str]:
+    """
+    Create a restricted login that acts for `principal`. The generated password is returned exactly
+    once; it is never stored in clear text.
+    """
+    if principal.is_assistant:
+        raise Forbidden("Assistants cannot create assistants.")
+    if assistants_for(principal).count() >= MAX_ASSISTANTS:
+        raise ValidationFailed(f"You can have at most {MAX_ASSISTANTS} assistants.")
+    full_name = (full_name or "").strip()
+    if not full_name:
+        raise ValidationFailed("Name is required.", fields={"full_name": ["This field is required."]})
+    email = (email or "").strip().lower()
+    if email:
+        if User.objects.filter(email=email).exists():
+            raise Conflict("An account with this email already exists.", fields={"email": ["Already registered."]})
+    else:
+        email = _generate_assistant_email(principal)
+
+    password = generate_assistant_password()
+    assistant = User.objects.create_user(
+        email=email,
+        password=password,
+        full_name=full_name,
+        timezone=principal.timezone,
+        locale=principal.locale,
+        assistant_for=principal,
+        email_verified_at=timezone.now(),
+    )
+    NotificationPreference.objects.get_or_create(user=assistant)
+    return assistant, password
+
+
+@transaction.atomic
+def reset_assistant_password(principal: User, assistant_id: int) -> tuple[User, str]:
+    assistant = get_assistant(principal, assistant_id)
+    password = generate_assistant_password()
+    assistant.set_password(password)
+    assistant.save(update_fields=["password"])
+    return assistant, password
+
+
+@transaction.atomic
+def update_assistant(
+    principal: User, assistant_id: int, *, full_name: str | None = None, is_active: bool | None = None
+):
+    assistant = get_assistant(principal, assistant_id)
+    changed: list[str] = []
+    if full_name is not None and full_name.strip():
+        assistant.full_name = full_name.strip()
+        changed.append("full_name")
+    if is_active is not None and is_active != assistant.is_active:
+        assistant.is_active = is_active
+        changed.append("is_active")
+    if changed:
+        assistant.save(update_fields=changed)
+    return assistant
+
+
+@transaction.atomic
+def remove_assistant(principal: User, assistant_id: int) -> None:
+    """
+    Disable the login but keep the account so `created_by` attribution on the principal's tasks
+    survives. Existing sessions stop working because inactive users no longer authenticate.
+    """
+    assistant = get_assistant(principal, assistant_id)
+    if assistant.is_active:
+        assistant.is_active = False
+        assistant.save(update_fields=["is_active"])
+
+
 @transaction.atomic
 def update_preferences(user: User, **fields) -> UserPreference:
     prefs, _ = UserPreference.objects.get_or_create(user=user)

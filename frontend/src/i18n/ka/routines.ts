@@ -64,4 +64,14 @@ export const routines: Record<string, string> = {
   Why: 'რატომ',
   'A sentence about the reason makes rules stick.': 'ერთი წინადადება მიზეზზე წესს უფრო მყარს ხდის.',
   Enabled: 'ჩართული',
+
+  // Rules on Today
+  'Kept today': 'დღეს დაცულია',
+  'Broken today': 'დღეს დაირღვა',
+  'Could not update the rule.': 'წესის განახლება ვერ მოხერხდა.',
+  '{count} days in a row': '{count} დღე ზედიზედ',
+  '{count} still to check today': 'დღეს კიდევ {count} შესამოწმებელია',
+  now: 'ახლა',
+  kept: 'დაცული',
+  'All rules checked for today.': 'დღეს ყველა წესი შემოწმებულია.',
 };

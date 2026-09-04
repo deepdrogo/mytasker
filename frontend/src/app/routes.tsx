@@ -11,8 +11,11 @@ const TasksPersonal = lazy(() => import('~/routes/tasks/Personal'));
 const TasksBusiness = lazy(() => import('~/routes/tasks/Business'));
 const TasksUpcoming = lazy(() => import('~/routes/tasks/Upcoming'));
 const TasksCompleted = lazy(() => import('~/routes/tasks/Completed'));
+const TasksAll = lazy(() => import('~/routes/tasks/All'));
+const TasksNoDate = lazy(() => import('~/routes/tasks/NoDate'));
 const ProjectsActive = lazy(() => import('~/routes/projects/Active'));
 const ProjectsAll = lazy(() => import('~/routes/projects/All'));
+const ProjectsCanvas = lazy(() => import('~/routes/projects/Canvas'));
 const ProjectsStartups = lazy(() => import('~/routes/projects/Startups'));
 const Ideas = lazy(() => import('~/routes/projects/Ideas'));
 const ProjectDetail = lazy(() => import('~/routes/projects/Detail'));
@@ -53,10 +56,13 @@ export const routes: RouteDefinition[] = [
       { path: '/tasks/business', component: TasksBusiness },
       { path: '/tasks/upcoming', component: TasksUpcoming },
       { path: '/tasks/completed', component: TasksCompleted },
+      { path: '/tasks/all', component: TasksAll },
+      { path: '/tasks/no-date', component: TasksNoDate },
       { path: '/projects', component: () => <Navigate href="/projects/active" /> },
       { path: '/projects/active', component: ProjectsActive },
       { path: '/projects/startups', component: ProjectsStartups },
       { path: '/projects/all', component: ProjectsAll },
+      { path: '/projects/canvas', component: ProjectsCanvas },
       { path: '/projects/ideas', component: Ideas },
       { path: '/projects/:id/*tab', component: ProjectDetail },
       { path: '/prompts', component: Prompts },

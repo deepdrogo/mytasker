@@ -9,7 +9,9 @@ from apps.tasks import selectors, services
 from apps.tasks.filters import TaskFilter
 from apps.tasks.models import Task
 from apps.tasks.serializers import (
+    BulkIdsSerializer,
     BulkRescheduleSerializer,
+    CheckinSerializer,
     TaskCreateSerializer,
     TaskSerializer,
     TaskUpdateSerializer,
@@ -39,7 +41,7 @@ class TaskViewSet(viewsets.ModelViewSet):
                 Prefetch(
                     "subtasks",
                     queryset=Task.objects.filter(deleted_at__isnull=True)
-                    .select_related("assignee", "owner", "project")
+                    .select_related("assignee", "owner", "project", "created_by")
                     .order_by("sort_order", "id"),
                     to_attr="prefetched_subtasks",
                 )
@@ -90,6 +92,14 @@ class TaskViewSet(viewsets.ModelViewSet):
         return self._respond(task)
 
     @action(detail=True, methods=["post"])
+    def checkin(self, request, pk=None):
+        """Daily tick for a long-term (ongoing) task; `{"checked": false}` removes today's tick."""
+        serializer = CheckinSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        task = services.checkin_task(self._actor(), int(pk), checked=serializer.validated_data["checked"])
+        return self._respond(task)
+
+    @action(detail=True, methods=["post"])
     def duplicate(self, request, pk=None):
         task = services.duplicate_task(self._actor(), int(pk))
         return self._respond(task, status.HTTP_201_CREATED)
@@ -122,6 +132,18 @@ class TaskViewSet(viewsets.ModelViewSet):
             self._actor(), data["task_ids"], due_at=data["due_at"], due_has_time=data["due_has_time"]
         )
         return Response(result)
+
+    @action(detail=False, methods=["post"], url_path="bulk-complete")
+    def bulk_complete(self, request):
+        serializer = BulkIdsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(services.bulk_complete(self._actor(), serializer.validated_data["task_ids"]))
+
+    @action(detail=False, methods=["post"], url_path="bulk-delete")
+    def bulk_delete(self, request):
+        serializer = BulkIdsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(services.bulk_delete(self._actor(), serializer.validated_data["task_ids"]))
 
     @action(detail=False, methods=["get"])
     def counts(self, request):

@@ -38,9 +38,17 @@
   gap: var(--s-4);
 }
 
+.sectionTools {
+  margin-left: auto;
+  display: inline-flex;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 .sectionTitle {
   display: flex;
   align-items: center;
+  gap: var(--s-3);
   justify-content: space-between;
   font-size: var(--fs-xs);
   text-transform: uppercase;
@@ -58,10 +66,9 @@
 .subtaskRow {
   display: flex;
   align-items: center;
-  gap: var(--s-4);
-  padding: var(--s-3) var(--s-2);
+  gap: var(--s-2);
+  padding: 0 var(--s-2) 0 0;
   font-size: var(--fs-md);
-  cursor: pointer;
   border-radius: var(--r-sm);
 }
 
@@ -69,10 +76,55 @@
   background: var(--c-hover);
 }
 
-.subtaskRow input {
+.subtaskMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-3) var(--s-2);
+  cursor: pointer;
+}
+
+.subtaskMain input {
   accent-color: var(--c-text);
   width: 14px;
   height: 14px;
+  flex: none;
+}
+
+.subtaskDelete {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--c-text-faint);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity var(--t-fast),
+    color var(--t-fast),
+    background var(--t-fast);
+}
+
+.subtaskRow:hover .subtaskDelete,
+.subtaskDelete:focus-visible {
+  opacity: 1;
+}
+
+.subtaskDelete:hover {
+  color: var(--c-text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+@media (hover: none) {
+  .subtaskDelete {
+    opacity: 1;
+  }
 }
 
 .subtaskDone {
@@ -98,4 +150,10 @@
   .grid {
     grid-template-columns: 1fr;
   }
+}
+
+.flags {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
 }

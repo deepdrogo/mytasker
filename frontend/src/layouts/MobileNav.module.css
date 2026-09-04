@@ -19,6 +19,9 @@
   box-shadow:
     var(--rim-top-strong),
     0 20px 50px rgba(0, 0, 0, 0.7);
+  transition:
+    transform var(--t-base),
+    opacity var(--t-base);
 }
 
 .item {

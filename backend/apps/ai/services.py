@@ -44,31 +44,83 @@ def reply_language(user) -> str:
 
 def _context_block(user) -> str:
     from apps.projects.models import Project
+    from apps.routines.models import RoutineItem, Rule
 
     prefs = getattr(user, "preferences", None)
     local = now_for(user)
-    projects = list(Project.objects.visible_to(user).order_by("-updated_at").values_list("id", "name", "kind")[:25])
-    project_lines = "\n".join(f"  - #{pid} {name} ({kind})" for pid, name, kind in projects) or "  (none)"
+    projects = list(
+        Project.objects.visible_to(user)
+        .exclude(status__in=[Project.Status.ARCHIVED, Project.Status.COMPLETED])
+        .order_by("-updated_at")
+        .values_list("id", "name", "kind", "category", "status")[:25]
+    )
+    project_lines = (
+        "\n".join(
+            f"  - #{pid} {name} ({'startup' if category == 'startup' else 'project'}, {status}"
+            f"{', pinned active' if kind == 'active' else ''})"
+            for pid, name, kind, category, status in projects
+        )
+        or "  (none)"
+    )
+    routine = list(
+        RoutineItem.objects.filter(routine__owner=user, routine__deleted_at__isnull=True, is_active=True)
+        .select_related("routine")
+        .order_by("routine__kind", "order", "start_time")[:30]
+    )
+    routine_lines = (
+        "\n".join(
+            f"  - #{item.pk} [{item.routine.kind}] {item.name}"
+            + (f" {item.start_time:%H:%M}-{item.end_time:%H:%M}" if item.start_time and item.end_time else "")
+            + (f" ({item.target_minutes} min)" if item.target_minutes else "")
+            for item in routine
+        )
+        or "  (empty)"
+    )
+    rules = list(Rule.objects.filter(owner=user, is_enabled=True).values_list("id", "text")[:20])
+    rule_lines = "\n".join(f"  - #{rid} {text}" for rid, text in rules) or "  (none)"
     return (
         f"User: {user.display_name}. Local time: {local.strftime('%A %Y-%m-%d %H:%M')} ({user.timezone}).\n"
         f"Interface language: {reply_language(user)}.\n"
         f"Default task type: {getattr(prefs, 'default_task_type', 'personal')}. "
         f"Business target: {getattr(prefs, 'business_hours_target_minutes', 600)} min/day.\n"
-        f"Projects visible to the user:\n{project_lines}"
+        f"Open projects & startups:\n{project_lines}\n"
+        f"Routine blocks (personal + business):\n{routine_lines}\n"
+        f"Rules:\n{rule_lines}"
     )
 
 
 SYSTEM_PROMPT = """You are the AI inside MyTasker, a minimalist life & business operating system.
-You help the user manage tasks, projects, prompts, routines and time by calling tools.
+You help the user run their whole system - not only tasks - by calling tools.
 
 REPLY LANGUAGE: {language}. This is the user's interface language and it is not negotiable: write every reply
 in {language} even when the user's message is in a different language. Only proper names, product names and
 quoted task titles stay as written.
 
+MyTasker vocabulary (Georgian terms the user may use are in brackets):
+- Task [დავალება, ტასკი, საქმე]: a one-off to-do with kind personal or business, optional due date, priority,
+  project and subtasks [ქვედავალება, სუბტასკი]. Business tasks without a project live in the "Business" list.
+  A task with is_ongoing=true is long-term work [გრძელვადიანი საქმე]: no deadline, the user ticks it once a day
+  ("check-in") and completes it only when the whole thing is finished. Not a routine item.
+- Project [პროექტი]: a container of business tasks. category=startup [სტარტაპი] shelves it under Startups;
+  kind=active [აქტიური] pins it on the dashboard; status planned/active/paused/completed/archived.
+  Working on any project task counts as business time.
+- Idea [იდეა]: a loose project idea, not yet a project.
+- Routine [რუტინა, დღის რეჟიმი, განრიგი]: two recurring daily schedules - personal and business - made of routine
+  blocks/items with a time window (HH:MM-HH:MM), target minutes and weekdays. They are NOT tasks: they repeat
+  every day and are ticked per day. "Sort out / arrange my routine" [რუტინა დამილაგე] means: call list_routine,
+  then fix overlaps, order the blocks by time (reorder_routine), fill gaps, adjust windows with update_routine_item.
+- Rule [წესი, პრინციპი]: a personal principle the user wants to keep every day (e.g. "no phone after 23:00").
+  Rules are not tasks either; each day the user marks them kept or broken (mark_rule).
+- Prompt [პრომპტი]: a saved AI prompt in the prompt library.
+- Timer / business time [ბიზნეს დრო, ტაიმერი]: time tracking; sleep is tracked separately.
+
 Rules:
 - Be brief. Never use emojis or emoticons.
-- Resolve dates only via the `when` fields (natural language); the server converts them in the user's timezone.
-- When the user names a task without an id, call `list_tasks` or `search` first to find it. Never guess ids.
+- Resolve dates only via the `when` / `deadline` fields (natural language); the server converts them in the
+  user's timezone. Routine windows are HH:MM local time.
+- When the user names a task, project, routine block or rule without an id, look it up first (`list_tasks`,
+  `list_routine`, `list_rules`, `list_projects`, `project_tasks`, `search`). Never guess ids.
+- Decide which entity the user means from the vocabulary above. "routine" is never a task; "rule" is never a task.
 - Prefer one clear action over asking questions. Ask only when the request is truly ambiguous.
 - For deleting or bulk-completing, call the tool once; the system will ask the user to confirm.
 - After acting, summarise what you did in one or two short lines.
@@ -228,6 +280,34 @@ def _preview(actor: Actor, tool_name: str, raw: dict[str, Any]) -> dict[str, Any
         ids = raw.get("task_ids") or []
         titles = list(Task.objects.visible_to(actor.user).filter(pk__in=ids).values_list("title", flat=True))
         return {"kind": "complete", "items": titles, "summary": f"Complete {len(titles)} tasks"}
+    if tool_name == "delete_project":
+        from apps.projects.models import Project
+
+        project = Project.objects.visible_to(actor.user).filter(pk=raw.get("project_id")).first()
+        open_count = Task.objects.visible_to(actor.user).filter(project=project).count() if project else 0
+        return {
+            "kind": "delete",
+            "items": [project.name] if project else [],
+            "summary": f"Delete project “{project.name}” and its {open_count} tasks" if project else "Delete project",
+        }
+    if tool_name == "delete_routine_item":
+        from apps.routines.models import RoutineItem
+
+        item = RoutineItem.objects.filter(pk=raw.get("item_id"), routine__owner=actor.user).first()
+        return {
+            "kind": "delete",
+            "items": [item.name] if item else [],
+            "summary": f"Remove routine block “{item.name}”" if item else "Remove routine block",
+        }
+    if tool_name == "delete_rule":
+        from apps.routines.models import Rule
+
+        rule = Rule.objects.filter(pk=raw.get("rule_id"), owner=actor.user).first()
+        return {
+            "kind": "delete",
+            "items": [rule.text] if rule else [],
+            "summary": f"Delete rule “{rule.text}”" if rule else "Delete rule",
+        }
     return {"kind": tool_name, "items": [], "summary": tool_name}
 
 
@@ -382,8 +462,7 @@ def improve_task(user, task_id: int) -> dict:
     return _structured(
         user,
         instruction=(
-            "Rewrite this task so it is specific, actionable and unambiguous. "
-            f"Write it in {reply_language(user)}."
+            f"Rewrite this task so it is specific, actionable and unambiguous. Write it in {reply_language(user)}."
         ),
         content=content,
         schema=schema,
@@ -481,7 +560,11 @@ def polish_tasks(user, task_ids: list[int]) -> dict:
     for task_id in ids:
         task = visible.get(task_id)
         if task is None or not can_edit_object(
-            user, owner_id=task.owner_id, project=task.project, visibility=task.visibility
+            user,
+            owner_id=task.owner_id,
+            project=task.project,
+            visibility=task.visibility,
+            created_by_id=task.created_by_id,
         ):
             skipped.append(task_id)
         else:
@@ -536,7 +619,8 @@ def polish_tasks(user, task_ids: list[int]) -> dict:
 
 def _polish_call(user, batch: list, instruction: str) -> dict[int, dict]:
     content = "\n".join(
-        f"DRAFT #{t.pk}: {t.title}" + (f"\n    (existing description: {t.description[:300]})" if t.description else "")
+        f"DRAFT #{t.pk}: {t.title}"
+        + (f"\n    (existing description: {t.description[:300]})" if t.description else "")
         for t in batch
     )
     data = _structured(

@@ -1,5 +1,5 @@
 import { A, useNavigate, useParams } from '@solidjs/router';
-import { ArrowLeft, Clock, Pencil, Plus, UserPlus } from 'lucide-solid';
+import { ArrowLeft, Clock, Pencil, Play, Plus, Square, UserPlus } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { createMemo, createSignal, For, Match, Show, Switch } from 'solid-js';
 import { ApiError } from '~/api/client';
@@ -25,6 +25,7 @@ import { TaskSelectionBar } from '~/features/tasks/TaskSelectionBar';
 import { createQuery } from '~/hooks/createQuery';
 import { t } from '~/i18n';
 import { authStore } from '~/stores/auth';
+import { timerStore, toggleTimer } from '~/stores/timer';
 import { tx } from '~/stores/translations';
 import { toast } from '~/stores/ui';
 import type { Project, ProjectMember, Role, Task } from '~/types';
@@ -50,6 +51,8 @@ export default function ProjectDetail(): JSX.Element {
   const id = () => Number(params.id);
   const tab = (): Tab => {
     const current = (params.tab ?? '').split('/')[0] as Tab;
+    // Assistants only get the task list; the backend refuses the other tabs' endpoints anyway.
+    if (authStore.isAssistant()) return DEFAULT_TAB;
     return TABS.includes(current) ? current : DEFAULT_TAB;
   };
 
@@ -61,6 +64,7 @@ export default function ProjectDetail(): JSX.Element {
 
   const tabs = createMemo(() => {
     const p = project.data();
+    if (authStore.isAssistant()) return undefined;
     return [
       { label: t('Tasks'), href: `/projects/${id()}/tasks`, count: p?.open_tasks },
       { label: t('Overview'), href: `/projects/${id()}/overview` },
@@ -110,6 +114,19 @@ export default function ProjectDetail(): JSX.Element {
                   </Show>
                   <Show when={p().category === 'startup'}>
                     <Badge variant="outline">{t('Startup')}</Badge>
+                  </Show>
+                  <Show when={p().capabilities.track_time}>
+                    <Button
+                      size="sm"
+                      variant={timerStore.running()?.project?.id === p().id ? 'primary' : 'secondary'}
+                      loading={timerStore.busy()}
+                      title={t('Time on this project counts as business time')}
+                      onClick={() => void toggleTimer({ category: 'business', project_id: p().id })}
+                    >
+                      <Show when={timerStore.running()?.project?.id === p().id} fallback={<><Play size={13} /> {t('Start timer')}</>}>
+                        <Square size={13} /> {t('Stop')}
+                      </Show>
+                    </Button>
                   </Show>
                   <Show when={p().capabilities.manage_project}>
                     <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>

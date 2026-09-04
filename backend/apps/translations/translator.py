@@ -49,11 +49,14 @@ def _system_prompt(target_langs: list[str]) -> str:
         "3. Keep the meaning, tone and register. Georgian output must be natural, modern Georgian as a native "
         "speaker would write in a to-do app; English output must be concise, natural English.\n"
         "4. Preserve markdown, line breaks, bullet structure, URLs, emails, code, numbers, dates, times, emojis, "
-        "hashtags, @mentions and product or brand names exactly. Do not translate proper names of people or "
-        "companies.\n"
-        "5. Keep every key exactly as given and never add, drop or merge keys. Never leave a translated value "
+        "hashtags and @mentions exactly.\n"
+        "5. Names of products, projects, companies and people are written in the script of the target language: "
+        "into Georgian, transliterate them (MyTasker -> მაითასქერი, Replika -> რეპლიკა, VerifHub AI -> ვერიფჰაბ AI); "
+        "into English, write Georgian names in Latin letters (მამონტი -> Mamonti). Short acronyms such as AI, API, "
+        "SEO, CRM stay as they are. Never leave a Latin-script name untouched in Georgian output.\n"
+        "6. Keep every key exactly as given and never add, drop or merge keys. Never leave a translated value "
         "empty when the source value is non-empty.\n"
-        "6. Do not explain, do not add notes. Only call the tool."
+        "7. Do not explain, do not add notes. Only call the tool."
     )
 
 

@@ -102,4 +102,47 @@ export const tasks: Record<string, string> = {
   // Completed
   'Done is done. Reopen anything by mistake.': 'რაც შესრულდა, შესრულდა. შემთხვევით დასრულებული დააბრუნე.',
   'No completed tasks yet.': 'დასრულებული დავალებები ჯერ არ არის.',
+
+  // Bulk selection
+  'Complete selected': 'მონიშნულების შესრულება',
+  'Delete selected': 'მონიშნულების წაშლა',
+  'Delete {count}?': 'წავშალო {count}?',
+  'Subtasks are deleted together with their parent. This cannot be undone.': 'ქვედავალებები მშობელთან ერთად იშლება. ეს ვერ დაბრუნდება.',
+  'Select all {count}': 'ყველას მონიშვნა ({count})',
+  '{count} completed': '{count} შესრულდა',
+  '{count} completed, {skipped} skipped': '{count} შესრულდა, {skipped} გამოტოვდა',
+  '{count} deleted': '{count} წაიშალა',
+  '{count} deleted, {skipped} skipped': '{count} წაიშალა, {skipped} გამოტოვდა',
+  'Could not update task.': 'დავალების განახლება ვერ მოხერხდა.',
+  'Polish subtasks': 'ქვედავალებების გასწორება',
+
+  // Canvas
+  'All tasks': 'ყველა დავალება',
+  'Personal, business and projects on one canvas.': 'პირადი, ბიზნესი და პროექტები ერთ ტილოზე.',
+  'No open tasks.': 'ღია დავალებები არ არის.',
+  '{done}/{total} subtasks': '{done}/{total} ქვედავალება',
+  'Add a task to {name}…': 'დაამატე დავალება {name}-ში…',
+  'Due tomorrow': 'ვადა ხვალ',
+  'Delete subtask': 'ქვედავალების წაშლა',
+  'Subtask deleted': 'ქვედავალება წაიშალა',
+
+  // Long-term (ongoing) tasks
+  'Long-term work - tick it daily, complete when finished': 'გრძელვადიანი საქმე - ყოველდღე მონიშნე, დაასრულე როცა მთლიანად მორჩები',
+  'Long-term work - ticked daily': 'გრძელვადიანი საქმე - ყოველდღიური ჩეკი',
+  'Check in for today': 'დღევანდელი ჩეკი',
+  'Checked in today': 'დღეს ჩეკი გაკეთებულია',
+  'Checked in for today': 'დღევანდელი ჩეკი გაკეთდა',
+  'Undo today’s check-in': 'დღევანდელი ჩეკის გაუქმება',
+  'Finish for good': 'საბოლოოდ დასრულება',
+  'Daily check-ins': 'ყოველდღიური ჩეკები',
+
+  // No date
+  'No date': 'თარიღის გარეშე',
+  'Open tasks without a deadline. Give them a day or let them go.': 'ღია დავალებები ვადის გარეშე. მიეცი დღე ან გაუშვი.',
+  'Everything has a date.': 'ყველაფერს თარიღი აქვს.',
+  'Tasks you add without a deadline will show up here.': 'ვადის გარეშე დამატებული დავალებები აქ გამოჩნდება.',
+
+  // Today
+  'Next 7 days': 'მომდევნო 7 დღე',
+  'No business tasks pending.': 'ბიზნეს დავალებები არ არის.',
 };

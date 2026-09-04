@@ -1,15 +1,224 @@
 .grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) minmax(0, 0.85fr);
-  gap: var(--s-8);
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 0.7fr);
+  gap: var(--s-7);
   align-items: start;
 }
 
 .col {
   display: flex;
   flex-direction: column;
-  gap: var(--s-8);
+  gap: var(--s-7);
   min-width: 0;
+}
+
+.side {
+  gap: var(--s-5);
+}
+
+.sectionLink {
+  color: var(--c-text-dim);
+  text-decoration: none;
+}
+
+.sectionLink:hover {
+  color: var(--c-text);
+}
+
+.hint + .sectionLink {
+  margin-left: var(--s-3);
+}
+
+/* Personal / Business: stacked full-width so titles stay readable; side by side only on very wide screens. */
+.plate {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-6);
+  align-items: start;
+}
+
+@media (min-width: 1700px) {
+  .plate {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Next 7 days */
+.calendar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.calDay {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.calDayLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-1) var(--s-2);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-text-faint);
+}
+
+.calList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.calTask {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  min-height: 30px;
+  padding: 0 var(--s-3);
+  border: none;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--c-text);
+  font: inherit;
+  font-size: var(--fs-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+
+.calTask:hover {
+  background: var(--c-hover);
+}
+
+.calTitle {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calProject {
+  flex: none;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-xs);
+  color: var(--c-text-faint);
+}
+
+/* Compact timer tiles */
+.timers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-3);
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-4) var(--s-4);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  background: var(--g-surface);
+  box-shadow: var(--shadow-card);
+  min-width: 0;
+}
+
+.tileHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s-2);
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--c-text-dim);
+  min-width: 0;
+}
+
+.tileHead > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tileTarget {
+  font-family: var(--font-mono);
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--c-text-faint);
+  flex: none;
+}
+
+.tileRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+}
+
+.tileValue {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: var(--fw-medium);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(180deg, #fff, #9a9a9a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.tileBtn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--c-border-strong);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--c-text);
+  cursor: pointer;
+  transition:
+    background var(--t-fast),
+    box-shadow var(--t-fast),
+    transform var(--t-fast);
+}
+
+.tileBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.tileBtn:active {
+  transform: scale(0.94);
+}
+
+.tileBtnActive {
+  background: var(--g-primary);
+  color: var(--c-invert-text);
+  border-color: transparent;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+}
+
+.tile .runningLabel {
+  font-size: var(--fs-xs);
 }
 
 .greeting {
@@ -301,9 +510,9 @@
 .routineRow {
   display: flex;
   align-items: center;
-  gap: var(--s-4);
-  min-height: 40px;
-  padding: 0 var(--s-5);
+  gap: var(--s-3);
+  min-height: 30px;
+  padding: 0 var(--s-3);
   border-radius: var(--r-md);
   border: 1px solid transparent;
   font-size: var(--fs-md);
@@ -323,8 +532,8 @@
 .routineCheck {
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: none;
   border: none;
@@ -365,12 +574,216 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: var(--fs-xs);
 }
 
 .routineTime {
   font-family: var(--font-mono);
-  font-size: var(--fs-xs);
+  font-size: 10px;
   color: var(--c-text-faint);
+  white-space: nowrap;
+}
+
+.routineBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: var(--s-1) 0;
+}
+
+.routineLine {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+.routineLine .routineName {
+  flex: 1;
+}
+
+.nowPill,
+.streakPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 7px;
+  border-radius: var(--r-full);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-text);
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid var(--c-border-strong);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.12);
+  flex: none;
+}
+
+.streakPill {
+  text-transform: none;
+  color: var(--c-text-dim);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--c-border);
+  box-shadow: none;
+}
+
+/* Segmented progress strip above a routine / rules list: one segment per item. */
+.routineProgress {
+  display: flex;
+  gap: 3px;
+  padding: 0 var(--s-2);
+}
+
+.routineSeg {
+  flex: 1;
+  height: 3px;
+  border-radius: var(--r-full);
+  background: rgba(255, 255, 255, 0.08);
+  transition: background var(--t-base), box-shadow var(--t-base);
+}
+
+.routineSegDone {
+  background: var(--g-ink);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.35);
+}
+
+.routineSegBroken {
+  background: rgba(255, 255, 255, 0.22);
+  background-image: repeating-linear-gradient(135deg, transparent 0 2px, rgba(0, 0, 0, 0.5) 2px 4px);
+}
+
+.miniBar {
+  height: 3px;
+  border-radius: var(--r-full);
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+
+.miniBarFill {
+  height: 100%;
+  border-radius: var(--r-full);
+  background: var(--g-ink);
+  transition: width var(--t-slow);
+}
+
+/* Rules: compact two-column grid, one short line per rule. */
+.rules {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1px;
+}
+
+.ruleRow {
+  min-height: 26px;
+  padding: 0 var(--s-2) 0 var(--s-3);
+  gap: var(--s-2);
+  font-size: var(--fs-xs);
+}
+
+.ruleRow .routineBody {
+  padding: 0;
+}
+
+.ruleRow .routineName {
+  font-size: var(--fs-xs);
+}
+
+.ruleIcon {
+  display: none;
+}
+
+.ruleKept .routineName {
+  color: var(--c-text);
+}
+
+.ruleBroken .routineName {
+  color: var(--c-text-faint);
+  text-decoration: line-through;
+  text-decoration-color: var(--c-text-faint);
+}
+
+.ruleActions {
+  display: inline-flex;
+  gap: 2px;
+  flex: none;
+}
+
+.ruleBtn {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--c-text-faint);
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.55;
+  transition:
+    background var(--t-fast),
+    color var(--t-fast),
+    border-color var(--t-fast),
+    opacity var(--t-fast),
+    box-shadow var(--t-fast);
+}
+
+.ruleBtn svg {
+  width: 11px;
+  height: 11px;
+}
+
+.ruleRow:hover .ruleBtn,
+.ruleBtn:focus-visible {
+  opacity: 1;
+}
+
+.ruleBtn:hover {
+  color: var(--c-text);
+  border-color: var(--c-border-strong);
+}
+
+.ruleBtnKept {
+  opacity: 1;
+  background: var(--g-primary);
+  color: var(--c-invert-text);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);
+}
+
+.ruleBtnKept svg {
+  stroke-width: 3;
+}
+
+.ruleBtnBroken {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--c-text);
+  border-color: var(--c-border-strong);
+}
+
+.ruleRow .streakPill {
+  padding: 0 5px;
+  font-size: 9px;
+}
+
+@media (hover: none) {
+  .ruleBtn {
+    width: 28px;
+    height: 28px;
+    opacity: 1;
+  }
+  .ruleRow {
+    min-height: 34px;
+  }
+}
+
+@media (max-width: 480px) {
+  .rules {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Stats */
@@ -383,8 +796,8 @@
 .stat {
   display: flex;
   flex-direction: column;
-  gap: var(--s-2);
-  padding: var(--s-5) var(--s-5);
+  gap: var(--s-1);
+  padding: var(--s-3) var(--s-4);
   background: var(--g-surface);
   border: 1px solid var(--c-border);
   border-radius: var(--r-lg);
@@ -401,7 +814,7 @@
 
 .statValue {
   font-family: var(--font-mono);
-  font-size: 22px;
+  font-size: 17px;
   font-weight: var(--fw-medium);
   letter-spacing: -0.03em;
   line-height: 1;
@@ -411,7 +824,7 @@
 }
 
 .statLabel {
-  font-size: 10.5px;
+  font-size: 9.5px;
   color: var(--c-text-dim);
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -452,23 +865,143 @@
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   color: var(--c-text-dim);
+  white-space: nowrap;
+}
+
+.projectCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-5);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  background: var(--g-surface);
+  box-shadow: var(--shadow-card);
+  transition: border-color var(--t-fast);
+}
+
+.projectCard:hover {
+  border-color: var(--c-border-strong);
+}
+
+.projectHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+  color: var(--c-text);
+  text-decoration: none;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
+}
+
+.projectName {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.projectHead:hover .projectName {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--c-border-strong);
+}
+
+.nextTasks {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.nextTask {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  min-height: 30px;
+  padding: 0 var(--s-2);
+  border: none;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--c-text-dim);
+  font: inherit;
+  font-size: var(--fs-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+
+.nextTask:hover {
+  background: var(--c-hover);
+  color: var(--c-text);
+}
+
+.nextTaskTitle {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Mobile: priority order - timer, overdue/due, routine, rest. */
+@media (max-width: 1280px) and (min-width: 1101px) {
+  .grid {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  }
+  .side {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
 @media (max-width: 1100px) {
   .grid {
     grid-template-columns: 1fr;
   }
-  .col:nth-child(2) {
+  .col:nth-child(3) {
     order: 0;
   }
   .col:nth-child(1) {
     order: 1;
   }
-  .col:nth-child(3) {
+  .col:nth-child(2) {
     order: 2;
   }
+
   .greeting {
     font-size: 24px;
+  }
+  .card {
+    padding: var(--s-5) var(--s-5);
+  }
+  .big {
+    font-size: 38px;
+  }
+  .stats {
+    gap: var(--s-3);
+  }
+  .stat {
+    padding: var(--s-4) var(--s-4);
+  }
+  .statValue {
+    font-size: 19px;
+  }
+  .routineTime {
+    font-size: 10.5px;
+  }
+}
+
+@media (max-width: 420px) {
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

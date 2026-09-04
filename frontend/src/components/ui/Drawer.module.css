@@ -114,7 +114,7 @@
   .panel {
     width: 100%;
     height: auto;
-    max-height: 92vh;
+    max-height: 92dvh;
     border: none;
     border-top: 1px solid var(--c-border-strong);
     border-radius: var(--r-2xl) var(--r-2xl) 0 0;

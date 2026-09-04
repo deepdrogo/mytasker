@@ -52,10 +52,14 @@ class TaskQuerySet(SoftDeleteQuerySet):
         - own tasks: always
         - project tasks: accepted member of a group / group_plus project AND visibility=group
         - private (Group Plus) tasks of other users: never
+        - assistant accounts: only the principal's tasks the assistant created itself
         """
         if user is None or not getattr(user, "is_authenticated", False):
             return self.none()
         from apps.projects.models import Project
+
+        if getattr(user, "assistant_for_id", None) is not None:
+            return self.filter(owner_id=user.assistant_for_id, created_by=user)
 
         return self.filter(
             Q(owner=user)
@@ -140,6 +144,8 @@ class Task(TimeStampedModel, SoftDeleteModel):
     reminder_at = models.DateTimeField(null=True, blank=True)
     reminder_sent_at = models.DateTimeField(null=True, blank=True)
     estimated_minutes = models.PositiveIntegerField(null=True, blank=True)
+    # Long-term work: no deadline, ticked off once a day (TaskCheckin), completed only when truly finished.
+    is_ongoing = models.BooleanField(default=False, db_index=True)
 
     recurrence = models.ForeignKey(
         RecurrenceRule, on_delete=models.SET_NULL, null=True, blank=True, related_name="tasks"
@@ -236,3 +242,22 @@ class Reminder(TimeStampedModel):
             models.Index(fields=["remind_at", "status"], name="reminder_due"),
             models.Index(fields=["user", "status"], name="reminder_user_status"),
         ]
+
+
+class TaskCheckin(models.Model):
+    """One row per ongoing task per local day: "I worked on this today"."""
+
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="checkins")
+    date = models.DateField()
+    checked_at = models.DateTimeField(auto_now=True)
+    checked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="task_checkins"
+    )
+
+    class Meta:
+        db_table = "tasks_task_checkin"
+        constraints = [models.UniqueConstraint(fields=["task", "date"], name="uniq_task_checkin")]
+        indexes = [models.Index(fields=["task", "-date"], name="task_checkin_lookup")]
+
+    def __str__(self) -> str:
+        return f"TaskCheckin({self.task_id}, {self.date})"

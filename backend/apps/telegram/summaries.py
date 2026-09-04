@@ -48,7 +48,11 @@ def morning_summary(user) -> str:
     if focus:
         lines.append("\n<b>Focus</b>")
         lines += [_task_line(t, user) for t in focus]
-    if not (today or overdue or focus):
+    ongoing = list(base.filter(is_ongoing=True).order_by("-updated_at")[:8])
+    if ongoing:
+        lines.append("\n<b>Daily check-ins</b>")
+        lines += [_task_line(t, user) for t in ongoing]
+    if not (today or overdue or focus or ongoing):
         lines.append("\nNothing scheduled. A clean slate — pick one meaningful thing.")
     streak = analytics.streak(user, day - timedelta(days=1))
     if streak:

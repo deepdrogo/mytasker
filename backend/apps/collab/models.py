@@ -20,6 +20,8 @@ class CommentQuerySet(SoftDeleteQuerySet):
     def visible_to(self, user):
         if user is None or not getattr(user, "is_authenticated", False):
             return self.none()
+        if getattr(user, "assistant_for_id", None) is not None:
+            return self.filter(author=user)
         from apps.projects.models import Project
 
         member_projects = Q(
@@ -86,6 +88,8 @@ class ActivityEventQuerySet(models.QuerySet):
         """
         if user is None or not getattr(user, "is_authenticated", False):
             return self.none()
+        if getattr(user, "assistant_for_id", None) is not None:
+            return self.filter(actor_user=user)
         from apps.projects.models import Project
 
         return self.filter(

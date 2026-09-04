@@ -65,10 +65,28 @@ class CompletionSerializer(serializers.Serializer):
 
 
 class RuleSerializer(serializers.ModelSerializer):
+    # None = not checked today, True = kept, False = broken.
+    today_kept = serializers.SerializerMethodField()
+    streak = serializers.SerializerMethodField()
+
     class Meta:
         model = Rule
-        fields = ["id", "text", "description", "order", "is_enabled"]
-        read_only_fields = ["id"]
+        fields = ["id", "text", "description", "order", "is_enabled", "today_kept", "streak"]
+        read_only_fields = ["id", "today_kept", "streak"]
+
+    def get_today_kept(self, obj) -> bool | None:
+        completions = self.context.get("rule_completions") or {}
+        row = completions.get(obj.pk)
+        return None if row is None else bool(row.kept)
+
+    def get_streak(self, obj) -> int:
+        streaks = self.context.get("rule_streaks") or {}
+        return int(streaks.get(obj.pk, 0))
+
+
+class RuleKeptSerializer(serializers.Serializer):
+    kept = serializers.BooleanField(allow_null=True)
+    date = serializers.DateField(required=False)
 
 
 class RuleInputSerializer(serializers.Serializer):

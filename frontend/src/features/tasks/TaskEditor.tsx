@@ -3,10 +3,12 @@ import type { JSX } from 'solid-js';
 import { batch, createEffect, createSignal, For, Show } from 'solid-js';
 import { ApiError } from '~/api/client';
 import { Button } from '~/components/ui/Button';
+import { DateTimeInput } from '~/components/ui/DateTimeInput';
 import { Drawer } from '~/components/ui/Drawer';
 import { ConfirmDialog, ErrorNote } from '~/components/ui/Feedback';
 import { Checkbox, Field, Input, Select, Textarea } from '~/components/ui/Input';
 import { AITaskTools } from '~/features/ai/AITaskTools';
+import { PolishButton } from '~/features/ai/PolishButton';
 import { Comments } from '~/features/collab/Comments';
 import { ProjectSelector } from '~/features/projects/ProjectSelector';
 import { tasksApi, type TaskInput } from '~/features/tasks/api';
@@ -46,6 +48,7 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
   const [hasTime, setHasTime] = createSignal(false);
   const [reminderAt, setReminderAt] = createSignal('');
   const [estimate, setEstimate] = createSignal('');
+  const [ongoing, setOngoing] = createSignal(false);
   const [projectId, setProjectId] = createSignal<number | null>(null);
   const [visibility, setVisibility] = createSignal<'private' | 'group'>('group');
   const [recurrence, setRecurrence] = createSignal('');
@@ -67,6 +70,7 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
       setHasTime(task.due_has_time);
       setReminderAt(toLocalInputValue(task.reminder_at));
       setEstimate(task.estimated_minutes ? String(task.estimated_minutes) : '');
+      setOngoing(task.is_ongoing);
       setProjectId(task.project?.id ?? null);
       setVisibility(task.visibility);
       setRecurrence(task.recurrence?.freq ?? '');
@@ -97,6 +101,7 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
       due_has_time: hasTime(),
       reminder_at: fromLocalInputValue(reminderAt()),
       estimated_minutes: estimate() ? Number(estimate()) : null,
+      is_ongoing: ongoing(),
       project_id: projectId(),
       visibility: visibility(),
       recurrence: recurrence()
@@ -259,30 +264,34 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
                 </Field>
 
                 <Field label={t('Due')}>
-                  <Input
-                    type={hasTime() ? 'datetime-local' : 'date'}
-                    value={hasTime() ? dueAt() : dueAt().slice(0, 10)}
-                    onInput={(e) => mark(setDueAt)(hasTime() ? e.currentTarget.value : `${e.currentTarget.value}T23:59`)}
+                  <DateTimeInput
+                    value={dueAt()}
+                    dateOnly={!hasTime()}
+                    defaultTime={hasTime() ? '09:00' : '23:59'}
+                    onChange={(value) => mark(setDueAt)(value)}
                     disabled={!task().can_edit}
                   />
                 </Field>
 
                 <Field label={t('Reminder')}>
-                  <Input
-                    type="datetime-local"
-                    value={reminderAt()}
-                    onInput={(e) => mark(setReminderAt)(e.currentTarget.value)}
-                    disabled={!task().can_edit}
-                  />
+                  <DateTimeInput value={reminderAt()} onChange={(value) => mark(setReminderAt)(value)} disabled={!task().can_edit} />
                 </Field>
               </div>
 
-              <Checkbox
-                label={t('Due at a specific time')}
-                checked={hasTime()}
-                onChange={(e) => mark(setHasTime)(e.currentTarget.checked)}
-                disabled={!task().can_edit}
-              />
+              <div class={styles.flags}>
+                <Checkbox
+                  label={t('Due at a specific time')}
+                  checked={hasTime()}
+                  onChange={(e) => mark(setHasTime)(e.currentTarget.checked)}
+                  disabled={!task().can_edit}
+                />
+                <Checkbox
+                  label={t('Long-term work - tick it daily, complete when finished')}
+                  checked={ongoing()}
+                  onChange={(e) => mark(setOngoing)(e.currentTarget.checked)}
+                  disabled={!task().can_edit || task().parent !== null}
+                />
+              </div>
 
               <Field label={t('Project')}>
                 <ProjectSelector
@@ -339,26 +348,59 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
                         {subtasks().filter((s) => s.status === 'done').length}/{subtasks().length}
                       </span>
                     </Show>
+                    <span class={styles.sectionTools}>
+                      <PolishButton
+                        taskIds={() => subtasks().filter((s) => s.can_edit && s.status !== 'done').map((s) => s.id)}
+                        label={t('Polish subtasks')}
+                        variant="ghost"
+                        onChanged={async () => {
+                          setSubtasks(await tasksApi.subtasks(task().id));
+                          props.onChanged?.();
+                        }}
+                      />
+                    </span>
                   </h3>
                   <div class={styles.subtasks}>
                     <For each={subtasks()}>
                       {(subtask) => (
-                        <label class={styles.subtaskRow}>
-                          <input
-                            type="checkbox"
-                            checked={subtask.status === 'done'}
-                            disabled={!subtask.can_edit}
-                            onChange={async (e) => {
-                              if (e.currentTarget.checked) await tasksApi.complete(subtask.id);
-                              else await tasksApi.reopen(subtask.id);
-                              setSubtasks(await tasksApi.subtasks(task().id));
-                              props.onChanged?.();
-                            }}
-                          />
-                          <span class={subtask.status === 'done' ? styles.subtaskDone : undefined}>
-                            {tx('task', subtask.id, 'title', subtask.title)}
-                          </span>
-                        </label>
+                        <div class={styles.subtaskRow}>
+                          <label class={styles.subtaskMain}>
+                            <input
+                              type="checkbox"
+                              checked={subtask.status === 'done'}
+                              disabled={!subtask.can_edit}
+                              onChange={async (e) => {
+                                if (e.currentTarget.checked) await tasksApi.complete(subtask.id);
+                                else await tasksApi.reopen(subtask.id);
+                                setSubtasks(await tasksApi.subtasks(task().id));
+                                props.onChanged?.();
+                              }}
+                            />
+                            <span class={subtask.status === 'done' ? styles.subtaskDone : undefined}>
+                              {tx('task', subtask.id, 'title', subtask.title)}
+                            </span>
+                          </label>
+                          <Show when={subtask.can_delete}>
+                            <button
+                              type="button"
+                              class={styles.subtaskDelete}
+                              aria-label={t('Delete subtask')}
+                              title={t('Delete subtask')}
+                              onClick={async () => {
+                                try {
+                                  await tasksApi.remove(subtask.id);
+                                  setSubtasks(await tasksApi.subtasks(task().id));
+                                  props.onChanged?.();
+                                  toast(t('Subtask deleted'));
+                                } catch {
+                                  toast(t('Could not delete.'));
+                                }
+                              }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </Show>
+                        </div>
                       )}
                     </For>
                   </div>

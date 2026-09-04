@@ -84,6 +84,8 @@ class MeSerializer(serializers.ModelSerializer):
     email_verified = serializers.SerializerMethodField()
     telegram_linked = serializers.SerializerMethodField()
     ai_enabled = serializers.SerializerMethodField()
+    is_assistant = serializers.SerializerMethodField()
+    principal = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -98,6 +100,8 @@ class MeSerializer(serializers.ModelSerializer):
             "telegram_linked",
             "is_staff",
             "ai_enabled",
+            "is_assistant",
+            "principal",
             "created_at",
             "preferences",
             "notification_preferences",
@@ -106,6 +110,15 @@ class MeSerializer(serializers.ModelSerializer):
 
     def get_email_verified(self, obj: User) -> bool:
         return obj.is_email_verified
+
+    def get_is_assistant(self, obj: User) -> bool:
+        return obj.is_assistant
+
+    def get_principal(self, obj: User) -> dict | None:
+        principal = obj.assistant_for if obj.assistant_for_id else None
+        if principal is None:
+            return None
+        return {"id": principal.pk, "display_name": principal.display_name}
 
     def get_telegram_linked(self, obj: User) -> bool:
         connection = getattr(obj, "telegram_connection", None)
@@ -180,3 +193,32 @@ class ProfileUpdateSerializer(serializers.Serializer):
     full_name = serializers.CharField(max_length=120, required=False, allow_blank=True)
     timezone = serializers.CharField(max_length=64, required=False, validators=[_validate_timezone])
     locale = serializers.CharField(max_length=10, required=False, validators=[_validate_locale])
+
+
+class AssistantSerializer(serializers.ModelSerializer):
+    display_name = serializers.CharField(read_only=True)
+    tasks_created = serializers.IntegerField(read_only=True, default=0)
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "email",
+            "full_name",
+            "display_name",
+            "is_active",
+            "last_seen_at",
+            "created_at",
+            "tasks_created",
+        ]
+        read_only_fields = fields
+
+
+class AssistantCreateSerializer(serializers.Serializer):
+    full_name = serializers.CharField(max_length=120)
+    email = serializers.EmailField(max_length=254, required=False, allow_blank=True, default="")
+
+
+class AssistantUpdateSerializer(serializers.Serializer):
+    full_name = serializers.CharField(max_length=120, required=False)
+    is_active = serializers.BooleanField(required=False)

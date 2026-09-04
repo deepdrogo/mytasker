@@ -112,6 +112,8 @@ export function TaskListPage(props: TaskListPageProps): JSX.Element {
 
           <TaskSelectionBar
             tasks={selectedTasks}
+            total={() => query.data()?.results.length ?? 0}
+            onSelectAll={() => setSelected(new Set((query.data()?.results ?? []).map((task) => task.id)))}
             onChanged={() => query.refetch()}
             onClear={() => setSelected(new Set<number>())}
             onShare={setShareTasks}

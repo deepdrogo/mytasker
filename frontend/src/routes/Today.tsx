@@ -2,13 +2,13 @@
 // Built by drogoz · https://github.com/deepdrogo/mytasker
 
 import { A } from '@solidjs/router';
-import { Check, Circle, Flame, Moon, Play, Square, Undo2 } from 'lucide-solid';
+import { Check, Circle, Flame, Moon, Play, Rocket, ScrollText, Square, Undo2, X } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For, Show, createMemo, createSignal, onCleanup } from 'solid-js';
 import { Page } from '~/components/shared/Page';
-import { Button } from '~/components/ui/Button';
+import { PriorityMark } from '~/components/shared/Indicators';
 import { ErrorNote, Skeleton } from '~/components/ui/Feedback';
-import { routinesApi } from '~/features/routines/api';
+import { routinesApi, rulesApi } from '~/features/routines/api';
 import { ShareDialog } from '~/features/sharing/ShareDialog';
 import { tasksApi } from '~/features/tasks/api';
 import { TaskComposer } from '~/features/tasks/TaskComposer';
@@ -16,13 +16,13 @@ import { TaskEditor } from '~/features/tasks/TaskEditor';
 import { TaskList } from '~/features/tasks/TaskList';
 import { todayApi } from '~/features/today/api';
 import { createQuery, invalidate } from '~/hooks/createQuery';
-import { t, tn } from '~/i18n';
+import { intlLocale, t, tn } from '~/i18n';
 import { authStore } from '~/stores/auth';
 import { tx } from '~/stores/translations';
 import { startSleep, stopSleep, timerStore, toggleTimer } from '~/stores/timer';
 import { toast } from '~/stores/ui';
-import type { RoutineItem, Task, TodayData } from '~/types';
-import { formatClock, formatDateFull, formatMinutes, percent } from '~/utils/format';
+import type { RoutineItem, Rule, Task, TodayData, TodayProject } from '~/types';
+import { formatClock, formatDateFull, formatDueDate, formatMinutes, percent } from '~/utils/format';
 import styles from './Today.module.css';
 import { cx } from '~/utils/cx';
 
@@ -38,12 +38,6 @@ export default function Today(): JSX.Element {
 
   const data = () => query.data();
   const refresh = () => query.refetch();
-  const greeting = createMemo(() => {
-    const hour = new Date().getHours();
-    const name = authStore.user()?.display_name?.split(' ')[0] ?? '';
-    const part = hour < 5 ? t('Good night') : hour < 12 ? t('Good morning') : hour < 18 ? t('Good afternoon') : t('Good evening');
-    return name ? `${part}, ${name}.` : `${part}.`;
-  });
 
   const undo = async (task: Task) => {
     try {
@@ -67,15 +61,35 @@ export default function Today(): JSX.Element {
     return running?.note || t('Running');
   };
 
+  const use12h = () => authStore.user()?.preferences.time_format === '12h';
+
+  /** Upcoming (next 7 days) grouped by local day, in order. */
+  const upcomingGroups = createMemo(() => {
+    const groups = new Map<string, { label: string; tasks: Task[] }>();
+    for (const task of data()?.tasks.upcoming ?? []) {
+      if (!task.due_at) continue;
+      const date = new Date(task.due_at);
+      const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+      const group = groups.get(key) ?? {
+        label: date.toLocaleDateString(intlLocale(), { weekday: 'short', day: 'numeric', month: 'short' }),
+        tasks: [],
+      };
+      group.tasks.push(task);
+      groups.set(key, group);
+    }
+    return [...groups.values()];
+  });
+
+  const share = (task: Task) => setShareTasks([task]);
+
   return (
     <Page title={t('Today')} subtitle={formatDateFull(new Date().toISOString())}>
       <Show when={!query.error()} fallback={<ErrorNote message={t('Could not load today.')} onRetry={refresh} />}>
         <Show when={data()} fallback={<Skeleton rows={8} height={40} />}>
           {(d) => (
             <div class={styles.grid}>
-              {/* Column 1: tasks */}
+              {/* Column 1: the plate - dated work, daily check-ins, personal / business, the week ahead */}
               <section class={styles.col}>
-                <p class={styles.greeting}>{greeting()}</p>
                 <TaskComposer
                   defaults={{ due_at: endOfToday() }}
                   placeholder={t('Add a task for today…')}
@@ -87,7 +101,7 @@ export default function Today(): JSX.Element {
 
                 <Show when={d().tasks.overdue.length > 0}>
                   <Section title={t('Overdue')} count={d().tasks.overdue.length} tone="strong">
-                    <TaskList tasks={d().tasks.overdue} compact showProject onOpen={setActiveTask} onChanged={refresh} onShare={(t) => setShareTasks([t])} />
+                    <TaskList tasks={d().tasks.overdue} compact showProject onOpen={setActiveTask} onChanged={refresh} onShare={share} />
                   </Section>
                 </Show>
 
@@ -100,15 +114,86 @@ export default function Today(): JSX.Element {
                     emptyHint={t('Add a task above or pull one from Focus.')}
                     onOpen={setActiveTask}
                     onChanged={refresh}
-                    onShare={(t) => setShareTasks([t])}
+                    onShare={share}
                   />
                 </Section>
 
-                <Show when={d().tasks.focus.length > 0}>
-                  <Section title={t('Focus')} hint={t('High priority, no date')}>
-                    <TaskList tasks={d().tasks.focus} compact showProject onOpen={setActiveTask} onChanged={refresh} onShare={(t) => setShareTasks([t])} />
+                <Show when={d().tasks.ongoing.length > 0}>
+                  <Section
+                    title={t('Daily check-ins')}
+                    hint={`${d().tasks.ongoing.filter((task) => task.today_checked).length}/${d().tasks.ongoing.length}`}
+                  >
+                    <TaskList tasks={d().tasks.ongoing} compact showProject onOpen={setActiveTask} onChanged={refresh} onShare={share} />
                   </Section>
                 </Show>
+
+                <Show when={d().tasks.focus.length > 0}>
+                  <Section title={t('Focus')} hint={t('High priority, no date')}>
+                    <TaskList tasks={d().tasks.focus} compact showProject onOpen={setActiveTask} onChanged={refresh} onShare={share} />
+                  </Section>
+                </Show>
+
+                <div class={styles.plate}>
+                  <Section title={t('Personal')} count={d().tasks.personal.length} link={{ href: '/tasks/personal', label: t('All') }}>
+                    <TaskList
+                      tasks={d().tasks.personal}
+                      compact
+                      dense
+                      showProject={false}
+                      emptyTitle={t('Nothing personal pending.')}
+                      onOpen={setActiveTask}
+                      onChanged={refresh}
+                      onShare={share}
+                    />
+                  </Section>
+                  <Section title={t('Business')} count={d().tasks.business.length} link={{ href: '/tasks/business', label: t('All') }}>
+                    <TaskList
+                      tasks={d().tasks.business}
+                      compact
+                      dense
+                      showProject={false}
+                      emptyTitle={t('No business tasks pending.')}
+                      onOpen={setActiveTask}
+                      onChanged={refresh}
+                      onShare={share}
+                    />
+                  </Section>
+                </div>
+
+                <Section title={t('Next 7 days')} count={d().tasks.upcoming.length} link={{ href: '/tasks/upcoming', label: t('Upcoming') }}>
+                  <Show when={upcomingGroups().length > 0} fallback={<p class={styles.dim}>{t('Nothing scheduled ahead.')}</p>}>
+                    <div class={styles.calendar}>
+                      <For each={upcomingGroups()}>
+                        {(group) => (
+                          <div class={styles.calDay}>
+                            <div class={styles.calDayLabel}>
+                              <span>{group.label}</span>
+                              <span class={styles.count}>{group.tasks.length}</span>
+                            </div>
+                            <ul class={styles.calList}>
+                              <For each={group.tasks}>
+                                {(task) => (
+                                  <li>
+                                    <button type="button" class={styles.calTask} onClick={() => setActiveTask(task)}>
+                                      <PriorityMark priority={task.priority} />
+                                      <span class={styles.calTitle}>{tx('task', task.id, 'title', task.title)}</span>
+                                      <Show when={task.project}>
+                                        {(project) => <span class={styles.calProject}>{tx('project', project().id, 'name', project().name)}</span>}
+                                      </Show>
+                                      <Show when={task.due_has_time}>
+                                        <span class={styles.mono}>{formatDueDate(task.due_at, true, use12h()).split(' ').pop()}</span>
+                                      </Show>
+                                    </button>
+                                  </li>
+                                )}
+                              </For>
+                            </ul>
+                          </div>
+                        )}
+                      </For>
+                    </div>
+                  </Show>
+                </Section>
 
                 <Section title={t('Completed today')} count={d().tasks.completed.length}>
                   <Show when={d().tasks.completed.length > 0} fallback={<p class={styles.dim}>{t('Nothing yet - the day is young.')}</p>}>
@@ -134,86 +219,91 @@ export default function Today(): JSX.Element {
                 </Section>
               </section>
 
-              {/* Column 2: time + routine */}
+              {/* Column 2: active projects, expanded vertically */}
               <section class={styles.col}>
-                <div class={styles.card}>
-                  <div class={styles.cardHead}>
-                    <span>{t('Business time')}</span>
-                    <span class={styles.target}>{t('target {value}', { value: formatMinutes(d().metrics.business_target_minutes) })}</span>
-                  </div>
-                  <div class={styles.big}>{formatClock(businessSeconds())}</div>
-                  <Bar value={percent(businessSeconds() / 60, d().metrics.business_target_minutes)} />
-                  <div class={styles.cardActions}>
-                    <Button
-                      variant={timerStore.running() ? 'secondary' : 'primary'}
-                      size="sm"
-                      loading={timerStore.busy()}
-                      onClick={() => void toggleTimer({ category: 'business' })}
-                    >
-                      <Show when={timerStore.running()} fallback={<><Play size={14} /> {t('Start')}</>}>
-                        <Square size={14} /> {t('Stop')}
-                      </Show>
-                    </Button>
-                    <Show when={timerStore.running()}>
-                      <span class={styles.runningLabel}>
-                        {runningLabel()}
-                      </span>
-                    </Show>
-                  </div>
-                </div>
-
-                <div class={styles.card}>
-                  <div class={styles.cardHead}>
-                    <span>
-                      <Moon size={13} /> {t('Sleep')}
-                    </span>
-                    <span class={styles.target}>{t('target {value}', { value: formatMinutes(d().metrics.sleep_target_minutes) })}</span>
-                  </div>
-                  <div class={styles.bigSmall}>
-                    <Show when={timerStore.sleep()} fallback={formatMinutes(d().metrics.sleep_minutes)}>
-                      {(tick(), formatClock(timerStore.sleepElapsedSeconds()))}
-                    </Show>
-                  </div>
-                  <div class={styles.cardActions}>
-                    <Button variant="secondary" size="sm" loading={timerStore.busy()} onClick={() => void (timerStore.sleep() ? stopSleep() : startSleep())}>
-                      {timerStore.sleep() ? t('Wake up') : t('Going to sleep')}
-                    </Button>
-                  </div>
-                </div>
-
-                <RoutineBlock title={t('Business routine')} items={d().routine.business} currentId={d().routine.current_item_id} onChanged={refresh} />
-                <RoutineBlock title={t('Personal routine')} items={d().routine.personal} currentId={d().routine.current_item_id} onChanged={refresh} />
+                <Section title={t('Active projects')} count={d().active_projects.length} hint={t('with open tasks')} link={{ href: '/projects/canvas', label: t('Canvas') }}>
+                  <Show
+                    when={d().active_projects.length > 0}
+                    fallback={<p class={styles.dim}>{t('No project has open tasks right now.')}</p>}
+                  >
+                    <ul class={styles.projects}>
+                      <For each={d().active_projects}>
+                        {(p) => <ProjectCardMini project={p} minutes={d().metrics.project_minutes[String(p.id)] ?? 0} onOpenTask={(id) => void tasksApi.get(id).then(setActiveTask)} />}
+                      </For>
+                    </ul>
+                  </Show>
+                </Section>
               </section>
 
-              {/* Column 3: metrics + projects */}
-              <section class={styles.col}>
+              {/* Column 3: timers, numbers, routine, rules - compact */}
+              <section class={cx(styles.col, styles.side)}>
+                <div class={styles.timers}>
+                  <div class={styles.tile}>
+                    <div class={styles.tileHead}>
+                      <span>{t('Business time')}</span>
+                      <span class={styles.tileTarget}>/ {formatMinutes(d().metrics.business_target_minutes)}</span>
+                    </div>
+                    <div class={styles.tileRow}>
+                      <span class={styles.tileValue}>{formatClock(businessSeconds())}</span>
+                      <button
+                        type="button"
+                        class={cx(styles.tileBtn, timerStore.running() && styles.tileBtnActive)}
+                        disabled={timerStore.busy()}
+                        onClick={() => void toggleTimer({ category: 'business' })}
+                        aria-label={timerStore.running() ? t('Stop') : t('Start')}
+                        title={timerStore.running() ? runningLabel() : t('Start')}
+                      >
+                        <Show when={timerStore.running()} fallback={<Play size={13} />}>
+                          <Square size={12} />
+                        </Show>
+                      </button>
+                    </div>
+                    <Bar value={percent(businessSeconds() / 60, d().metrics.business_target_minutes)} />
+                    <Show when={timerStore.running()}>
+                      <span class={styles.runningLabel}>{runningLabel()}</span>
+                    </Show>
+                  </div>
+                  <div class={styles.tile}>
+                    <div class={styles.tileHead}>
+                      <span>
+                        <Moon size={11} /> {t('Sleep')}
+                      </span>
+                      <span class={styles.tileTarget}>/ {formatMinutes(d().metrics.sleep_target_minutes)}</span>
+                    </div>
+                    <div class={styles.tileRow}>
+                      <span class={styles.tileValue}>
+                        <Show when={timerStore.sleep()} fallback={formatMinutes(d().metrics.sleep_minutes)}>
+                          {(tick(), formatClock(timerStore.sleepElapsedSeconds()))}
+                        </Show>
+                      </span>
+                      <button
+                        type="button"
+                        class={cx(styles.tileBtn, timerStore.sleep() && styles.tileBtnActive)}
+                        disabled={timerStore.busy()}
+                        onClick={() => void (timerStore.sleep() ? stopSleep() : startSleep())}
+                        aria-label={timerStore.sleep() ? t('Wake up') : t('Going to sleep')}
+                        title={timerStore.sleep() ? t('Wake up') : t('Going to sleep')}
+                      >
+                        <Show when={timerStore.sleep()} fallback={<Moon size={13} />}>
+                          <Square size={12} />
+                        </Show>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 <div class={styles.stats}>
                   <Stat label={t('Done')} value={String(d().metrics.tasks_completed)} />
                   <Stat label={t('Planned')} value={String(d().metrics.tasks_planned)} />
                   <Stat label={t('Missed')} value={String(d().metrics.tasks_missed)} />
                   <Stat label={t('Routine')} value={`${d().metrics.routine_items_completed}/${d().metrics.routine_items_total}`} />
-                  <Stat label={t('Streak')} value={<><Flame size={13} /> {d().streak}</>} />
+                  <Stat label={t('Streak')} value={<><Flame size={12} /> {d().streak}</>} />
                   <Stat label={t('Personal')} value={formatMinutes(d().metrics.personal_minutes)} />
                 </div>
 
-                <Section title={t('Active projects')} count={d().active_projects.length}>
-                  <Show when={d().active_projects.length > 0} fallback={<p class={styles.dim}>{t('No active projects.')}</p>}>
-                    <ul class={styles.projects}>
-                      <For each={d().active_projects}>
-                        {(p) => (
-                          <li>
-                            <A href={`/projects/${p.id}`} class={styles.projectLink}>
-                              <span>{tx('project', p.id, 'name', p.name)}</span>
-                              <Show when={d().metrics.project_minutes[String(p.id)]}>
-                                <span class={styles.mono}>{formatMinutes(d().metrics.project_minutes[String(p.id)] ?? 0)}</span>
-                              </Show>
-                            </A>
-                          </li>
-                        )}
-                      </For>
-                    </ul>
-                  </Show>
-                </Section>
+                <RoutineBlock title={t('Business routine')} items={d().routine.business} currentId={d().routine.current_item_id} onChanged={refresh} />
+                <RoutineBlock title={t('Personal routine')} items={d().routine.personal} currentId={d().routine.current_item_id} onChanged={refresh} />
+                <RulesBlock rules={d().rules} onChanged={refresh} />
 
                 <p class={styles.dim}>
                   {t('{tasks} done · {rate}% of plan', { tasks: tn(d().metrics.tasks_completed, 'task'), rate: d().metrics.completion_rate })} ·{' '}
@@ -249,7 +339,14 @@ function endOfToday(): string {
   return d.toISOString();
 }
 
-function Section(props: { title: string; count?: number; hint?: string; tone?: 'strong'; children: JSX.Element }): JSX.Element {
+function Section(props: {
+  title: string;
+  count?: number;
+  hint?: string;
+  tone?: 'strong';
+  link?: { href: string; label: string };
+  children: JSX.Element;
+}): JSX.Element {
   return (
     <div class={styles.section}>
       <div class={cx(styles.sectionHead, props.tone === 'strong' && styles.strong)}>
@@ -259,6 +356,13 @@ function Section(props: { title: string; count?: number; hint?: string; tone?: '
         </Show>
         <Show when={props.hint}>
           <span class={styles.hint}>{props.hint}</span>
+        </Show>
+        <Show when={props.link}>
+          {(link) => (
+            <A href={link().href} class={cx(styles.hint, styles.sectionLink)}>
+              {link().label} →
+            </A>
+          )}
         </Show>
       </div>
       {props.children}
@@ -299,9 +403,16 @@ function RoutineBlock(props: { title: string; items: RoutineItem[]; currentId: n
     }
   };
 
+  const window = (item: RoutineItem) =>
+    item.start_time && item.end_time ? `${item.start_time.slice(0, 5)}–${item.end_time.slice(0, 5)}` : item.start_time ? item.start_time.slice(0, 5) : '';
+  const progress = (item: RoutineItem) => (item.target_minutes > 0 ? percent(item.today_minutes, item.target_minutes) : 0);
+
   return (
     <Show when={props.items.length > 0}>
       <Section title={props.title} hint={`${done()}/${props.items.length}`}>
+        <div class={styles.routineProgress} aria-hidden="true">
+          <For each={props.items}>{(item) => <span class={cx(styles.routineSeg, item.today_completed && styles.routineSegDone)} />}</For>
+        </div>
         <ul class={styles.routine}>
           <For each={props.items}>
             {(item) => (
@@ -317,16 +428,153 @@ function RoutineBlock(props: { title: string; items: RoutineItem[]; currentId: n
                     <Check size={15} />
                   </Show>
                 </button>
-                <span class={styles.routineName}>{tx('routine_item', item.id, 'name', item.name)}</span>
-                <span class={styles.routineTime}>
-                  {item.start_time ? item.start_time.slice(0, 5) : ''}
-                  {item.today_minutes ? ` · ${formatMinutes(item.today_minutes)}` : item.target_minutes ? ` · ${formatMinutes(item.target_minutes)}` : ''}
-                </span>
+                <div class={styles.routineBody}>
+                  <div class={styles.routineLine}>
+                    <span class={styles.routineName}>{tx('routine_item', item.id, 'name', item.name)}</span>
+                    <Show when={item.id === props.currentId && !item.today_completed}>
+                      <span class={styles.nowPill}>{t('now')}</span>
+                    </Show>
+                    <span class={styles.routineTime}>
+                      {window(item)}
+                      {item.today_minutes
+                        ? `${window(item) ? ' · ' : ''}${formatMinutes(item.today_minutes)}${item.target_minutes ? ` / ${formatMinutes(item.target_minutes)}` : ''}`
+                        : item.target_minutes
+                          ? `${window(item) ? ' · ' : ''}${formatMinutes(item.target_minutes)}`
+                          : ''}
+                    </span>
+                  </div>
+                  <Show when={item.target_minutes > 0 && item.today_minutes > 0 && !item.today_completed}>
+                    <div class={styles.miniBar}>
+                      <div class={styles.miniBarFill} style={{ width: `${Math.min(100, progress(item))}%` }} />
+                    </div>
+                  </Show>
+                </div>
               </li>
             )}
           </For>
         </ul>
       </Section>
     </Show>
+  );
+}
+
+/** Daily self-check for personal rules: kept / broken / not yet checked. */
+function RulesBlock(props: { rules: Rule[]; onChanged: () => void }): JSX.Element {
+  const [busy, setBusy] = createSignal<number | null>(null);
+  const kept = () => props.rules.filter((r) => r.today_kept === true).length;
+  const checked = () => props.rules.filter((r) => r.today_kept !== null).length;
+
+  const mark = async (rule: Rule, value: boolean) => {
+    setBusy(rule.id);
+    try {
+      // Clicking the active state again clears the mark.
+      await rulesApi.markKept(rule.id, rule.today_kept === value ? null : value);
+      props.onChanged();
+    } catch {
+      toast(t('Could not update the rule.'));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <Show when={props.rules.length > 0}>
+      <Section title={t('Rules')} hint={`${kept()}/${props.rules.length}`}>
+        <div class={styles.routineProgress} aria-hidden="true">
+          <For each={props.rules}>
+            {(rule) => <span class={cx(styles.routineSeg, rule.today_kept === true && styles.routineSegDone, rule.today_kept === false && styles.routineSegBroken)} />}
+          </For>
+        </div>
+        <ul class={cx(styles.routine, styles.rules)}>
+          <For each={props.rules}>
+            {(rule) => (
+              <li class={cx(styles.routineRow, styles.ruleRow, rule.today_kept === true && styles.ruleKept, rule.today_kept === false && styles.ruleBroken)}>
+                <ScrollText size={14} class={styles.ruleIcon} />
+                <div class={styles.routineBody}>
+                  <div class={styles.routineLine}>
+                    <span class={styles.routineName}>{tx('rule', rule.id, 'text', rule.text)}</span>
+                    <Show when={rule.streak > 1}>
+                      <span class={styles.streakPill} title={t('{count} days in a row', { count: rule.streak })}>
+                        <Flame size={11} /> {rule.streak}
+                      </span>
+                    </Show>
+                  </div>
+                </div>
+                <div class={styles.ruleActions}>
+                  <button
+                    type="button"
+                    class={cx(styles.ruleBtn, rule.today_kept === true && styles.ruleBtnKept)}
+                    disabled={busy() === rule.id}
+                    onClick={() => void mark(rule, true)}
+                    aria-pressed={rule.today_kept === true}
+                    aria-label={t('Kept today')}
+                    title={t('Kept today')}
+                  >
+                    <Check size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    class={cx(styles.ruleBtn, rule.today_kept === false && styles.ruleBtnBroken)}
+                    disabled={busy() === rule.id}
+                    onClick={() => void mark(rule, false)}
+                    aria-pressed={rule.today_kept === false}
+                    aria-label={t('Broken today')}
+                    title={t('Broken today')}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              </li>
+            )}
+          </For>
+        </ul>
+        <Show when={checked() < props.rules.length}>
+          <p class={styles.dim}>{t('{count} still to check today', { count: props.rules.length - checked() })}</p>
+        </Show>
+      </Section>
+    </Show>
+  );
+}
+
+/** Compact project card for Today: progress, next open tasks, tracked minutes. */
+function ProjectCardMini(props: { project: TodayProject; minutes: number; onOpenTask: (id: number) => void }): JSX.Element {
+  const total = () => props.project.task_total ?? 0;
+  const done = () => props.project.task_done ?? 0;
+  const use12h = () => authStore.user()?.preferences.time_format === '12h';
+  return (
+    <li class={styles.projectCard}>
+      <A href={`/projects/${props.project.id}/tasks`} class={styles.projectHead}>
+        <span class={styles.projectName}>
+          <Show when={props.project.category === 'startup'}>
+            <Rocket size={12} />
+          </Show>
+          {tx('project', props.project.id, 'name', props.project.name)}
+        </span>
+        <span class={styles.mono}>
+          {t('{count} open', { count: props.project.task_open ?? 0 })}
+          <Show when={props.minutes > 0}> · {formatMinutes(props.minutes)}</Show>
+        </span>
+      </A>
+      <Show when={total() > 0}>
+        <div class={styles.miniBar}>
+          <div class={styles.miniBarFill} style={{ width: `${percent(done(), total())}%` }} />
+        </div>
+      </Show>
+      <ul class={styles.nextTasks}>
+        <For each={props.project.next_tasks}>
+          {(task) => (
+            <li>
+              <button type="button" class={styles.nextTask} onClick={() => props.onOpenTask(task.id)}>
+                <PriorityMark priority={task.priority} />
+                <span class={styles.nextTaskTitle}>{tx('task', task.id, 'title', task.title)}</span>
+                <Show when={task.due_at}>
+                  <span class={styles.mono}>{formatDueDate(task.due_at, false, use12h())}</span>
+                </Show>
+              </button>
+            </li>
+          )}
+        </For>
+      </ul>
+    </li>
   );
 }

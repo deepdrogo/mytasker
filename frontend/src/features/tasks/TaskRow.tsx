@@ -8,6 +8,8 @@ import {
   ChevronRight,
   Clock,
   Copy,
+  Flame,
+  Infinity as InfinityIcon,
   MessageSquare,
   MoreHorizontal,
   Play,
@@ -16,6 +18,7 @@ import {
   Sparkles,
   Square,
   Trash2,
+  UserPlus,
 } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { createSignal, Show } from 'solid-js';
@@ -29,6 +32,7 @@ import { tx } from '~/stores/translations';
 import { startTimer, stopTimer, timerStore } from '~/stores/timer';
 import { toast } from '~/stores/ui';
 import type { Task } from '~/types';
+import { cx } from '~/utils/cx';
 import { formatDueDate, formatDuration } from '~/utils/format';
 import styles from './TaskRow.module.css';
 
@@ -42,6 +46,8 @@ interface TaskRowProps {
   selectable?: boolean;
   selected?: boolean;
   onToggleSelect?: (task: Task) => void;
+  /** Narrow columns (canvas): full title on up to two lines, no badges, only the menu button. */
+  dense?: boolean;
 }
 
 export function TaskRow(props: TaskRowProps): JSX.Element {
@@ -63,7 +69,42 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
     }
   };
 
+  const ongoing = () => props.task.is_ongoing && props.task.status !== 'done';
+
+  /** Long-term tasks: the round box is today's check-in, not completion. */
+  const toggleCheckin = async (event: MouseEvent) => {
+    event.stopPropagation();
+    if (busy() || !props.task.can_edit) return;
+    setBusy(true);
+    try {
+      await tasksApi.checkin(props.task.id, !props.task.today_checked);
+      if (!props.task.today_checked) toast(t('Checked in for today'));
+      props.onChanged?.();
+    } catch {
+      toast(t('Could not update the task.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const finishForGood = async () => {
+    if (busy() || !props.task.can_edit) return;
+    setBusy(true);
+    try {
+      await tasksApi.complete(props.task.id);
+      toast(t('Completed “{title}”', { title: title() }), {
+        action: { label: t('Undo'), run: () => void tasksApi.reopen(props.task.id).then(() => props.onChanged?.()) },
+      });
+      props.onChanged?.();
+    } catch {
+      toast(t('Could not update the task.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const toggleComplete = async (event: MouseEvent) => {
+    if (ongoing()) return toggleCheckin(event);
     event.stopPropagation();
     if (busy() || !props.task.can_edit) return;
     setBusy(true);
@@ -96,9 +137,10 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
       if (isRunning()) {
         await stopTimer();
       } else {
+        // Any project task is business work; the server applies the same rule when category is omitted.
         await startTimer({
           task_id: props.task.id,
-          category: props.task.kind === 'business' ? 'business' : 'personal',
+          category: props.task.kind === 'business' || props.task.project ? 'business' : 'personal',
         });
       }
     } catch {
@@ -108,6 +150,16 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
 
   const menuItems = (): MenuItem[] => [
     { label: t('Open'), icon: <ChevronRight size={14} />, onSelect: () => props.onOpen?.(props.task) },
+    ...(ongoing()
+      ? [
+          {
+            label: t('Finish for good'),
+            icon: <Check size={14} />,
+            disabled: !props.task.can_edit,
+            onSelect: () => void finishForGood(),
+          } satisfies MenuItem,
+        ]
+      : []),
     {
       label: isRunning() ? t('Stop timer') : t('Start timer'),
       icon: <Play size={14} />,
@@ -130,15 +182,28 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
       },
     },
     {
-      label: t('Tomorrow'),
+      label: t('Today'),
       icon: <Clock size={14} />,
       separatorBefore: true,
+      onSelect: async () => {
+        // Due by the end of today, no specific hour - shows up in "Due today" without a clock.
+        const target = new Date();
+        target.setHours(23, 59, 0, 0);
+        await tasksApi.update(props.task.id, { due_at: target.toISOString(), due_has_time: false });
+        props.onChanged?.();
+        toast(t('Due today'));
+      },
+    },
+    {
+      label: t('Tomorrow'),
+      icon: <Clock size={14} />,
       onSelect: async () => {
         const target = new Date();
         target.setDate(target.getDate() + 1);
         target.setHours(9, 0, 0, 0);
         await tasksApi.update(props.task.id, { due_at: target.toISOString(), due_has_time: true });
         props.onChanged?.();
+        toast(t('Due tomorrow'));
       },
     },
     {
@@ -163,6 +228,7 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
         styles.row,
         done() ? styles.done : '',
         props.compact ? styles.compact : '',
+        props.dense ? styles.dense : '',
         props.selected ? styles.selected : '',
       ]
         .filter(Boolean)
@@ -187,13 +253,22 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
       </Show>
 
       <button
-        class={styles.checkbox}
+        class={cx(styles.checkbox, ongoing() && styles.checkinBox, ongoing() && props.task.today_checked && styles.checkedToday)}
         onClick={toggleComplete}
         disabled={busy() || !props.task.can_edit}
-        aria-label={done() ? t('Reopen {title}', { title: title() }) : t('Complete {title}', { title: title() })}
-        aria-pressed={done()}
+        aria-label={
+          ongoing()
+            ? props.task.today_checked
+              ? t('Undo today’s check-in')
+              : t('Check in for today')
+            : done()
+              ? t('Reopen {title}', { title: title() })
+              : t('Complete {title}', { title: title() })
+        }
+        aria-pressed={ongoing() ? props.task.today_checked : done()}
+        title={ongoing() ? (props.task.today_checked ? t('Checked in today') : t('Check in for today')) : undefined}
       >
-        <Show when={done()}>
+        <Show when={done() || (ongoing() && props.task.today_checked)}>
           <Check size={12} />
         </Show>
       </button>
@@ -205,7 +280,17 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
           <Show when={props.task.recurrence}>
             <Repeat size={11} class={styles.inlineIcon} aria-label={t('Recurring')} />
           </Show>
-          <VisibilityMark visibility={props.task.visibility} />
+          <Show when={props.task.is_ongoing}>
+            <span class={styles.ongoingMark} title={t('Long-term work - ticked daily')}>
+              <InfinityIcon size={12} />
+              <Show when={props.task.checkin_streak > 1}>
+                <Flame size={10} /> {props.task.checkin_streak}
+              </Show>
+            </span>
+          </Show>
+          <Show when={!props.dense}>
+            <VisibilityMark visibility={props.task.visibility} />
+          </Show>
         </div>
 
         <Show when={hasMeta(props.task, props.showProject)}>
@@ -267,6 +352,17 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
                 </>
               )}
             </Show>
+
+            <Show when={addedBy(props.task)}>
+              {(who) => (
+                <>
+                  <Dot />
+                  <span class={styles.addedBy} title={t('Added by {name}', { name: who().display_name })}>
+                    <UserPlus size={11} /> {who().display_name}
+                  </span>
+                </>
+              )}
+            </Show>
           </Meta>
         </Show>
       </div>
@@ -277,7 +373,7 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
             ● rec
           </span>
         </Show>
-        <Show when={canPolish()}>
+        <Show when={canPolish() && !props.dense}>
           <button
             class={[styles.iconAction, polishing() ? styles.iconActionBusy : ''].filter(Boolean).join(' ')}
             onClick={(e) => void polish(e)}
@@ -288,14 +384,16 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
             <Sparkles size={13} />
           </button>
         </Show>
-        <button
-          class={styles.iconAction}
-          onClick={toggleTimer}
-          aria-label={isRunning() ? t('Stop timer') : t('Start timer for this task')}
-          title={isRunning() ? t('Stop timer') : t('Start timer')}
-        >
-          <Play size={13} />
-        </button>
+        <Show when={!props.dense}>
+          <button
+            class={styles.iconAction}
+            onClick={toggleTimer}
+            aria-label={isRunning() ? t('Stop timer') : t('Start timer for this task')}
+            title={isRunning() ? t('Stop timer') : t('Start timer')}
+          >
+            <Play size={13} />
+          </button>
+        </Show>
         <Dropdown
           items={menuItems()}
           label={t('Actions for {title}', { title: title() })}
@@ -310,6 +408,13 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
   );
 }
 
+/** Show who added the task when it was not the owner (assistant or team member), never for the viewer's own additions. */
+function addedBy(task: Task): Task['created_by'] {
+  const me = authStore.user()?.id;
+  if (!task.created_by || task.created_by.id === task.owner.id || task.created_by.id === me) return null;
+  return task.created_by;
+}
+
 function hasMeta(task: Task, showProject?: boolean): boolean {
   return Boolean(
     task.due_at ||
@@ -318,6 +423,7 @@ function hasMeta(task: Task, showProject?: boolean): boolean {
       task.tracked_seconds > 0 ||
       task.estimated_minutes ||
       task.comment_count > 0 ||
-      task.assignee,
+      task.assignee ||
+      addedBy(task),
   );
 }
