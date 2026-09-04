@@ -49,3 +49,25 @@ def test_weekly_review_backfills_summaries(auth_client, user):
     assert monthly.status_code == 200
     assert monthly.data["totals"]["tasks_completed"] == 0
     assert len(monthly.data["weeks"]) >= 4
+
+
+def test_today_excludes_crypto_world(auth_client):
+    now = timezone.now()
+    auth_client.post(
+        "/api/v1/tasks/",
+        {"title": "Watch BTC", "kind": "crypto", "due_at": now.isoformat(), "priority": "high"},
+        format="json",
+    )
+    auth_client.post("/api/v1/tasks/", {"title": "Life errand", "kind": "personal", "priority": "high"}, format="json")
+
+    data = auth_client.get("/api/v1/today/").data
+    titles = (
+        [t["title"] for t in data["tasks"]["due_today"]]
+        + [t["title"] for t in data["tasks"]["focus"]]
+        + [t["title"] for t in data["tasks"]["personal"]]
+        + [t["title"] for t in data["tasks"]["business"]]
+        + [t["title"] for t in data["tasks"]["overdue"]]
+        + [t["title"] for t in data["tasks"]["upcoming"]]
+    )
+    assert "Watch BTC" not in titles
+    assert "Life errand" in titles

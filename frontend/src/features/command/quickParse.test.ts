@@ -32,6 +32,12 @@ describe('quickParse', () => {
     expect(r.title).toBe('Fix prod outage');
   });
 
+  it('maps @crypto to crypto world', () => {
+    const r = quickParse('Watch funding @crypto');
+    expect(r.kind).toBe('crypto');
+    expect(r.title).toBe('Watch funding');
+  });
+
   it('leaves plain text untouched', () => {
     const r = quickParse('  Buy milk  ');
     expect(r).toMatchObject({ title: 'Buy milk', tags: [] });

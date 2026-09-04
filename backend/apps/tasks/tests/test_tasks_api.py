@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 import pytest
 from django.utils import timezone
 
@@ -204,3 +206,20 @@ def test_bulk_reschedule_sets_and_clears_deadline_and_skips_foreign_tasks(client
         client.post("/api/v1/tasks/bulk-reschedule/", {"task_ids": [], "due_at": None}, format="json").status_code
         == 400
     )
+
+
+def test_crypto_list_is_isolated_from_mixed_views(client_for, user):
+    client = client_for(user)
+    future = (timezone.now() + timedelta(days=3)).isoformat()
+    client.post("/api/v1/tasks/", {"title": "Buy ETH", "kind": "crypto", "due_at": future}, format="json")
+    client.post("/api/v1/tasks/", {"title": "Call mom", "kind": "personal", "due_at": future}, format="json")
+
+    crypto = client.get("/api/v1/tasks/?kind=crypto&top_level=true&completed=false").data["results"]
+    assert [row["title"] for row in crypto] == ["Buy ETH"]
+
+    upcoming = client.get("/api/v1/tasks/", {"view": "upcoming", "exclude_kind": "crypto"}).data["results"]
+    assert [row["title"] for row in upcoming] == ["Call mom"]
+
+    counts = client.get("/api/v1/tasks/counts/").data
+    assert counts["crypto"] == 1
+    assert counts["upcoming"] == 1

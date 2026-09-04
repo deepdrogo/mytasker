@@ -11,6 +11,7 @@ from common.tz import day_bounds, week_bounds
 
 class TaskFilter(filters.FilterSet):
     kind = filters.CharFilter(field_name="kind")
+    exclude_kind = filters.CharFilter(method="filter_exclude_kind")
     origin = filters.CharFilter(field_name="origin")
     status = filters.BaseInFilter(field_name="status")
     priority = filters.BaseInFilter(field_name="priority")
@@ -32,6 +33,10 @@ class TaskFilter(filters.FilterSet):
     class Meta:
         model = Task
         fields: list[str] = []
+
+    def filter_exclude_kind(self, queryset, name, value):
+        kinds = [item.strip() for item in (value or "").split(",") if item.strip()]
+        return queryset.exclude(kind__in=kinds) if kinds else queryset
 
     def filter_has_project(self, queryset, name, value):
         return queryset.filter(project__isnull=not value)

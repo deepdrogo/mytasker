@@ -24,6 +24,7 @@ import { PriorityMark } from '~/components/shared/Indicators';
 import { TaskEditor } from '~/features/tasks/TaskEditor';
 import { tasksApi } from '~/features/tasks/api';
 import { t } from '~/i18n';
+import { taskKindLabel } from '~/utils/taskKind';
 import { authStore } from '~/stores/auth';
 import { tx } from '~/stores/translations';
 import { toast, uiStore } from '~/stores/ui';
@@ -78,6 +79,7 @@ export function CommandPalette(): JSX.Element {
     { id: 'today', label: 'Go to Today', icon: <Calendar size={15} />, keywords: 'dashboard home', run: go('/today') },
     { id: 'personal', label: 'Personal tasks', icon: <CheckSquare size={15} />, run: go('/tasks/personal') },
     { id: 'business', label: 'Business tasks', icon: <CheckSquare size={15} />, run: go('/tasks/business') },
+    { id: 'crypto', label: 'Crypto world tasks', icon: <CheckSquare size={15} />, keywords: 'crypto cryptoworld კრიპტო კრიპტოსამყარო', run: go('/tasks/crypto') },
     { id: 'upcoming', label: 'Upcoming', icon: <Calendar size={15} />, run: go('/tasks/upcoming') },
     { id: 'completed', label: 'Completed tasks', icon: <CheckSquare size={15} />, run: go('/tasks/completed') },
     { id: 'projects', label: 'Active projects', icon: <FolderKanban size={15} />, run: go('/projects/active') },
@@ -128,7 +130,7 @@ export function CommandPalette(): JSX.Element {
         id: `task-${task.id}`,
         group: t('Tasks'),
         label: tx('task', task.id, 'title', task.title),
-        hint: task.project ? tx('project', task.project.id, 'name', task.project.name) : task.kind === 'business' ? t('Business') : t('Personal'),
+        hint: task.project ? tx('project', task.project.id, 'name', task.project.name) : taskKindLabel(task.kind),
         icon: <PriorityMark priority={task.priority} />,
         run: () => {
           uiStore.closePalette();

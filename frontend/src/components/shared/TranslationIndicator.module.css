@@ -1,7 +1,7 @@
 .pill {
   position: fixed;
   z-index: var(--z-toast);
-  left: calc(var(--sidebar-w) + var(--s-6));
+  left: var(--s-5);
   bottom: var(--s-5);
   display: inline-flex;
   align-items: center;

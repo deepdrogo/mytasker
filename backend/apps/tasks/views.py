@@ -156,14 +156,16 @@ class TaskViewSet(viewsets.ModelViewSet):
         _, end_of_today = day_bounds(request.user)
         now = timezone.now()
         base = selectors.base_queryset(request.user).top_level()
+        open_not_crypto = ~Q(status__in=["done", "cancelled"]) & ~Q(kind=Task.Kind.CRYPTO)
         data = base.aggregate(
             personal=Count("id", filter=Q(kind=Task.Kind.PERSONAL) & ~Q(status__in=["done", "cancelled"])),
             business=Count(
                 "id",
                 filter=Q(kind=Task.Kind.BUSINESS, origin=Task.Origin.LIST) & ~Q(status__in=["done", "cancelled"]),
             ),
-            today=Count("id", filter=Q(due_at__lt=end_of_today) & ~Q(status__in=["done", "cancelled"])),
-            overdue=Count("id", filter=Q(due_at__lt=now) & ~Q(status__in=["done", "cancelled"])),
-            upcoming=Count("id", filter=Q(due_at__gte=end_of_today) & ~Q(status__in=["done", "cancelled"])),
+            crypto=Count("id", filter=Q(kind=Task.Kind.CRYPTO) & ~Q(status__in=["done", "cancelled"])),
+            today=Count("id", filter=Q(due_at__lt=end_of_today) & open_not_crypto),
+            overdue=Count("id", filter=Q(due_at__lt=now) & open_not_crypto),
+            upcoming=Count("id", filter=Q(due_at__gte=end_of_today) & open_not_crypto),
         )
         return Response(data)

@@ -59,6 +59,7 @@ export const uiStore = {
   closeNotifications: () => setNotificationsOpen(false),
   openSidebar: () => setSidebarOpen(true),
   closeSidebar: () => setSidebarOpen(false),
+  toggleSidebar: () => setSidebarOpen((open) => !open),
 };
 
 /** Media query helper that stays reactive. */

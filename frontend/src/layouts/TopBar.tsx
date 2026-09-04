@@ -18,11 +18,14 @@ export function TopBar(): JSX.Element {
 
   return (
     <header class={styles.topbar}>
-      <Show when={isMobile()}>
-        <button class={styles.iconBtn} onClick={uiStore.openSidebar} aria-label={t('Open navigation')}>
-          <Menu size={17} />
-        </button>
-      </Show>
+      <button
+        class={styles.iconBtn}
+        onClick={uiStore.toggleSidebar}
+        aria-label={uiStore.sidebarOpen() ? t('Close navigation') : t('Open navigation')}
+        aria-expanded={uiStore.sidebarOpen()}
+      >
+        <Menu size={17} />
+      </button>
 
       <button class={styles.search} onClick={uiStore.openPalette} aria-label={searchLabel()}>
         <Search size={14} />

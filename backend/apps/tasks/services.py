@@ -277,7 +277,8 @@ def update_task(actor: Actor, task_id: int, *, expected_version: int | None = No
         if task.is_subtask:
             raise ValidationFailed("Move the parent task instead.", fields={"project": ["Subtask follows parent."]})
         task.project = project
-        task.kind = Task.Kind.BUSINESS if project is not None else task.kind
+        if project is not None and task.kind == Task.Kind.PERSONAL:
+            task.kind = Task.Kind.BUSINESS
         task.visibility = _normalise_visibility(project, task.visibility, task.owner_id == user.pk)
         changed += ["project", "kind", "visibility"]
         # A project-only task detached from its project must land back in a list, or it would vanish.

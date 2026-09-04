@@ -4,6 +4,7 @@ import type { ID, Priority, RecurrenceRule, Task, TaskKind, TaskOrigin, Visibili
 
 export interface TaskListParams extends QueryParams {
   kind?: TaskKind;
+  exclude_kind?: TaskKind;
   origin?: TaskOrigin;
   view?: 'today' | 'tomorrow' | 'week' | 'upcoming' | 'overdue' | 'no_date' | 'completed';
   project?: ID;

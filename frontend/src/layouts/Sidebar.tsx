@@ -1,5 +1,6 @@
 import { A, useLocation } from '@solidjs/router';
 import {
+  Bitcoin,
   BookText,
   Briefcase,
   CalendarClock,
@@ -20,6 +21,7 @@ import {
   Sparkles,
   TrendingUp,
   User,
+  X,
 } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
@@ -50,6 +52,7 @@ const SECTIONS: NavSection[] = [
     links: [
       { label: 'Personal', href: '/tasks/personal', icon: () => <User size={15} /> },
       { label: 'Business', href: '/tasks/business', icon: () => <Briefcase size={15} /> },
+      { label: 'Crypto world', href: '/tasks/crypto', icon: () => <Bitcoin size={15} /> },
       { label: 'Upcoming', href: '/tasks/upcoming', icon: () => <CalendarClock size={15} /> },
       { label: 'No date', href: '/tasks/no-date', icon: () => <CalendarOff size={15} /> },
       { label: 'Completed', href: '/tasks/completed', icon: () => <CheckCircle2 size={15} /> },
@@ -95,6 +98,7 @@ const ASSISTANT_SECTIONS: NavSection[] = [
     links: [
       { label: 'Personal', href: '/tasks/personal', icon: () => <User size={15} /> },
       { label: 'Business', href: '/tasks/business', icon: () => <Briefcase size={15} /> },
+      { label: 'Crypto world', href: '/tasks/crypto', icon: () => <Bitcoin size={15} /> },
       { label: 'Upcoming', href: '/tasks/upcoming', icon: () => <CalendarClock size={15} /> },
       { label: 'No date', href: '/tasks/no-date', icon: () => <CalendarOff size={15} /> },
       { label: 'Completed', href: '/tasks/completed', icon: () => <CheckCircle2 size={15} /> },
@@ -131,6 +135,11 @@ export function Sidebar(props: { onNavigate?: () => void }): JSX.Element {
         <A href="/today" class={styles.brandLink} onClick={props.onNavigate} aria-label={t('MyTasker - Today')}>
           <Logo size={22} />
         </A>
+        <Show when={props.onNavigate}>
+          <button type="button" class={styles.closeBtn} onClick={props.onNavigate} aria-label={t('Close navigation')}>
+            <X size={16} />
+          </button>
+        </Show>
       </div>
 
       <nav class={styles.nav}>

@@ -97,8 +97,9 @@ in {language} even when the user's message is in a different language. Only prop
 quoted task titles stay as written.
 
 MyTasker vocabulary (Georgian terms the user may use are in brackets):
-- Task [დავალება, ტასკი, საქმე]: a one-off to-do with kind personal or business, optional due date, priority,
+- Task [დავალება, ტასკი, საქმე]: a one-off to-do with kind personal, business or crypto, optional due date, priority,
   project and subtasks [ქვედავალება, სუბტასკი]. Business tasks without a project live in the "Business" list.
+  Crypto world [კრიპტოსამყარო] is a separate list and never appears on Today.
   A task with is_ongoing=true is long-term work [გრძელვადიანი საქმე]: no deadline, the user ticks it once a day
   ("check-in") and completes it only when the whole thing is finished. Not a routine item.
 - Project [პროექტი]: a container of business tasks. category=startup [სტარტაპი] shelves it under Startups;

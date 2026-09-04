@@ -50,7 +50,13 @@ export function QuickAddDialog(): JSX.Element {
     const path = location.pathname;
     const projectMatch = /^\/projects\/(\d+)/.exec(path);
     setProjectId(projectMatch ? Number(projectMatch[1]) : null);
-    setKind(path.includes('/business') || projectMatch ? 'business' : authStore.user()?.preferences.default_task_type ?? 'personal');
+    setKind(
+      path.includes('/crypto')
+        ? 'crypto'
+        : path.includes('/business') || projectMatch
+          ? 'business'
+          : (authStore.user()?.preferences.default_task_type ?? 'personal'),
+    );
     queueMicrotask(() => input?.focus());
   });
 
@@ -106,6 +112,7 @@ export function QuickAddDialog(): JSX.Element {
           <Select sizeVariant="sm" value={parsed().kind ?? kind()} onChange={(e) => setKind(e.currentTarget.value as TaskKind)} aria-label={t('Type')}>
             <option value="personal">{t('Personal')}</option>
             <option value="business">{t('Business')}</option>
+            <option value="crypto">{t('Crypto world')}</option>
           </Select>
           <Select
             sizeVariant="sm"

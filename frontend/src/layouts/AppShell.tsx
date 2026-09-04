@@ -2,7 +2,7 @@
 // Built by drogoz · https://github.com/deepdrogo/mytasker
 
 import type { JSX } from 'solid-js';
-import { Show, Suspense } from 'solid-js';
+import { onCleanup, onMount, Show, Suspense } from 'solid-js';
 import { CommandPalette } from '~/features/command/CommandPalette';
 import { QuickAddDialog } from '~/features/command/QuickAddDialog';
 import { AIPanel } from '~/features/ai/AIPanel';
@@ -18,14 +18,22 @@ import styles from './AppShell.module.css';
 export function AppShell(props: { children?: JSX.Element }): JSX.Element {
   const isMobile = useIsMobile();
 
+  onMount(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && uiStore.sidebarOpen()) uiStore.closeSidebar();
+    };
+    window.addEventListener('keydown', onKey);
+    onCleanup(() => window.removeEventListener('keydown', onKey));
+  });
+
   return (
     <div class={styles.shell}>
-      <Show when={!isMobile()}>
-        <Sidebar />
-      </Show>
-      <Show when={isMobile() && uiStore.sidebarOpen()}>
-        <div class={styles.mobileSidebar} onClick={(e) => e.target === e.currentTarget && uiStore.closeSidebar()}>
-          <div class={styles.mobileSidebarPanel}>
+      <Show when={uiStore.sidebarOpen()}>
+        <div
+          class={isMobile() ? styles.navOverlay : `${styles.navOverlay} ${styles.navOverlayDesktop}`}
+          onClick={(e) => e.target === e.currentTarget && uiStore.closeSidebar()}
+        >
+          <div class={isMobile() ? styles.navPanel : `${styles.navPanel} ${styles.navPanelDesktop}`}>
             <Sidebar onNavigate={uiStore.closeSidebar} />
           </div>
         </div>

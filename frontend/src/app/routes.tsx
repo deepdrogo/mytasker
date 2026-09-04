@@ -9,6 +9,7 @@ import { ProtectedLayout } from '~/app/ProtectedLayout';
 const Today = lazy(() => import('~/routes/Today'));
 const TasksPersonal = lazy(() => import('~/routes/tasks/Personal'));
 const TasksBusiness = lazy(() => import('~/routes/tasks/Business'));
+const TasksCrypto = lazy(() => import('~/routes/tasks/Crypto'));
 const TasksUpcoming = lazy(() => import('~/routes/tasks/Upcoming'));
 const TasksCompleted = lazy(() => import('~/routes/tasks/Completed'));
 const TasksAll = lazy(() => import('~/routes/tasks/All'));
@@ -54,6 +55,7 @@ export const routes: RouteDefinition[] = [
       { path: '/tasks', component: () => <Navigate href="/tasks/personal" /> },
       { path: '/tasks/personal', component: TasksPersonal },
       { path: '/tasks/business', component: TasksBusiness },
+      { path: '/tasks/crypto', component: TasksCrypto },
       { path: '/tasks/upcoming', component: TasksUpcoming },
       { path: '/tasks/completed', component: TasksCompleted },
       { path: '/tasks/all', component: TasksAll },

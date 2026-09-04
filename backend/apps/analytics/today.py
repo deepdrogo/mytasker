@@ -35,7 +35,13 @@ def today_snapshot(user, request=None) -> dict:
     now = timezone.now()
     ctx = {"request": request}
 
-    base = selectors.base_queryset(user).top_level().annotate(priority_rank=selectors.priority_rank_expression())
+    # Crypto world is a private list — never mixed into the Today dashboard.
+    base = (
+        selectors.base_queryset(user)
+        .top_level()
+        .exclude(kind=Task.Kind.CRYPTO)
+        .annotate(priority_rank=selectors.priority_rank_expression())
+    )
     overdue = base.filter(OPEN, due_at__lt=now).exclude(due_at__gte=start).order_by("due_at")[:50]
     due_today = base.filter(OPEN, due_at__gte=start, due_at__lt=end).order_by("priority_rank", "due_at")[:100]
     # "Focus": high priority open tasks without a date, so they don't fall through the cracks.

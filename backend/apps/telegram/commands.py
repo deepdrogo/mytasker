@@ -142,7 +142,10 @@ def cmd_add(user, arg: str) -> tuple[str, dict | None]:
         return "Usage: /add Call Nino tomorrow 15:00 !high #business", None
     kind = Task.Kind.PERSONAL
     priority = None
-    if re.search(r"(^|\s)#business\b", text, re.I):
+    if re.search(r"(^|\s)#crypto\b", text, re.I):
+        kind = Task.Kind.CRYPTO
+        text = re.sub(r"(^|\s)#crypto\b", " ", text, flags=re.I)
+    elif re.search(r"(^|\s)#business\b", text, re.I):
         kind = Task.Kind.BUSINESS
         text = re.sub(r"(^|\s)#business\b", " ", text, flags=re.I)
     text = re.sub(r"(^|\s)#personal\b", " ", text, flags=re.I)

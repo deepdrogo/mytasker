@@ -1,7 +1,7 @@
 // MyTasker — Tasks › All: personal, business and every project on one page, subtasks expanded.
 // Built by drogoz · https://github.com/deepdrogo/mytasker
 
-import { Briefcase, Rocket, User } from 'lucide-solid';
+import { Bitcoin, Briefcase, Rocket, User } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { createMemo } from 'solid-js';
 import { Page } from '~/components/shared/Page';
@@ -17,7 +17,14 @@ import type { Task } from '~/types';
 export default function TasksAll(): JSX.Element {
   const tasks = createQuery(
     () => 'tasks:canvas:all',
-    () => tasksApi.list({ top_level: true, completed: false, include_subtasks: '1', ordering: 'manual', page_size: 200 }),
+    () =>
+      tasksApi.list({
+        top_level: true,
+        completed: false,
+        include_subtasks: '1',
+        ordering: 'manual',
+        page_size: 200,
+      }),
   );
   const projects = createQuery(
     () => 'projects:canvas',
@@ -28,6 +35,7 @@ export default function TasksAll(): JSX.Element {
     const all = tasks.data()?.results ?? [];
     const personal: Task[] = [];
     const business: Task[] = [];
+    const crypto: Task[] = [];
     const byProject = new Map<number, Task[]>();
     for (const task of all) {
       if (task.project) {
@@ -35,7 +43,8 @@ export default function TasksAll(): JSX.Element {
         list.push(task);
         byProject.set(task.project.id, list);
       } else if (task.kind === 'personal') personal.push(task);
-      else business.push(task);
+      else if (task.kind === 'crypto') crypto.push(task);
+      else if (task.kind === 'business') business.push(task);
     }
 
     const cols: CanvasColumn[] = [];
@@ -57,6 +66,15 @@ export default function TasksAll(): JSX.Element {
       tasks: business,
       composerDefaults: { kind: 'business', origin: 'list' },
       composerPlaceholder: t('Add a business task…'),
+    });
+    cols.push({
+      key: 'crypto',
+      title: t('Crypto world'),
+      href: '/tasks/crypto',
+      icon: <Bitcoin size={13} />,
+      tasks: crypto,
+      composerDefaults: { kind: 'crypto' },
+      composerPlaceholder: t('Add a crypto task…'),
     });
 
     const known = new Map((projects.data()?.results ?? []).map((p) => [p.id, p] as const));
@@ -89,7 +107,7 @@ export default function TasksAll(): JSX.Element {
   };
 
   return (
-    <Page title={t('All tasks')} subtitle={t('Personal, business and projects on one canvas.')}>
+    <Page title={t('All tasks')} subtitle={t('Personal, business, crypto world and projects on one canvas.')}>
       <CanvasBoard
         columns={columns}
         loading={() => tasks.loading()}

@@ -5,6 +5,7 @@ export const command: Record<string, string> = {
   'Go to Today': 'დღევანდელ დღეზე გადასვლა',
   'Personal tasks': 'პირადი დავალებები',
   'Business tasks': 'ბიზნეს დავალებები',
+  'Crypto world tasks': 'კრიპტოსამყაროს დავალებები',
   'Completed tasks': 'დასრულებული დავალებები',
   'All projects': 'ყველა პროექტი',
   'Project ideas': 'პროექტის იდეები',

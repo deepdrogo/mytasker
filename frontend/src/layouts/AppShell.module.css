@@ -14,7 +14,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  margin: var(--canvas-gap) var(--canvas-gap) var(--canvas-gap) 0;
+  margin: var(--canvas-gap);
   border-radius: var(--r-xl);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012) 30%, rgba(255, 255, 255, 0.008));
   border: 1px solid var(--c-border);
@@ -37,7 +37,7 @@
   padding: var(--s-8);
 }
 
-.mobileSidebar {
+.navOverlay {
   position: fixed;
   inset: 0;
   z-index: var(--z-drawer);
@@ -48,7 +48,7 @@
   animation: fade var(--t-base);
 }
 
-.mobileSidebarPanel {
+.navPanel {
   width: 288px;
   max-width: 86%;
   height: 100%;
@@ -57,6 +57,20 @@
   box-shadow: var(--shadow-lg);
   animation: slideIn var(--t-slow);
   display: flex;
+}
+
+.navOverlayDesktop {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.navPanelDesktop {
+  width: var(--sidebar-w);
+  max-width: 280px;
+  height: calc(100% - 2 * var(--canvas-gap));
+  margin: var(--canvas-gap) 0 var(--canvas-gap) var(--canvas-gap);
+  border-radius: var(--r-xl);
+  border: 1px solid var(--c-border-strong);
+  overflow: hidden;
 }
 
 @keyframes fade {

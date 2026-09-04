@@ -6,6 +6,7 @@ export const core: Record<string, string> = {
   Tasks: 'დავალებები',
   Personal: 'პირადი',
   Business: 'ბიზნესი',
+  'Crypto world': 'კრიპტოსამყარო',
   Upcoming: 'მომავალი',
   Completed: 'დასრულებული',
   Projects: 'პროექტები',
@@ -28,6 +29,7 @@ export const core: Record<string, string> = {
   Primary: 'მთავარი',
   'MyTasker - Today': 'MyTasker — დღეს',
   'Open navigation': 'ნავიგაციის გახსნა',
+  'Close navigation': 'ნავიგაციის დახურვა',
   Section: 'სექცია',
   Language: 'ენა',
 

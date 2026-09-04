@@ -30,7 +30,7 @@ OPEN = ~Q(status__in=[Task.Status.DONE, Task.Status.CANCELLED])
 
 class ListTasksIn(BaseModel):
     query: str | None = Field(None, description="Substring to match in the title")
-    kind: Literal["personal", "business"] | None = None
+    kind: Literal["personal", "business", "crypto"] | None = None
     scope: Literal["today", "overdue", "upcoming", "open", "done_today", "all"] = "open"
     project_id: int | None = None
     limit: int = Field(15, ge=1, le=50)
@@ -38,7 +38,7 @@ class ListTasksIn(BaseModel):
 
 class CreateTaskIn(BaseModel):
     title: str = Field(..., min_length=1, max_length=300)
-    kind: Literal["personal", "business"] = "personal"
+    kind: Literal["personal", "business", "crypto"] = "personal"
     when: str | None = Field(None, description="Natural language due date/time, e.g. 'tomorrow 15:00', 'friday'")
     priority: Literal["critical", "high", "normal", "low"] | None = None
     project_id: int | None = None
@@ -65,7 +65,7 @@ class UpdateTaskIn(BaseModel):
     title: str | None = Field(None, max_length=300)
     when: str | None = Field(None, description="New due date/time in natural language; 'none' clears it")
     priority: Literal["critical", "high", "normal", "low"] | None = None
-    kind: Literal["personal", "business"] | None = None
+    kind: Literal["personal", "business", "crypto"] | None = None
     description: str | None = Field(None, max_length=2000)
     project_id: int | None = None
     estimated_minutes: int | None = Field(None, ge=1, le=1440)
@@ -252,6 +252,8 @@ def list_tasks(actor: Actor, args: ListTasksIn) -> dict:
         qs = qs.filter(status=Task.Status.DONE, completed_at__gte=start, completed_at__lt=end)
     if args.kind:
         qs = qs.filter(kind=args.kind)
+    elif args.scope == "today":
+        qs = qs.exclude(kind=Task.Kind.CRYPTO)
     if args.project_id:
         qs = qs.filter(project_id=args.project_id)
     if args.query:
@@ -805,7 +807,7 @@ TOOLS: dict[str, Tool] = {
         ),
         Tool(
             "create_task",
-            "Create a task. Put the due date in `when` as natural language; optionally include subtasks.",
+            "Create a task. Put the due date in `when` as natural language; optionally include subtasks. Use kind=crypto for Crypto world — that list never appears on Today.",
             CreateTaskIn,
             create_task,
         ),

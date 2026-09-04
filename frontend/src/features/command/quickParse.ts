@@ -58,10 +58,12 @@ export function quickParse(raw: string): QuickParse {
     }
   }
 
-  const kindMatch = /\s@(personal|business|work|p|b)(?=\s)/i.exec(text);
+  const kindMatch = /\s@(personal|business|work|crypto|cryptoworld|p|b|c)(?=\s)/i.exec(text);
   if (kindMatch) {
     const k = kindMatch[1]!.toLowerCase();
-    result.kind = k === 'p' || k === 'personal' ? 'personal' : 'business';
+    if (k === 'p' || k === 'personal') result.kind = 'personal';
+    else if (k === 'c' || k === 'crypto' || k === 'cryptoworld') result.kind = 'crypto';
+    else result.kind = 'business';
     text = text.replace(kindMatch[0], ' ');
   }
 

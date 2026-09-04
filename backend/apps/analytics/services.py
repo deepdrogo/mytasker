@@ -78,12 +78,14 @@ def compute_day(user, day: date) -> DayMetrics:
     now = timezone.now()
     m = DayMetrics(date=day)
 
-    own = Task.objects.filter(owner=user, parent__isnull=True)
+    own = Task.objects.filter(owner=user, parent__isnull=True).exclude(kind=Task.Kind.CRYPTO)
     # Planned = tasks that were due on that day (or overdue carried into it and still open at end of day).
     planned = own.filter(due_at__gte=start, due_at__lt=end)
     m.tasks_planned = planned.count()
-    completed = Task.objects.filter(completed_at__gte=start, completed_at__lt=end, parent__isnull=True).filter(
-        Q(owner=user) | Q(completed_by=user)
+    completed = (
+        Task.objects.filter(completed_at__gte=start, completed_at__lt=end, parent__isnull=True)
+        .exclude(kind=Task.Kind.CRYPTO)
+        .filter(Q(owner=user) | Q(completed_by=user))
     )
     agg = completed.aggregate(
         total=Count("id", distinct=True),

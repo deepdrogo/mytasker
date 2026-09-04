@@ -4,7 +4,7 @@ export type ISODate = string;
 
 export type Priority = 'critical' | 'high' | 'normal' | 'low';
 export type Visibility = 'private' | 'group';
-export type TaskKind = 'personal' | 'business';
+export type TaskKind = 'personal' | 'business' | 'crypto';
 /** `list` tasks belong to the Personal/Business lists (optionally linked to a project); `project` tasks live only in their project. */
 export type TaskOrigin = 'list' | 'project';
 export type TaskStatus = 'todo' | 'in_progress' | 'done' | 'cancelled';

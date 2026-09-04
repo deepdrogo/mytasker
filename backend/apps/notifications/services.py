@@ -174,7 +174,14 @@ def render(event: ActivityEvent) -> Rendered:
     name = event.name
     url = ""
     if event.target_type == "task":
-        url = f"/tasks/{'business' if p.get('kind') == 'business' else 'personal'}?task={event.target_id}"
+        kind = p.get("kind")
+        if kind == "crypto":
+            list_path = "crypto"
+        elif kind == "business":
+            list_path = "business"
+        else:
+            list_path = "personal"
+        url = f"/tasks/{list_path}?task={event.target_id}"
         if event.project_id:
             url = f"/projects/{event.project_id}/tasks?task={event.target_id}"
     elif event.target_type == "project" and event.project_id:

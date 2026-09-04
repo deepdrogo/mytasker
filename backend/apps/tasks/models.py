@@ -100,6 +100,7 @@ class Task(TimeStampedModel, SoftDeleteModel):
     class Kind(models.TextChoices):
         PERSONAL = "personal", "Personal"
         BUSINESS = "business", "Business"
+        CRYPTO = "crypto", "Crypto world"
 
     class Status(models.TextChoices):
         TODO = "todo", "To do"

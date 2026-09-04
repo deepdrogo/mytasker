@@ -88,6 +88,12 @@ export const tasks: Record<string, string> = {
   'Could not restore the previous deadlines.': 'წინა ვადების აღდგენა ვერ მოხერხდა.',
   'Could not change the deadline.': 'ვადის შეცვლა ვერ მოხერხდა.',
 
+  // Crypto world
+  'A private list for crypto work. It never appears on Today.':
+    'კრიპტო საქმეების ცალკე სია. დღევანდელ დეშბორდზე არ ჩანს.',
+  'Add a crypto task…': 'დაამატე კრიპტო დავალება…',
+  'Nothing in the crypto world yet.': 'კრიპტოსამყაროში ჯერ არაფერია.',
+
   // Personal
   'Life tasks, no project needed.': 'პირადი საქმეები, პროექტის გარეშე.',
   'Add a personal task…': 'დაამატე პირადი დავალება…',
@@ -118,7 +124,8 @@ export const tasks: Record<string, string> = {
 
   // Canvas
   'All tasks': 'ყველა დავალება',
-  'Personal, business and projects on one canvas.': 'პირადი, ბიზნესი და პროექტები ერთ ტილოზე.',
+  'Personal, business, crypto world and projects on one canvas.':
+    'პირადი, ბიზნესი, კრიპტოსამყარო და პროექტები ერთ ტილოზე.',
   'No open tasks.': 'ღია დავალებები არ არის.',
   '{done}/{total} subtasks': '{done}/{total} ქვედავალება',
   'Add a task to {name}…': 'დაამატე დავალება {name}-ში…',

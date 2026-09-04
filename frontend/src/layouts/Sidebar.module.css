@@ -1,20 +1,45 @@
 .sidebar {
-  width: var(--sidebar-w);
+  width: 100%;
   flex: none;
   height: 100%;
   display: flex;
   flex-direction: column;
   background: transparent;
   overflow: hidden;
-  padding: var(--canvas-gap) 0 var(--canvas-gap) var(--canvas-gap);
 }
 
 .brand {
   height: var(--topbar-h);
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
   padding: 0 var(--s-6);
   flex: none;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.closeBtn {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-md);
+  color: var(--c-text-dim);
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background var(--t-fast),
+    color var(--t-fast),
+    border-color var(--t-fast);
+}
+
+.closeBtn:hover {
+  background: var(--c-hover);
+  color: var(--c-text);
+  border-color: var(--c-border);
 }
 
 .brandLink {
@@ -128,10 +153,11 @@
 
 .footer {
   flex: none;
-  padding: var(--s-4) var(--s-4) 0;
+  padding: var(--s-4) var(--s-4) var(--s-5);
   display: flex;
   flex-direction: column;
   gap: 2px;
+  border-top: 1px solid var(--c-border);
 }
 
 .account {
@@ -186,7 +212,6 @@
   }
   .brand {
     padding: 0 var(--s-6);
-    border-bottom: 1px solid var(--c-border);
   }
   .nav {
     padding: var(--s-5) var(--s-5);
