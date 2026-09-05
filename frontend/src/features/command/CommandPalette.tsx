@@ -301,7 +301,12 @@ export function CommandPalette(): JSX.Element {
         </Portal>
       </Show>
 
-      <TaskEditor task={openTask()} open={openTask() !== null} onClose={() => setOpenTask(null)} />
+      <TaskEditor
+        task={openTask()}
+        open={openTask() !== null}
+        onClose={() => setOpenTask(null)}
+        onOpenTask={(task) => void tasksApi.get(task.id).then(setOpenTask).catch(() => setOpenTask(task))}
+      />
     </>
   );
 }

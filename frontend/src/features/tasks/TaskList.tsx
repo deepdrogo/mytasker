@@ -19,6 +19,7 @@ interface TaskListProps {
   onShare?: (task: Task) => void;
   onChanged?: () => void;
   showProject?: boolean;
+  showKind?: boolean;
   compact?: boolean;
   /** Narrow-column mode: titles wrap to two lines, badges hidden (see TaskRow). */
   dense?: boolean;
@@ -59,6 +60,7 @@ export function TaskList(props: TaskListProps): JSX.Element {
                     onShare={props.onShare}
                     onChanged={props.onChanged}
                     showProject={props.showProject}
+                    showKind={props.showKind}
                     compact={props.compact}
                     dense={props.dense}
                     selectable={props.selectable}

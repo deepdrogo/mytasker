@@ -2,7 +2,7 @@
 // Built by drogoz · https://github.com/deepdrogo/mytasker
 
 import { A } from '@solidjs/router';
-import { Check, Circle, Flame, GripVertical, Moon, Play, Rocket, ScrollText, Square, Undo2, X } from 'lucide-solid';
+import { CalendarOff, Check, Circle, Flame, GripVertical, Moon, Play, Rocket, ScrollText, Square, Undo2, X } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For, Show, createMemo, createSignal, onCleanup } from 'solid-js';
 import { Page } from '~/components/shared/Page';
@@ -249,26 +249,32 @@ export default function Dashboard(): JSX.Element {
                     when={projectOrder.items().length > 0}
                     fallback={<p class={styles.dim}>{t('No project has open tasks right now.')}</p>}
                   >
-                    <ul class={styles.projects} ref={projectOrder.setContainer}>
-                      <For each={projectOrder.items()}>
-                        {(p, index) => (
-                          <ProjectCardMini
-                            project={p}
-                            minutes={d().metrics.project_minutes[String(p.id)] ?? 0}
-                            onOpenTask={(id) => void tasksApi.get(id).then(setActiveTask)}
-                            sortable={projectOrder}
-                            position={index() + 1}
-                            total={projectOrder.items().length}
-                          />
-                        )}
-                      </For>
-                    </ul>
+                    {/* The wrapper scrolls, not the list itself: the drag hook measures rows against the list and
+                        auto-scrolls the nearest scrolling ancestor. */}
+                    <div class={cx(projectOrder.items().length > 4 && styles.projectsScroll)}>
+                      <ul class={styles.projects} ref={projectOrder.setContainer}>
+                        <For each={projectOrder.items()}>
+                          {(p, index) => (
+                            <ProjectCardMini
+                              project={p}
+                              minutes={d().metrics.project_minutes[String(p.id)] ?? 0}
+                              onOpenTask={(id) => void tasksApi.get(id).then(setActiveTask)}
+                              sortable={projectOrder}
+                              position={index() + 1}
+                              total={projectOrder.items().length}
+                            />
+                          )}
+                        </For>
+                      </ul>
+                    </div>
                   </Show>
                 </Section>
               </section>
 
-              {/* Column 3: timers, numbers, routine, rules - compact */}
+              {/* Column 3: timers, numbers, routine, rules - compact. On narrow screens the column dissolves
+                  (display: contents): timers + stats jump to the top, routine + rules sink to the very bottom. */}
               <section class={cx(styles.col, styles.side)}>
+                <div class={cx(styles.sideGroup, styles.sideTop)}>
                 <div class={styles.timers}>
                   <div class={styles.tile}>
                     <div class={styles.tileHead}>
@@ -332,7 +338,20 @@ export default function Dashboard(): JSX.Element {
                   <Stat label={t('Streak')} value={<><Flame size={12} /> {d().streak}</>} />
                   <Stat label={t('Personal')} value={formatMinutes(d().metrics.personal_minutes)} />
                 </div>
+                </div>
 
+                <div class={cx(styles.sideGroup, styles.sideBottom)}>
+                <Show when={d().routine.paused}>
+                  <p class={styles.weekendNote}>
+                    <CalendarOff size={13} />
+                    <span>
+                      {t('Weekend - the routine takes the day off. Rules still count.')}{' '}
+                      <A href="/settings/preferences" class={styles.link}>
+                        {t('Change')}
+                      </A>
+                    </span>
+                  </p>
+                </Show>
                 <RoutineBlock title={t('Business routine')} items={d().routine.business} currentId={d().routine.current_item_id} onChanged={refresh} />
                 <RoutineBlock title={t('Personal routine')} items={d().routine.personal} currentId={d().routine.current_item_id} onChanged={refresh} />
                 <RulesBlock rules={d().rules} onChanged={refresh} />
@@ -343,6 +362,7 @@ export default function Dashboard(): JSX.Element {
                     {t('Insights')}
                   </A>
                 </p>
+                </div>
               </section>
             </div>
           )}
@@ -359,6 +379,7 @@ export default function Dashboard(): JSX.Element {
           if (current) void tasksApi.get(current.id).then(setActiveTask).catch(() => setActiveTask(null));
         }}
         onShare={(task) => setShareTasks([task])}
+        onOpenTask={(task) => void tasksApi.get(task.id).then(setActiveTask).catch(() => setActiveTask(task))}
       />
       <ShareDialog tasks={shareTasks()} open={shareTasks() !== null} onClose={() => setShareTasks(null)} />
     </Page>
@@ -568,6 +589,9 @@ function RulesBlock(props: { rules: Rule[]; onChanged: () => void }): JSX.Elemen
   );
 }
 
+/** The top three slots carry a faint colour so the day's order reads at a glance: 1 red, 2 amber, 3 green. */
+const RANK_CLASS: Record<number, string> = { 1: 'rank1', 2: 'rank2', 3: 'rank3' };
+
 /** Compact project card for the dashboard: progress, next open tasks, tracked minutes, drag grip to reorder. */
 function ProjectCardMini(props: {
   project: TodayProject;
@@ -581,9 +605,13 @@ function ProjectCardMini(props: {
   const done = () => props.project.task_done ?? 0;
   const use12h = () => authStore.user()?.preferences.time_format === '12h';
   const name = () => tx('project', props.project.id, 'name', props.project.name);
+  const rankClass = () => {
+    const key = RANK_CLASS[props.position];
+    return key ? styles[key] : undefined;
+  };
   return (
     <li
-      class={cx(styles.projectCard, props.sortable.isDragging(props.project) && styles.projectDragging)}
+      class={cx(styles.projectCard, rankClass(), props.sortable.isDragging(props.project) && styles.projectDragging)}
       {...props.sortable.itemProps(props.project)}
       style={props.sortable.itemStyle(props.project)}
     >
@@ -599,6 +627,9 @@ function ProjectCardMini(props: {
             <GripVertical size={14} />
           </button>
         </Show>
+        <span class={styles.rank} aria-label={t('Position {position}', { position: props.position })}>
+          {props.position}
+        </span>
         <A href={`/projects/${props.project.id}/tasks`} class={styles.projectHead}>
           <span class={styles.projectName}>
             <Show when={props.project.category === 'startup'}>

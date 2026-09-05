@@ -37,6 +37,28 @@
   padding: var(--s-8);
 }
 
+/* Pinned sidebar: a fixed dock on the left, the canvas shrinks beside it. Same chrome as the desktop slide-over. */
+.dock {
+  flex: none;
+  width: var(--sidebar-w);
+  height: calc(100% - 2 * var(--canvas-gap));
+  margin: var(--canvas-gap) 0 var(--canvas-gap) var(--canvas-gap);
+  border-radius: var(--r-xl);
+  border: 1px solid var(--c-border);
+  background: var(--g-surface);
+  box-shadow: var(--rim-top);
+  overflow: hidden;
+  display: flex;
+  animation: dockIn var(--t-base);
+}
+
+@keyframes dockIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}
+
 .navOverlay {
   position: fixed;
   inset: 0;

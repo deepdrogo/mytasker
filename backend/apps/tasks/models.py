@@ -246,10 +246,14 @@ class Reminder(TimeStampedModel):
 
 
 class TaskCheckin(models.Model):
-    """One row per ongoing task per local day: "I worked on this today"."""
+    """
+    One row per ongoing task per local day. `skipped=False`: "I worked on this today";
+    `skipped=True`: "I deliberately let today go" - kept so the done / skipped tally is honest.
+    """
 
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="checkins")
     date = models.DateField()
+    skipped = models.BooleanField(default=False)
     checked_at = models.DateTimeField(auto_now=True)
     checked_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="task_checkins"

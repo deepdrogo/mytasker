@@ -30,6 +30,22 @@ def base_queryset(user):
         .annotate(c=Count("*"))
         .values("c")[:1]
     )
+    # Daily check-in tally for long-term tasks: how many days were done, how many deliberately skipped.
+    today = today_for(user)
+    todays_checkin = TaskCheckin.objects.filter(task=OuterRef("pk"), date=today)
+
+    def checkin_count(skipped: bool):
+        return Coalesce(
+            Subquery(
+                TaskCheckin.objects.filter(task=OuterRef("pk"), skipped=skipped)
+                .values("task")
+                .annotate(c=Count("*"))
+                .values("c")[:1],
+                output_field=IntegerField(),
+            ),
+            Value(0),
+        )
+
     return (
         Task.objects.visible_to(user)
         .select_related(
@@ -58,7 +74,10 @@ def base_queryset(user):
             ),
             tracked_seconds=Coalesce(Subquery(tracked, output_field=IntegerField()), Value(0)),
             comment_count=Coalesce(Subquery(comments, output_field=IntegerField()), Value(0)),
-            today_checked=Exists(TaskCheckin.objects.filter(task=OuterRef("pk"), date=today_for(user))),
+            today_checked=Exists(todays_checkin.filter(skipped=False)),
+            today_skipped=Exists(todays_checkin.filter(skipped=True)),
+            checkin_done_count=checkin_count(False),
+            checkin_skipped_count=checkin_count(True),
         )
     )
 

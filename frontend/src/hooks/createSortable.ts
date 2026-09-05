@@ -157,11 +157,17 @@ export function createSortable<T>(options: SortableOptions<T>): Sortable<T> {
     setOffset(0);
     container.dataset.sorting = 'true';
     document.body.style.userSelect = 'none';
-    try {
-      handle.setPointerCapture(e.pointerId);
-    } catch {
-      /* capture is best-effort; touch has it implicitly */
-    }
+    // Capture is best-effort. Reordering moves the dragged row in the DOM (remove + insert), and browsers drop
+    // pointer capture the moment the capturing element leaves the tree - so it is re-taken after every move and
+    // never treated as the end of the drag. Move/up/cancel are tracked on window, which does not need capture.
+    const capture = () => {
+      try {
+        if (!handle.hasPointerCapture(e.pointerId)) handle.setPointerCapture(e.pointerId);
+      } catch {
+        /* pointer already gone or capture unsupported - the window listeners still see the rest of the drag */
+      }
+    };
+    capture();
 
     const update = () => {
       if (!container) return;
@@ -180,6 +186,7 @@ export function createSortable<T>(options: SortableOptions<T>): Sortable<T> {
         const [moved] = next.splice(currentIndex, 1);
         next.splice(slot, 0, moved as T);
         applyOrder(next, key);
+        capture();
       }
       const maxTop = Math.max(0, container.clientHeight - row.offsetHeight);
       const clamped = Math.max(0, Math.min(maxTop, localY));
@@ -220,7 +227,6 @@ export function createSortable<T>(options: SortableOptions<T>): Sortable<T> {
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', finish);
       window.removeEventListener('pointercancel', finish);
-      handle.removeEventListener('lostpointercapture', finish);
       try {
         handle.releasePointerCapture(e.pointerId);
       } catch {
@@ -243,7 +249,6 @@ export function createSortable<T>(options: SortableOptions<T>): Sortable<T> {
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', finish);
     window.addEventListener('pointercancel', finish);
-    handle.addEventListener('lostpointercapture', finish);
     abortDrag = finish;
   };
 

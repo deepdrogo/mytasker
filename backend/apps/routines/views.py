@@ -62,6 +62,7 @@ def routine_items(request, kind: str):
         {
             "items": RoutineItemSerializer(items, many=True, context=_context(user, day)).data,
             "current_item_id": current.pk if current else None,
+            "paused": services.routine_paused_on(user, day or today_for(user)),
         }
     )
 

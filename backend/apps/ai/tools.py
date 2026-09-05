@@ -807,7 +807,8 @@ TOOLS: dict[str, Tool] = {
         ),
         Tool(
             "create_task",
-            "Create a task. Put the due date in `when` as natural language; optionally include subtasks. Use kind=crypto for Crypto world — that list never appears on Today.",
+            "Create a task. Put the due date in `when` as natural language; optionally include subtasks. "
+            "Use kind=crypto for Crypto world — that list never appears on Today.",
             CreateTaskIn,
             create_task,
         ),

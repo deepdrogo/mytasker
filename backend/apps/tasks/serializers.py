@@ -50,6 +50,9 @@ class TaskSerializer(serializers.ModelSerializer):
     comment_count = serializers.IntegerField(read_only=True, default=0)
     is_overdue = serializers.BooleanField(read_only=True)
     today_checked = serializers.BooleanField(read_only=True, default=False)
+    today_skipped = serializers.BooleanField(read_only=True, default=False)
+    checkin_done_count = serializers.IntegerField(read_only=True, default=0)
+    checkin_skipped_count = serializers.IntegerField(read_only=True, default=0)
     checkin_streak = serializers.SerializerMethodField()
     completed_by_name = serializers.SerializerMethodField()
     can_edit = serializers.SerializerMethodField()
@@ -79,6 +82,9 @@ class TaskSerializer(serializers.ModelSerializer):
             "estimated_minutes",
             "is_ongoing",
             "today_checked",
+            "today_skipped",
+            "checkin_done_count",
+            "checkin_skipped_count",
             "checkin_streak",
             "tracked_seconds",
             "tags",
@@ -213,3 +219,9 @@ class BulkRescheduleSerializer(serializers.Serializer):
 
 class CheckinSerializer(serializers.Serializer):
     checked = serializers.BooleanField(required=False, default=True)
+    # "Skip today": a deliberate miss, recorded so the done / skipped tally stays honest. Wins over `checked`.
+    skipped = serializers.BooleanField(required=False, default=False)
+
+
+class ReorderIdsSerializer(serializers.Serializer):
+    ids = serializers.ListField(child=serializers.IntegerField(min_value=1), min_length=1, max_length=200)

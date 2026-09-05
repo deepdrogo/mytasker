@@ -132,6 +132,7 @@ export const tasks: Record<string, string> = {
   'Due tomorrow': 'ვადა ხვალ',
   'Delete subtask': 'ქვედავალების წაშლა',
   'Subtask deleted': 'ქვედავალება წაიშალა',
+  'Edit subtask': 'ქვედავალების რედაქტირება',
 
   // Long-term (ongoing) tasks
   'Long-term work - tick it daily, complete when finished': 'გრძელვადიანი საქმე - ყოველდღე მონიშნე, დაასრულე როცა მთლიანად მორჩები',
@@ -142,6 +143,15 @@ export const tasks: Record<string, string> = {
   'Undo today’s check-in': 'დღევანდელი ჩეკის გაუქმება',
   'Finish for good': 'საბოლოოდ დასრულება',
   'Daily check-ins': 'ყოველდღიური ჩეკები',
+  'Skip today': 'დღეს დაიგნორება',
+  'Skip today - counted as a skipped day': 'დღეს დაიგნორება - დაიგნორებულ დღედ ჩაითვლება',
+  'Undo skip': 'დაიგნორების გაუქმება',
+  'Skipped for today': 'დღეს დაიგნორდა',
+  'skipped today': 'დღეს დაიგნორებული',
+  'Skipped today': 'დღეს დაიგნორებული',
+  '{done} days done · {skipped} skipped': '{done} დღე გაკეთდა · {skipped} დაიგნორდა',
+  '{n}-day streak': '{n} დღე ზედიზედ',
+  List: 'სია',
 
   // No date
   'No date': 'თარიღის გარეშე',

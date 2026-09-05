@@ -17,6 +17,29 @@ const [aiPrefill, setAiPrefill] = createSignal('');
 const [notificationsOpen, setNotificationsOpen] = createSignal(false);
 const [sidebarOpen, setSidebarOpen] = createSignal(false);
 
+// Desktop only: a pinned sidebar stays docked beside the canvas instead of sliding over it. Remembered per browser.
+const SIDEBAR_PIN_KEY = 'mt_sidebar_pinned';
+
+function readPinned(): boolean {
+  try {
+    return localStorage.getItem(SIDEBAR_PIN_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+const [sidebarPinned, setSidebarPinnedSignal] = createSignal(readPinned());
+
+function setSidebarPinned(value: boolean): void {
+  setSidebarPinnedSignal(value);
+  try {
+    if (value) localStorage.setItem(SIDEBAR_PIN_KEY, '1');
+    else localStorage.removeItem(SIDEBAR_PIN_KEY);
+  } catch {
+    /* private mode - the choice lasts for this session only */
+  }
+}
+
 let toastId = 0;
 
 export function toast(message: string, options: { tone?: ToastTone; action?: Toast['action']; ms?: number } = {}): void {
@@ -40,6 +63,7 @@ export const uiStore = {
   aiPrefill,
   notificationsOpen,
   sidebarOpen,
+  sidebarPinned,
   openPalette: () => setPaletteOpen(true),
   closePalette: () => setPaletteOpen(false),
   togglePalette: () => setPaletteOpen((v) => !v),
@@ -60,6 +84,16 @@ export const uiStore = {
   openSidebar: () => setSidebarOpen(true),
   closeSidebar: () => setSidebarOpen(false),
   toggleSidebar: () => setSidebarOpen((open) => !open),
+  /** Pin: dock the sidebar and drop the overlay. Unpin: back to the slide-over, closed. */
+  pinSidebar: () => {
+    setSidebarPinned(true);
+    setSidebarOpen(false);
+  },
+  unpinSidebar: () => {
+    setSidebarPinned(false);
+    setSidebarOpen(false);
+  },
+  togglePinnedSidebar: () => (sidebarPinned() ? uiStore.unpinSidebar() : uiStore.pinSidebar()),
 };
 
 /** Media query helper that stays reactive. */

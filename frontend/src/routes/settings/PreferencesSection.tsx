@@ -27,6 +27,7 @@ export default function PreferencesSection(): JSX.Element {
     evening_summary_time: initial?.evening_summary_time ?? '21:00',
     weekly_review_enabled: initial?.weekly_review_enabled ?? true,
     monthly_review_enabled: initial?.monthly_review_enabled ?? true,
+    routine_on_weekends: initial?.routine_on_weekends ?? false,
   });
   const [busy, setBusy] = createSignal(false);
   const set = <K extends keyof UserPreferences>(key: K, value: UserPreferences[K]) => setForm((f) => ({ ...f, [key]: value }));
@@ -107,6 +108,15 @@ export default function PreferencesSection(): JSX.Element {
             </Select>
           </Field>
         </div>
+
+        <hr class={styles.divider} />
+
+        <div class={styles.row}>
+          <Checkbox label={t('Routine on weekends')} checked={form().routine_on_weekends} onChange={(e) => set('routine_on_weekends', e.currentTarget.checked)} />
+        </div>
+        <p class={styles.dim}>
+          {t('Off: the everyday routine pauses on Saturday and Sunday and does not count against you. Rules still apply every day. Blocks scheduled only for weekend days always show.')}
+        </p>
 
         <hr class={styles.divider} />
 

@@ -17,6 +17,8 @@ export interface RoutineItemInput {
 export interface RoutineListResponse {
   items: RoutineItem[];
   current_item_id: ID | null;
+  /** The requested day is a weekend with the everyday routine switched off (Preferences). */
+  paused: boolean;
 }
 
 const SCOPES = ['routines', 'today'];

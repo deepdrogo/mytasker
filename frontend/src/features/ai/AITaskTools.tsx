@@ -85,15 +85,17 @@ export function AITaskTools(props: AITaskToolsProps): JSX.Element {
     });
 
   return (
-    <Show when={enabled() && props.task.can_edit && !props.task.parent}>
+    <Show when={enabled() && props.task.can_edit}>
       <div class={styles.tools}>
         <div class={styles.buttons}>
           <Button variant="ghost" size="sm" loading={busy() === 'improve'} disabled={busy() !== null} onClick={() => void improve()}>
             <Sparkles size={13} /> {t('Improve')}
           </Button>
-          <Button variant="ghost" size="sm" loading={busy() === 'breakdown'} disabled={busy() !== null} onClick={() => void breakDown()}>
-            <ListTree size={13} /> {t('Break down')}
-          </Button>
+          <Show when={!props.task.parent}>
+            <Button variant="ghost" size="sm" loading={busy() === 'breakdown'} disabled={busy() !== null} onClick={() => void breakDown()}>
+              <ListTree size={13} /> {t('Break down')}
+            </Button>
+          </Show>
         </div>
 
         <Show when={improved()}>
@@ -120,7 +122,7 @@ export function AITaskTools(props: AITaskToolsProps): JSX.Element {
                   </Show>
                 </div>
               </Show>
-              <Show when={r().suggested_subtasks?.length}>
+              <Show when={r().suggested_subtasks?.length && !props.task.parent}>
                 <div class={styles.suggestion}>
                   <span class={styles.label}>{t('Possible subtasks')}</span>
                   <ul class={styles.plain}>

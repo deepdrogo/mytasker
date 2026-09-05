@@ -2,18 +2,21 @@
 // Built by drogoz · https://github.com/deepdrogo/mytasker
 
 import { A } from '@solidjs/router';
-import { Check, ChevronDown, ChevronRight, Circle, Trash2 } from 'lucide-solid';
+import { Check, ChevronDown, ChevronRight, Circle, GripVertical, Pencil, Sparkles, Trash2 } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For, Show, createMemo, createSignal } from 'solid-js';
 import { ErrorNote, Skeleton } from '~/components/ui/Feedback';
 import { PolishButton } from '~/features/ai/PolishButton';
+import { polishTasks } from '~/features/ai/polish';
 import { ShareDialog } from '~/features/sharing/ShareDialog';
 import { tasksApi, type TaskInput } from '~/features/tasks/api';
 import { TaskComposer } from '~/features/tasks/TaskComposer';
 import { TaskEditor } from '~/features/tasks/TaskEditor';
 import { TaskRow } from '~/features/tasks/TaskRow';
 import { TaskSelectionBar } from '~/features/tasks/TaskSelectionBar';
+import { createSortable, type Sortable } from '~/hooks/createSortable';
 import { t } from '~/i18n';
+import { authStore } from '~/stores/auth';
 import { tx } from '~/stores/translations';
 import { toast } from '~/stores/ui';
 import type { Task } from '~/types';
@@ -58,7 +61,16 @@ export function CanvasBoard(props: CanvasBoardProps): JSX.Element {
 
   const allTasks = createMemo(() => props.columns().flatMap((c) => c.tasks));
   const selectedTasks = () => allTasks().filter((task) => selected().has(task.id));
-  const polishIds = () => allTasks().filter((task) => task.can_edit && task.status !== 'done').map((task) => task.id);
+  const polishIds = () => {
+    const ids: number[] = [];
+    for (const task of allTasks()) {
+      if (task.can_edit && task.status !== 'done') ids.push(task.id);
+      for (const sub of task.subtasks ?? []) {
+        if (sub.can_edit && sub.status !== 'done') ids.push(sub.id);
+      }
+    }
+    return ids;
+  };
 
   const toggleSelect = (task: Task) => {
     setSelected((current) => {
@@ -167,11 +179,13 @@ export function CanvasBoard(props: CanvasBoardProps): JSX.Element {
                                     {t('{done}/{total} subtasks', { done: task.subtask_done, total: task.subtask_total })}
                                   </button>
                                   <Show when={!collapsed().has(task.id)}>
-                                    <ul class={styles.subtaskList}>
-                                      <For each={task.subtasks}>
-                                        {(sub) => <SubtaskRow task={sub} selected={selected().has(sub.id)} onToggleSelect={toggleSelect} onOpen={openTask} onChanged={props.onRefresh} />}
-                                      </For>
-                                    </ul>
+                                    <SubtaskList
+                                      parent={task}
+                                      selected={selected()}
+                                      onToggleSelect={toggleSelect}
+                                      onOpen={openTask}
+                                      onChanged={props.onRefresh}
+                                    />
                                   </Show>
                                 </div>
                               </Show>
@@ -198,6 +212,7 @@ export function CanvasBoard(props: CanvasBoardProps): JSX.Element {
           if (current) void tasksApi.get(current.id).then(setActiveTask).catch(() => setActiveTask(null));
         }}
         onShare={(task) => setShareTasks([task])}
+        onOpenTask={openTask}
       />
       <ShareDialog
         tasks={shareTasks()}
@@ -211,15 +226,68 @@ export function CanvasBoard(props: CanvasBoardProps): JSX.Element {
   );
 }
 
+function SubtaskList(props: {
+  parent: Task;
+  selected: Set<number>;
+  onToggleSelect: (task: Task) => void;
+  onOpen: (task: Task) => void;
+  onChanged: () => void;
+}): JSX.Element {
+  const canDrag = () => props.parent.can_edit && (props.parent.subtasks?.length ?? 0) > 1;
+  const sortable = createSortable<Task>({
+    items: () => props.parent.subtasks ?? [],
+    key: (item) => item.id,
+    enabled: canDrag,
+    onReorder: async (items) => {
+      try {
+        await tasksApi.reorderSubtasks(
+          props.parent.id,
+          items.map((item) => item.id),
+        );
+        props.onChanged();
+      } catch {
+        toast(t('Could not save the order.'));
+        props.onChanged();
+      }
+    },
+  });
+
+  return (
+    <ul class={styles.subtaskList} ref={sortable.setContainer}>
+      <For each={sortable.items()}>
+        {(sub, index) => (
+          <SubtaskRow
+            task={sub}
+            selected={props.selected.has(sub.id)}
+            sortable={sortable}
+            position={index() + 1}
+            total={sortable.items().length}
+            canDrag={canDrag()}
+            onToggleSelect={props.onToggleSelect}
+            onOpen={props.onOpen}
+            onChanged={props.onChanged}
+          />
+        )}
+      </For>
+    </ul>
+  );
+}
+
 function SubtaskRow(props: {
   task: Task;
   selected: boolean;
+  sortable: Sortable<Task>;
+  position: number;
+  total: number;
+  canDrag: boolean;
   onToggleSelect: (task: Task) => void;
   onOpen: (task: Task) => void;
   onChanged: () => void;
 }): JSX.Element {
   const [busy, setBusy] = createSignal(false);
+  const [polishing, setPolishing] = createSignal(false);
   const done = () => props.task.status === 'done';
+  const canPolish = () => authStore.aiEnabled() && props.task.can_edit && !done();
 
   const toggleDone = async () => {
     if (busy() || !props.task.can_edit) return;
@@ -232,6 +300,17 @@ function SubtaskRow(props: {
       toast(t('Could not update task.'));
     } finally {
       setBusy(false);
+    }
+  };
+
+  const polish = async (event: MouseEvent) => {
+    event.stopPropagation();
+    if (polishing() || !canPolish()) return;
+    setPolishing(true);
+    try {
+      await polishTasks([props.task.id], props.onChanged);
+    } finally {
+      setPolishing(false);
     }
   };
 
@@ -250,7 +329,31 @@ function SubtaskRow(props: {
   };
 
   return (
-    <li class={cx(styles.subtask, done() && styles.subtaskDone, props.selected && styles.subtaskSelected)}>
+    <li
+      class={cx(
+        styles.subtask,
+        done() && styles.subtaskDone,
+        props.selected && styles.subtaskSelected,
+        props.sortable.isDragging(props.task) && styles.subtaskDragging,
+      )}
+      {...props.sortable.itemProps(props.task)}
+      style={props.sortable.itemStyle(props.task)}
+    >
+      <Show when={props.canDrag}>
+        <button
+          type="button"
+          class={styles.grip}
+          {...props.sortable.handleProps(props.task)}
+          aria-label={t('Reorder {name} ({position} of {total})', {
+            name: tx('task', props.task.id, 'title', props.task.title),
+            position: props.position,
+            total: props.total,
+          })}
+          title={t('Drag to reorder · arrow keys to move')}
+        >
+          <GripVertical size={12} />
+        </button>
+      </Show>
       <input
         type="checkbox"
         class={styles.subtaskSelect}
@@ -266,6 +369,30 @@ function SubtaskRow(props: {
       <button type="button" class={styles.subtaskTitle} onClick={() => props.onOpen(props.task)}>
         {tx('task', props.task.id, 'title', props.task.title)}
       </button>
+      <Show when={props.task.can_edit}>
+        <button
+          type="button"
+          class={cx(styles.subtaskDelete, styles.subtaskEdit)}
+          disabled={busy()}
+          onClick={() => props.onOpen(props.task)}
+          aria-label={t('Edit subtask')}
+          title={t('Edit subtask')}
+        >
+          <Pencil size={12} />
+        </button>
+      </Show>
+      <Show when={canPolish()}>
+        <button
+          type="button"
+          class={styles.subtaskDelete}
+          disabled={polishing() || busy()}
+          onClick={(e) => void polish(e)}
+          aria-label={t('Polish {title} with AI', { title: props.task.title })}
+          title={t('Polish with AI')}
+        >
+          <Sparkles size={12} />
+        </button>
+      </Show>
       <Show when={props.task.can_delete}>
         <button type="button" class={styles.subtaskDelete} disabled={busy()} onClick={() => void remove()} aria-label={t('Delete subtask')} title={t('Delete subtask')}>
           <Trash2 size={12} />

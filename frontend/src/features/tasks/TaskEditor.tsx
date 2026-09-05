@@ -1,4 +1,16 @@
-import { Play, Repeat, Share2, Sparkles, Square, Trash2 } from 'lucide-solid';
+import {
+  ChevronLeft,
+  ChevronRight,
+  GripVertical,
+  Infinity as InfinityIcon,
+  Pencil,
+  Play,
+  Repeat,
+  Share2,
+  Sparkles,
+  Square,
+  Trash2,
+} from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { batch, createEffect, createSignal, For, Show } from 'solid-js';
 import { ApiError } from '~/api/client';
@@ -9,13 +21,16 @@ import { ConfirmDialog, ErrorNote } from '~/components/ui/Feedback';
 import { Checkbox, Field, Input, Select, Textarea } from '~/components/ui/Input';
 import { AITaskTools } from '~/features/ai/AITaskTools';
 import { PolishButton } from '~/features/ai/PolishButton';
+import { polishTasks } from '~/features/ai/polish';
 import { Comments } from '~/features/collab/Comments';
 import { ProjectSelector } from '~/features/projects/ProjectSelector';
 import { tasksApi, type TaskInput } from '~/features/tasks/api';
 import { TaskComposer } from '~/features/tasks/TaskComposer';
+import { createSortable, type Sortable } from '~/hooks/createSortable';
 import { intlLocale, t } from '~/i18n';
-import { isTranslated, tx } from '~/stores/translations';
+import { isTranslated, markStale, tx } from '~/stores/translations';
 import { startTimer, stopTimer, timerStore } from '~/stores/timer';
+import { authStore } from '~/stores/auth';
 import { toast } from '~/stores/ui';
 import type { Priority, Task } from '~/types';
 import { formatDuration, fromLocalInputValue, toLocalInputValue } from '~/utils/format';
@@ -27,6 +42,8 @@ interface TaskEditorProps {
   onClose: () => void;
   onChanged?: () => void;
   onShare?: (task: Task) => void;
+  /** Open another task in this same drawer (a subtask, or the parent when backing out). */
+  onOpenTask?: (task: Task) => void;
 }
 
 const PRIORITIES: Priority[] = ['critical', 'high', 'normal', 'low'];
@@ -78,6 +95,30 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
       setError('');
     });
     void tasksApi.subtasks(task.id).then(setSubtasks).catch(() => setSubtasks([]));
+  });
+
+  const sortable = createSortable<Task>({
+    items: () => subtasks(),
+    key: (item) => item.id,
+    enabled: () => (props.task?.can_edit ?? false) && subtasks().length > 1,
+    onReorder: async (items) => {
+      const parentId = props.task?.id;
+      if (!parentId) return;
+      setSubtasks(items);
+      try {
+        await tasksApi.reorderSubtasks(
+          parentId,
+          items.map((item) => item.id),
+        );
+      } catch {
+        try {
+          setSubtasks(await tasksApi.subtasks(parentId));
+        } catch {
+          /* keep the local order rather than emptying the list */
+        }
+        toast(t('Could not save the order.'));
+      }
+    },
   });
 
   const mark = <T,>(setter: (value: T) => void) => (value: T) => {
@@ -174,6 +215,19 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
               </Show>
 
               <div class={styles.quickBar}>
+                <Show when={task().parent && props.onOpenTask}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const parentId = task().parent;
+                      if (parentId) void tasksApi.get(parentId).then((parent) => props.onOpenTask?.(parent));
+                    }}
+                  >
+                    <ChevronLeft size={14} />
+                    {t('Back')}
+                  </Button>
+                </Show>
                 <Button variant={task().status === 'done' ? 'secondary' : 'primary'} size="sm" onClick={toggleComplete}>
                   {task().status === 'done' ? t('Reopen') : t('Complete')}
                 </Button>
@@ -198,6 +252,11 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
                   <Share2 size={14} />
                   {t('Share')}
                 </Button>
+                <PolishButton
+                  taskIds={() => (task().can_edit && task().status !== 'done' ? [task().id] : [])}
+                  variant="secondary"
+                  onChanged={props.onChanged}
+                />
               </div>
 
               <Show when={task().tracked_seconds > 0}>
@@ -291,6 +350,19 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
                   onChange={(e) => mark(setOngoing)(e.currentTarget.checked)}
                   disabled={!task().can_edit || task().parent !== null}
                 />
+                {/* Check-in history: how the habit actually went, not just today's box. */}
+                <Show when={task().is_ongoing && task().checkin_done_count + task().checkin_skipped_count > 0}>
+                  <p class={styles.hint}>
+                    <InfinityIcon size={13} />
+                    <span>
+                      {t('{done} days done · {skipped} skipped', {
+                        done: task().checkin_done_count,
+                        skipped: task().checkin_skipped_count,
+                      })}
+                      <Show when={task().checkin_streak > 1}> · {t('{n}-day streak', { n: task().checkin_streak })}</Show>
+                    </span>
+                  </p>
+                </Show>
               </div>
 
               <Field label={t('Project')}>
@@ -360,47 +432,21 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
                       />
                     </span>
                   </h3>
-                  <div class={styles.subtasks}>
-                    <For each={subtasks()}>
-                      {(subtask) => (
-                        <div class={styles.subtaskRow}>
-                          <label class={styles.subtaskMain}>
-                            <input
-                              type="checkbox"
-                              checked={subtask.status === 'done'}
-                              disabled={!subtask.can_edit}
-                              onChange={async (e) => {
-                                if (e.currentTarget.checked) await tasksApi.complete(subtask.id);
-                                else await tasksApi.reopen(subtask.id);
-                                setSubtasks(await tasksApi.subtasks(task().id));
-                                props.onChanged?.();
-                              }}
-                            />
-                            <span class={subtask.status === 'done' ? styles.subtaskDone : undefined}>
-                              {tx('task', subtask.id, 'title', subtask.title)}
-                            </span>
-                          </label>
-                          <Show when={subtask.can_delete}>
-                            <button
-                              type="button"
-                              class={styles.subtaskDelete}
-                              aria-label={t('Delete subtask')}
-                              title={t('Delete subtask')}
-                              onClick={async () => {
-                                try {
-                                  await tasksApi.remove(subtask.id);
-                                  setSubtasks(await tasksApi.subtasks(task().id));
-                                  props.onChanged?.();
-                                  toast(t('Subtask deleted'));
-                                } catch {
-                                  toast(t('Could not delete.'));
-                                }
-                              }}
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          </Show>
-                        </div>
+                  <div class={styles.subtasks} ref={sortable.setContainer}>
+                    <For each={sortable.items()}>
+                      {(subtask, index) => (
+                        <SubtaskItem
+                          task={subtask}
+                          sortable={sortable}
+                          position={index() + 1}
+                          total={sortable.items().length}
+                          canDrag={(props.task?.can_edit ?? false) && sortable.items().length > 1}
+                          onOpen={props.onOpenTask}
+                          onChanged={async () => {
+                            setSubtasks(await tasksApi.subtasks(task().id));
+                            props.onChanged?.();
+                          }}
+                        />
                       )}
                     </For>
                   </div>
@@ -444,5 +490,222 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
         onCancel={() => setConfirmDelete(false)}
       />
     </>
+  );
+}
+
+function SubtaskItem(props: {
+  task: Task;
+  sortable: Sortable<Task>;
+  position: number;
+  total: number;
+  canDrag: boolean;
+  onOpen?: (task: Task) => void;
+  onChanged: () => void | Promise<void>;
+}): JSX.Element {
+  const [editing, setEditing] = createSignal(false);
+  const [draft, setDraft] = createSignal('');
+  const [busy, setBusy] = createSignal(false);
+  const [polishing, setPolishing] = createSignal(false);
+  const done = () => props.task.status === 'done';
+  const canPolish = () => authStore.aiEnabled() && props.task.can_edit && !done();
+
+  const startEdit = (event?: Event) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (!props.task.can_edit || busy()) return;
+    setDraft(props.task.title);
+    setEditing(true);
+  };
+
+  const cancel = () => {
+    setEditing(false);
+    setDraft('');
+  };
+
+  const save = async () => {
+    if (!editing() || busy()) return;
+    const title = draft().trim();
+    if (!title || title === props.task.title) {
+      cancel();
+      return;
+    }
+    setEditing(false);
+    setBusy(true);
+    try {
+      await tasksApi.update(props.task.id, { title, version: props.task.version });
+      markStale('task', props.task.id);
+      await props.onChanged();
+    } catch (err) {
+      setDraft(title);
+      setEditing(true);
+      toast(err instanceof ApiError ? err.message : t('Could not update the task.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const polish = async (event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (polishing() || !canPolish()) return;
+    setPolishing(true);
+    try {
+      await polishTasks([props.task.id], () => void props.onChanged());
+    } finally {
+      setPolishing(false);
+    }
+  };
+
+  const toggleDone = async (event: Event) => {
+    const input = event.currentTarget as HTMLInputElement;
+    if (busy() || !props.task.can_edit) {
+      input.checked = done();
+      return;
+    }
+    setBusy(true);
+    try {
+      if (input.checked) await tasksApi.complete(props.task.id);
+      else await tasksApi.reopen(props.task.id);
+      await props.onChanged();
+    } catch {
+      toast(t('Could not update the task.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async () => {
+    if (busy()) return;
+    setBusy(true);
+    try {
+      await tasksApi.remove(props.task.id);
+      await props.onChanged();
+      toast(t('Subtask deleted'));
+    } catch {
+      toast(t('Could not delete.'));
+      setBusy(false);
+    }
+  };
+
+  const title = () => tx('task', props.task.id, 'title', props.task.title);
+
+  return (
+    <div
+      class={props.sortable.isDragging(props.task) ? `${styles.subtaskRow} ${styles.subtaskDragging}` : styles.subtaskRow}
+      {...props.sortable.itemProps(props.task)}
+      style={props.sortable.itemStyle(props.task)}
+    >
+      <Show when={props.canDrag}>
+        <button
+          type="button"
+          class={styles.grip}
+          {...props.sortable.handleProps(props.task)}
+          aria-label={t('Reorder {name} ({position} of {total})', {
+            name: title(),
+            position: props.position,
+            total: props.total,
+          })}
+          title={t('Drag to reorder · arrow keys to move')}
+        >
+          <GripVertical size={14} />
+        </button>
+      </Show>
+      <label class={styles.subtaskCheck}>
+        <input
+          type="checkbox"
+          checked={done()}
+          disabled={!props.task.can_edit || busy()}
+          onChange={toggleDone}
+          aria-label={done() ? t('Reopen') : t('Complete')}
+        />
+      </label>
+      <Show
+        when={editing()}
+        fallback={
+          <button
+            type="button"
+            class={done() ? `${styles.subtaskTitle} ${styles.subtaskDone}` : styles.subtaskTitle}
+            onClick={startEdit}
+            disabled={!props.task.can_edit}
+            title={props.task.can_edit ? t('Edit subtask') : undefined}
+          >
+            {title()}
+          </button>
+        }
+      >
+        <Input
+          ref={(el) => {
+            el?.focus();
+            el?.select();
+          }}
+          class={styles.subtaskInput}
+          sizeVariant="sm"
+          value={draft()}
+          disabled={busy()}
+          maxLength={300}
+          aria-label={t('Edit subtask')}
+          onInput={(e) => setDraft(e.currentTarget.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              void save();
+            } else if (e.key === 'Escape') {
+              e.preventDefault();
+              cancel();
+            }
+          }}
+          onBlur={() => void save()}
+        />
+      </Show>
+      <div class={styles.subtaskActions}>
+        <Show when={props.task.can_edit && !editing()}>
+          <button
+            type="button"
+            class={`${styles.subtaskAction} ${styles.subtaskActionAlways}`}
+            aria-label={t('Edit subtask')}
+            title={t('Edit subtask')}
+            disabled={busy()}
+            onClick={startEdit}
+          >
+            <Pencil size={13} />
+          </button>
+        </Show>
+        <Show when={canPolish() && !editing()}>
+          <button
+            type="button"
+            class={styles.subtaskAction}
+            aria-label={t('Polish {title} with AI', { title: props.task.title })}
+            title={t('Polish with AI')}
+            disabled={polishing() || busy()}
+            onClick={(e) => void polish(e)}
+          >
+            <Sparkles size={13} />
+          </button>
+        </Show>
+        <Show when={props.onOpen && !editing()}>
+          <button
+            type="button"
+            class={styles.subtaskAction}
+            aria-label={t('Open')}
+            title={t('Open')}
+            onClick={() => props.onOpen?.(props.task)}
+          >
+            <ChevronRight size={13} />
+          </button>
+        </Show>
+        <Show when={props.task.can_delete && !editing()}>
+          <button
+            type="button"
+            class={styles.subtaskAction}
+            aria-label={t('Delete subtask')}
+            title={t('Delete subtask')}
+            disabled={busy()}
+            onClick={() => void remove()}
+          >
+            <Trash2 size={13} />
+          </button>
+        </Show>
+      </div>
+    </div>
   );
 }

@@ -74,4 +74,13 @@ export const routines: Record<string, string> = {
   now: 'ახლა',
   kept: 'დაცული',
   'All rules checked for today.': 'დღეს ყველა წესი შემოწმებულია.',
+
+  // Weekends
+  'Routine on weekends': 'რუტინა შაბათ-კვირას',
+  'Off: the everyday routine pauses on Saturday and Sunday and does not count against you. Rules still apply every day. Blocks scheduled only for weekend days always show.':
+    'გამორთული: ყოველდღიური რუტინა შაბათს და კვირას ისვენებს და სტატისტიკაში არ გითვლება. წესები ყოველდღე მოქმედებს. მხოლოდ შაბათ-კვირაზე დაგეგმილი ბლოკები მაინც ჩანს.',
+  'Weekend - the routine takes the day off. Rules still count.': 'შაბათ-კვირაა - რუტინა ისვენებს. წესები მაინც ითვლება.',
+  'Weekend - the routine takes the day off.': 'შაბათ-კვირაა - რუტინა ისვენებს.',
+  'Rules still count. Turn on "Routine on weekends" in Preferences to run the routine on Saturday and Sunday.':
+    'წესები მაინც ითვლება. რუტინა შაბათ-კვირასაც რომ მუშაობდეს, პარამეტრებში ჩართე „რუტინა შაბათ-კვირას“.',
 };

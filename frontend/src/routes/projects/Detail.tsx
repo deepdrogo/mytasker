@@ -288,7 +288,13 @@ function OverviewTab(props: { project: Project }): JSX.Element {
         <Comments project={props.project.id} canComment={props.project.capabilities.comment} />
       </PageSection>
 
-      <TaskEditor task={activeTask()} open={activeTask() !== null} onClose={() => setActiveTask(null)} onChanged={() => overview.refetch()} />
+      <TaskEditor
+        task={activeTask()}
+        open={activeTask() !== null}
+        onClose={() => setActiveTask(null)}
+        onChanged={() => overview.refetch()}
+        onOpenTask={(task) => void tasksApi.get(task.id).then(setActiveTask).catch(() => setActiveTask(task))}
+      />
     </div>
   );
 }
@@ -384,6 +390,7 @@ function TasksTab(props: { project: Project }): JSX.Element {
           if (current) void tasksApi.get(current.id).then(setActiveTask).catch(() => setActiveTask(null));
         }}
         onShare={(task) => setShareTasks([task])}
+        onOpenTask={(task) => void tasksApi.get(task.id).then(setActiveTask).catch(() => setActiveTask(task))}
       />
       <ShareDialog
         tasks={shareTasks()}

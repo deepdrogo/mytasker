@@ -44,6 +44,7 @@ class UserPreferenceSerializer(serializers.ModelSerializer):
             "evening_summary_time",
             "weekly_review_enabled",
             "monthly_review_enabled",
+            "routine_on_weekends",
         ]
 
     def validate_first_day_of_week(self, value: int) -> int:

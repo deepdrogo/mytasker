@@ -12,12 +12,14 @@ from apps.tasks.serializers import (
     BulkIdsSerializer,
     BulkRescheduleSerializer,
     CheckinSerializer,
+    ReorderIdsSerializer,
     TaskCreateSerializer,
     TaskSerializer,
     TaskUpdateSerializer,
     TaskWithSubtasksSerializer,
 )
 from common.actors import Actor
+from common.tz import today_for
 
 
 class TaskViewSet(viewsets.ModelViewSet):
@@ -56,9 +58,30 @@ class TaskViewSet(viewsets.ModelViewSet):
     def _actor(self) -> Actor:
         return Actor.from_request(self.request)
 
+    def _context_for(self, tasks) -> dict:
+        """Serializer context plus check-in streaks for whichever long-term tasks are in this response."""
+        context = self.get_serializer_context()
+        ongoing_ids = [task.pk for task in tasks if getattr(task, "is_ongoing", False)]
+        if ongoing_ids:
+            context["checkin_streaks"] = services.checkin_streaks(ongoing_ids, today_for(self.request.user))
+        return context
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        items = page if page is not None else list(queryset)
+        serializer = self.get_serializer_class()(items, many=True, context=self._context_for(items))
+        if page is not None:
+            return self.get_paginated_response(serializer.data)
+        return Response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        task = self.get_object()
+        return Response(TaskWithSubtasksSerializer(task, context=self._context_for([task])).data)
+
     def _respond(self, task: Task, code: int = status.HTTP_200_OK) -> Response:
         fresh = self.get_queryset().filter(pk=task.pk).first() or task
-        return Response(TaskWithSubtasksSerializer(fresh, context=self.get_serializer_context()).data, status=code)
+        return Response(TaskWithSubtasksSerializer(fresh, context=self._context_for([fresh])).data, status=code)
 
     def create(self, request, *args, **kwargs):
         serializer = TaskCreateSerializer(data=request.data)
@@ -93,10 +116,14 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def checkin(self, request, pk=None):
-        """Daily tick for a long-term (ongoing) task; `{"checked": false}` removes today's tick."""
+        """
+        Daily mark for a long-term (ongoing) task: `{"checked": true}` done, `{"skipped": true}` skipped on purpose,
+        `{"checked": false}` clears today's mark.
+        """
         serializer = CheckinSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        task = services.checkin_task(self._actor(), int(pk), checked=serializer.validated_data["checked"])
+        data = serializer.validated_data
+        task = services.checkin_task(self._actor(), int(pk), checked=data["checked"], skipped=data["skipped"])
         return self._respond(task)
 
     @action(detail=True, methods=["post"])
@@ -121,6 +148,14 @@ class TaskViewSet(viewsets.ModelViewSet):
             )
         items = self.get_queryset().filter(parent_id=int(pk)).order_by("sort_order", "id")
         return Response(TaskSerializer(items, many=True, context=self.get_serializer_context()).data)
+
+    @action(detail=True, methods=["post"], url_path="subtasks/reorder")
+    def reorder_subtasks(self, request, pk=None):
+        """Manual order for this task's subtasks (drag & drop): ids in the new order, first on top."""
+        serializer = ReorderIdsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        applied = services.reorder_subtasks(request.user, int(pk), serializer.validated_data["ids"])
+        return Response({"ids": applied})
 
     @action(detail=False, methods=["post"], url_path="bulk-reschedule")
     def bulk_reschedule(self, request):

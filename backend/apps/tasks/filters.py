@@ -25,6 +25,8 @@ class TaskFilter(filters.FilterSet):
     due_before = filters.IsoDateTimeFilter(field_name="due_at", lookup_expr="lt")
     due_after = filters.IsoDateTimeFilter(field_name="due_at", lookup_expr="gte")
     has_due = filters.BooleanFilter(method="filter_has_due")
+    # Long-term work ticked daily ("daily check-ins"); `is_ongoing=true` lists only those, `false` leaves them out.
+    is_ongoing = filters.BooleanFilter(field_name="is_ongoing")
     completed = filters.BooleanFilter(method="filter_completed")
     overdue = filters.BooleanFilter(method="filter_overdue")
     view = filters.CharFilter(method="filter_view")

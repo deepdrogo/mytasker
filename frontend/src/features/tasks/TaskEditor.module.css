@@ -76,24 +76,115 @@
   background: var(--c-hover);
 }
 
-.subtaskMain {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: var(--s-4);
-  padding: var(--s-3) var(--s-2);
+.subtaskDragging {
+  background: var(--g-glass);
+  box-shadow:
+    var(--shadow-card),
+    0 12px 28px rgba(0, 0, 0, 0.45);
+}
+
+.grip {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--c-text-faint);
+  cursor: grab;
+  opacity: 0.55;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition:
+    opacity var(--t-fast),
+    color var(--t-fast),
+    background var(--t-fast);
+}
+
+.subtaskRow:hover .grip,
+.grip:focus-visible,
+.subtaskDragging .grip {
+  opacity: 1;
+}
+
+.grip:hover {
+  color: var(--c-text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.grip:active,
+.subtaskDragging .grip {
+  cursor: grabbing;
+}
+
+@media (hover: none) {
+  .grip {
+    opacity: 0.85;
+    width: 28px;
+    height: 32px;
+  }
+}
+
+.subtaskCheck {
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: var(--s-3) 0 var(--s-3) var(--s-2);
   cursor: pointer;
 }
 
-.subtaskMain input {
+.subtaskCheck input {
   accent-color: var(--c-text);
   width: 14px;
   height: 14px;
-  flex: none;
 }
 
-.subtaskDelete {
+.subtaskTitle {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  padding: var(--s-3) var(--s-2);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subtaskTitle:hover:not(:disabled) {
+  color: var(--c-text);
+}
+
+.subtaskTitle:disabled {
+  cursor: default;
+}
+
+.subtaskInput {
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
+}
+
+.subtaskDone {
+  text-decoration: line-through;
+  color: var(--c-text-dim);
+}
+
+.subtaskActions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.subtaskAction {
   flex: none;
   display: grid;
   place-items: center;
@@ -111,25 +202,25 @@
     background var(--t-fast);
 }
 
-.subtaskRow:hover .subtaskDelete,
-.subtaskDelete:focus-visible {
+.subtaskActionAlways,
+.subtaskRow:hover .subtaskAction,
+.subtaskAction:focus-visible {
   opacity: 1;
 }
 
-.subtaskDelete:hover {
+.subtaskAction:hover:not(:disabled) {
   color: var(--c-text);
   background: rgba(255, 255, 255, 0.08);
 }
 
-@media (hover: none) {
-  .subtaskDelete {
-    opacity: 1;
-  }
+.subtaskAction:disabled {
+  cursor: default;
 }
 
-.subtaskDone {
-  text-decoration: line-through;
-  color: var(--c-text-dim);
+@media (hover: none) {
+  .subtaskAction {
+    opacity: 1;
+  }
 }
 
 .footnote {

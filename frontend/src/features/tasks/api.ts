@@ -17,6 +17,8 @@ export interface TaskListParams extends QueryParams {
   completed?: boolean;
   overdue?: boolean;
   has_project?: boolean;
+  /** Long-term work ticked daily: `true` only those, `false` everything else. */
+  is_ongoing?: boolean;
   q?: string;
   ordering?: string;
   page?: number;
@@ -102,6 +104,13 @@ export const tasksApi = {
     return task;
   },
 
+  /** "Skip today" on a long-term task: a deliberate miss that is counted and breaks the streak. */
+  skipCheckin: async (id: ID): Promise<Task> => {
+    const task = await api.post<Task>(`/tasks/${id}/checkin/`, { skipped: true });
+    invalidate(...TASK_SCOPES);
+    return task;
+  },
+
   duplicate: async (id: ID): Promise<Task> => {
     const task = await api.post<Task>(`/tasks/${id}/duplicate/`);
     invalidate(...TASK_SCOPES);
@@ -143,6 +152,13 @@ export const tasksApi = {
   },
 
   subtasks: (id: ID) => api.get<Task[]>(`/tasks/${id}/subtasks/`),
+
+  /** Persist a new subtask order (first id on top). Ordering is a preference — versions stay put. */
+  reorderSubtasks: async (parentId: ID, ids: ID[]): Promise<{ ids: ID[] }> => {
+    const result = await api.post<{ ids: ID[] }>(`/tasks/${parentId}/subtasks/reorder/`, { ids });
+    invalidate(...TASK_SCOPES);
+    return result;
+  },
 
   addSubtask: async (id: ID, input: TaskInput): Promise<Task> => {
     const task = await api.post<Task>(`/tasks/${id}/subtasks/`, input);

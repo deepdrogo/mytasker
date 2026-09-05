@@ -17,6 +17,8 @@ import styles from './AppShell.module.css';
 
 export function AppShell(props: { children?: JSX.Element }): JSX.Element {
   const isMobile = useIsMobile();
+  // Desktop only: a pinned sidebar is a fixed dock beside the canvas; phones always use the slide-over.
+  const docked = () => !isMobile() && uiStore.sidebarPinned();
 
   onMount(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -28,13 +30,23 @@ export function AppShell(props: { children?: JSX.Element }): JSX.Element {
 
   return (
     <div class={styles.shell}>
-      <Show when={uiStore.sidebarOpen()}>
+      <Show when={docked()}>
+        <div class={styles.dock}>
+          <Sidebar pinned onTogglePin={uiStore.togglePinnedSidebar} />
+        </div>
+      </Show>
+
+      <Show when={uiStore.sidebarOpen() && !docked()}>
         <div
           class={isMobile() ? styles.navOverlay : `${styles.navOverlay} ${styles.navOverlayDesktop}`}
           onClick={(e) => e.target === e.currentTarget && uiStore.closeSidebar()}
         >
           <div class={isMobile() ? styles.navPanel : `${styles.navPanel} ${styles.navPanelDesktop}`}>
-            <Sidebar onNavigate={uiStore.closeSidebar} />
+            <Sidebar
+              onNavigate={uiStore.closeSidebar}
+              pinned={false}
+              onTogglePin={isMobile() ? undefined : uiStore.togglePinnedSidebar}
+            />
           </div>
         </div>
       </Show>

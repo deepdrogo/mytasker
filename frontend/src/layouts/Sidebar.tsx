@@ -14,6 +14,8 @@ import {
   LayoutGrid,
   Lightbulb,
   ListChecks,
+  Pin,
+  PinOff,
   Repeat,
   Rocket,
   ScrollText,
@@ -126,7 +128,14 @@ const AI_LINK: NavLink = { label: 'AI', href: '/ai', icon: () => <Sparkles size=
 const SETTINGS_LINK: NavLink = { label: 'Settings', href: '/settings', icon: () => <Settings size={15} /> };
 const FOOTER_LINKS: NavLink[] = [{ label: 'Donate', href: '/donate', icon: () => <Coins size={15} /> }, SETTINGS_LINK];
 
-export function Sidebar(props: { onNavigate?: () => void }): JSX.Element {
+export function Sidebar(props: {
+  /** Slide-over mode: called after a link is chosen so the panel can close. Absent when docked. */
+  onNavigate?: () => void;
+  /** Desktop: is the sidebar docked (pinned) right now? */
+  pinned?: boolean;
+  /** Desktop: pin / unpin control. Absent on phones, where docking makes no sense. */
+  onTogglePin?: () => void;
+}): JSX.Element {
   const location = useLocation();
   const isActive = (href: string) => location.pathname === href || location.pathname.startsWith(`${href}/`);
   const sections = () => (authStore.isAssistant() ? ASSISTANT_SECTIONS : SECTIONS);
@@ -141,11 +150,27 @@ export function Sidebar(props: { onNavigate?: () => void }): JSX.Element {
         <A href="/dashboard" class={styles.brandLink} onClick={props.onNavigate} aria-label={t('MyTasker - Dashboard')}>
           <Logo size={22} />
         </A>
-        <Show when={props.onNavigate}>
-          <button type="button" class={styles.closeBtn} onClick={props.onNavigate} aria-label={t('Close navigation')}>
-            <X size={16} />
-          </button>
-        </Show>
+        <div class={styles.brandActions}>
+          <Show when={props.onTogglePin}>
+            <button
+              type="button"
+              class={[styles.closeBtn, props.pinned ? styles.pinActive : ''].filter(Boolean).join(' ')}
+              onClick={props.onTogglePin}
+              aria-pressed={props.pinned}
+              aria-label={props.pinned ? t('Unpin sidebar') : t('Pin sidebar')}
+              title={props.pinned ? t('Unpin sidebar - it slides over again') : t('Pin sidebar - keep it open')}
+            >
+              <Show when={props.pinned} fallback={<Pin size={15} />}>
+                <PinOff size={15} />
+              </Show>
+            </button>
+          </Show>
+          <Show when={props.onNavigate}>
+            <button type="button" class={styles.closeBtn} onClick={props.onNavigate} aria-label={t('Close navigation')}>
+              <X size={16} />
+            </button>
+          </Show>
+        </div>
       </div>
 
       <nav class={styles.nav}>

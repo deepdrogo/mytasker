@@ -48,3 +48,34 @@ def test_rules_reorder(auth_client):
     assert auth_client.post("/api/v1/rules/reorder/", {"ids": [b["id"], a["id"]]}, format="json").status_code == 204
     assert [r["id"] for r in auth_client.get("/api/v1/rules/").data] == [b["id"], a["id"]]
     assert auth_client.post("/api/v1/rules/", {"text": ""}, format="json").status_code == 400
+
+
+def test_routine_pauses_on_weekends_unless_opted_in(auth_client, user):
+    from apps.accounts.models import UserPreference
+    from apps.routines import services
+
+    everyday = auth_client.post("/api/v1/routines/personal/items/", {"name": "Gym"}, format="json").data
+    weekend_only = auth_client.post(
+        "/api/v1/routines/personal/items/", {"name": "Long run", "repeat_days": 96}, format="json"
+    ).data
+    saturday, monday = "2026-09-05", "2026-09-07"
+
+    # Default: the everyday block takes the weekend off; a weekend-only block is deliberate and stays.
+    res = auth_client.get(f"/api/v1/routines/personal/items/?today=1&date={saturday}")
+    assert res.data["paused"] is True
+    assert [i["id"] for i in res.data["items"]] == [weekend_only["id"]]
+
+    res = auth_client.get(f"/api/v1/routines/personal/items/?today=1&date={monday}")
+    assert res.data["paused"] is False
+    assert [i["id"] for i in res.data["items"]] == [everyday["id"]]
+
+    # Opt in: weekends run the full routine again.
+    prefs, _ = UserPreference.objects.get_or_create(user=user)
+    prefs.routine_on_weekends = True
+    prefs.save()
+    user.refresh_from_db()
+    from datetime import date
+
+    ids = {i.pk for i in services.items_for_day(user, "personal", date.fromisoformat(saturday))}
+    assert ids == {everyday["id"], weekend_only["id"]}
+    assert services.routine_paused_on(user, date.fromisoformat(saturday)) is False

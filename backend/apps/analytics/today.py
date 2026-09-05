@@ -79,8 +79,9 @@ def today_snapshot(user, request=None) -> dict:
     business_items = [i for i in routine_items if i.routine.kind == Routine.Kind.BUSINESS]
     personal_items = [i for i in routine_items if i.routine.kind == Routine.Kind.PERSONAL]
 
-    # Only projects that still have something to do; a project with zero open tasks is noise on the dashboard.
+    # Every project that still has something to do; a project with zero open tasks is noise on the dashboard.
     # The user arranges these by hand (drag & drop -> sort_order); recently touched projects break ties.
+    # No cap: the dashboard list scrolls, and the order the user set is the order they plan the day by.
     active_projects = list(
         Project.objects.visible_to(user)
         .with_progress(user)
@@ -88,7 +89,7 @@ def today_snapshot(user, request=None) -> dict:
         .order_by("sort_order", "-updated_at")
         .values(
             "id", "name", "priority", "kind", "category", "status", "deadline", "task_total", "task_done", "task_open"
-        )[:12]
+        )
     )
     project_ids = [p["id"] for p in active_projects]
     next_tasks: dict[int, list[dict]] = {pid: [] for pid in project_ids}
@@ -132,6 +133,8 @@ def today_snapshot(user, request=None) -> dict:
             "completed": TaskSerializer(completed, many=True, context=ctx).data,
         },
         "routine": {
+            # True on a weekend day when the everyday routine is off (Preferences); rules still count.
+            "paused": routine_services.routine_paused_on(user, day),
             "current_item_id": current_item.pk if current_item else None,
             "business": RoutineItemSerializer(business_items, many=True, context=routine_ctx).data,
             "personal": RoutineItemSerializer(personal_items, many=True, context=routine_ctx).data,

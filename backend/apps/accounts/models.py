@@ -109,6 +109,10 @@ class UserPreference(TimeStampedModel):
     weekly_review_enabled = models.BooleanField(default=True)
     monthly_review_enabled = models.BooleanField(default=True)
 
+    # The everyday routine pauses on Saturday and Sunday unless this is on. Rules are not affected -
+    # they are principles and count every day.
+    routine_on_weekends = models.BooleanField(default=False)
+
     class Meta:
         db_table = "accounts_user_preference"
 

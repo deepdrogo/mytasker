@@ -1,5 +1,5 @@
 import { useNavigate } from '@solidjs/router';
-import { Bell, Menu, Plus, Search, Sparkles } from 'lucide-solid';
+import { Bell, Menu, PanelLeftClose, Plus, Search, Sparkles } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
 import { LanguageSwitch } from '~/components/shared/LanguageSwitch';
@@ -15,16 +15,22 @@ export function TopBar(): JSX.Element {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const searchLabel = () => (authStore.aiEnabled() ? t('Search or ask AI') : t('Search'));
+  // Desktop with a pinned sidebar: the dock is always visible, so the menu button collapses it (unpins) instead.
+  const docked = () => !isMobile() && uiStore.sidebarPinned();
+  const navOpen = () => docked() || uiStore.sidebarOpen();
 
   return (
     <header class={styles.topbar}>
       <button
         class={styles.iconBtn}
-        onClick={uiStore.toggleSidebar}
-        aria-label={uiStore.sidebarOpen() ? t('Close navigation') : t('Open navigation')}
-        aria-expanded={uiStore.sidebarOpen()}
+        onClick={() => (docked() ? uiStore.unpinSidebar() : uiStore.toggleSidebar())}
+        aria-label={docked() ? t('Collapse sidebar') : navOpen() ? t('Close navigation') : t('Open navigation')}
+        aria-expanded={navOpen()}
+        title={docked() ? t('Collapse sidebar') : undefined}
       >
-        <Menu size={17} />
+        <Show when={docked()} fallback={<Menu size={17} />}>
+          <PanelLeftClose size={17} />
+        </Show>
       </button>
 
       <button class={styles.search} onClick={uiStore.openPalette} aria-label={searchLabel()}>

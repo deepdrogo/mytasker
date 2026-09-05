@@ -26,10 +26,14 @@ interface TaskListPageProps {
   /** Let the composer attach the new task to a project (Business list). */
   composerProjectPicker?: boolean;
   showProject?: boolean;
+  /** Tag each row with its list (Personal / Business / Crypto) - for views that mix them. */
+  showKind?: boolean;
   emptyTitle?: string;
   emptyHint?: string;
   tabs?: Array<{ label: string; href: string }>;
   defaultOrdering?: string;
+  /** Extra block rendered between the composer and the list (e.g. Today's daily check-ins). */
+  beforeList?: (ctx: { openTask: (task: Task) => void; shareTask: (task: Task) => void }) => JSX.Element;
 }
 
 const SORTS = [
@@ -110,6 +114,10 @@ export function TaskListPage(props: TaskListPageProps): JSX.Element {
             />
           </Show>
 
+          <Show when={props.beforeList}>
+            {(render) => render()({ openTask: setActiveTask, shareTask: (task) => setShareTasks([task]) })}
+          </Show>
+
           <TaskSelectionBar
             tasks={selectedTasks}
             total={() => query.data()?.results.length ?? 0}
@@ -128,6 +136,7 @@ export function TaskListPage(props: TaskListPageProps): JSX.Element {
             onShare={(task) => setShareTasks([task])}
             onChanged={query.refetch}
             showProject={props.showProject}
+            showKind={props.showKind}
             selectable
             selectedIds={selected()}
             onToggleSelect={toggleSelect}
@@ -166,6 +175,7 @@ export function TaskListPage(props: TaskListPageProps): JSX.Element {
           if (current) void tasksApi.get(current.id).then(setActiveTask).catch(() => setActiveTask(null));
         }}
         onShare={(task) => setShareTasks([task])}
+        onOpenTask={(task) => void tasksApi.get(task.id).then(setActiveTask).catch(() => setActiveTask(task))}
       />
 
       <ShareDialog

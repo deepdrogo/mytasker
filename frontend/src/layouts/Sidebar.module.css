@@ -42,6 +42,22 @@
   border-color: var(--c-border);
 }
 
+.brandActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+
+/* Pinned state of the pin button: quietly lit so it reads as "on". */
+.pinActive,
+.pinActive:hover {
+  color: var(--c-text);
+  background: var(--g-glass-active);
+  border-color: var(--c-rim);
+  box-shadow: var(--rim-top);
+}
+
 .brandLink {
   display: flex;
   align-items: center;

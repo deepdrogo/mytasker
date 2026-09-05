@@ -58,7 +58,9 @@ def test_today_excludes_crypto_world(auth_client):
         {"title": "Watch BTC", "kind": "crypto", "due_at": now.isoformat(), "priority": "high"},
         format="json",
     )
-    auth_client.post("/api/v1/tasks/", {"title": "Life errand", "kind": "personal", "priority": "high"}, format="json")
+    auth_client.post(
+        "/api/v1/tasks/", {"title": "Life errand", "kind": "personal", "priority": "high"}, format="json"
+    )
 
     data = auth_client.get("/api/v1/today/").data
     titles = (

@@ -1,0 +1,62 @@
+/* Daily check-ins block on Today / Tomorrow: a framed strip above the dated list. */
+.checkins {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-3) var(--s-3);
+  border: 1px dashed var(--c-border-strong);
+  border-radius: var(--r-lg);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.checkinsHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  padding: 0 var(--s-3);
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--c-text-dim);
+}
+
+.checkinsHead > svg {
+  align-self: center;
+  color: var(--c-text-faint);
+}
+
+.checkinsCount {
+  padding: 1px 7px;
+  border-radius: var(--r-full);
+  background: rgba(255, 255, 255, 0.06);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.checkinsSkipped {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--c-text-faint);
+  background: none;
+  border: 1px dotted var(--c-border-strong);
+}
+
+.checkinsHint {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-normal);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--c-text-faint);
+}
+
+@media (max-width: 599px) {
+  .checkinsHint {
+    display: none;
+  }
+}

@@ -16,6 +16,31 @@
   gap: var(--s-5);
 }
 
+/* Two halves of the side column: timers + stats, then routine + rules. Split so narrow layouts can place them apart. */
+.sideGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  min-width: 0;
+}
+
+.weekendNote {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border: 1px dashed var(--c-border-strong);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  color: var(--c-text-dim);
+}
+
+.weekendNote > svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--c-text-faint);
+}
+
 .sectionLink {
   color: var(--c-text-dim);
   text-decoration: none;
@@ -840,9 +865,85 @@
   gap: 2px;
 }
 
+/* Long lists scroll inside the column instead of stretching the page; the drag hook auto-scrolls near the edges. */
+.projectsScroll {
+  max-height: min(72vh, 860px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: var(--s-2);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  /* Soft fade at the bottom edge hints there is more below. */
+  mask-image: linear-gradient(180deg, #000 calc(100% - 28px), transparent);
+  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 28px), transparent);
+  padding-bottom: 28px;
+}
+
+.projectsScroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.projectsScroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: var(--r-full);
+}
+
 /* While a card is being dragged, freeze hover effects on the rest so nothing flickers underneath. */
 .projects[data-sorting] .projectCard:not(.projectDragging) {
   pointer-events: none;
+}
+
+/* Position number; the first three carry a faint colour (red / amber / green) so the order is legible at a glance. */
+.rank {
+  flex: none;
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--c-border);
+  background: rgba(255, 255, 255, 0.04);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text-faint);
+  transition:
+    color var(--t-fast),
+    border-color var(--t-fast),
+    background var(--t-fast),
+    box-shadow var(--t-fast);
+}
+
+.rank1,
+.rank2,
+.rank3 {
+  --rank-rgb: 255 255 255;
+  border-left: 2px solid rgb(var(--rank-rgb) / 0.75);
+  background:
+    linear-gradient(90deg, rgb(var(--rank-rgb) / 0.09), transparent 42%),
+    var(--g-surface);
+}
+
+.rank1 {
+  --rank-rgb: 244 96 96;
+}
+
+.rank2 {
+  --rank-rgb: 232 190 74;
+}
+
+.rank3 {
+  --rank-rgb: 88 196 122;
+}
+
+.rank1 .rank,
+.rank2 .rank,
+.rank3 .rank {
+  color: rgb(var(--rank-rgb));
+  border-color: rgb(var(--rank-rgb) / 0.45);
+  background: rgb(var(--rank-rgb) / 0.12);
+  box-shadow: 0 0 10px rgb(var(--rank-rgb) / 0.25);
 }
 
 .projectHeadRow {
@@ -870,7 +971,7 @@
   background: none;
   color: var(--c-text-faint);
   cursor: grab;
-  opacity: 0.45;
+  opacity: 0.7;
   touch-action: none;
   -webkit-user-select: none;
   user-select: none;
@@ -1027,7 +1128,7 @@
   white-space: nowrap;
 }
 
-/* Mobile: priority order - timer, overdue/due, routine, rest. */
+/* Two columns: plate + projects on top, the side column stretched underneath as two halves side by side. */
 @media (max-width: 1280px) and (min-width: 1101px) {
   .grid {
     grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
@@ -1040,11 +1141,16 @@
   }
 }
 
+/* Single column (phone / small tablet). The side column dissolves into the grid so its halves can be placed apart:
+   timers + stats first, then the plate, then projects, and routine + rules at the very bottom. */
 @media (max-width: 1100px) {
   .grid {
     grid-template-columns: 1fr;
   }
-  .col:nth-child(3) {
+  .side {
+    display: contents;
+  }
+  .sideTop {
     order: 0;
   }
   .col:nth-child(1) {
@@ -1052,6 +1158,11 @@
   }
   .col:nth-child(2) {
     order: 2;
+  }
+  .sideBottom {
+    order: 3;
+    padding-top: var(--s-4);
+    border-top: 1px solid var(--c-border);
   }
 
   .greeting {

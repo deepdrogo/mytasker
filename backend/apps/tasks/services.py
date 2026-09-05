@@ -11,7 +11,7 @@ from typing import Any
 from dateutil.rrule import DAILY, FR, MO, MONTHLY, SA, SU, TH, TU, WE, WEEKLY, rrule
 from django.contrib.postgres.search import SearchVector
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, Max
 from django.utils import timezone
 
 from apps.projects.models import Project
@@ -211,6 +211,10 @@ def create_task(
     payload.pop("visibility", None)
 
     rule = _build_recurrence(recurrence) if recurrence else None
+
+    if parent is not None and "sort_order" not in payload:
+        last = Task.objects.filter(parent=parent, deleted_at__isnull=True).aggregate(m=Max("sort_order")).get("m")
+        payload["sort_order"] = (last or 0) + 1
 
     task = Task.objects.create(
         owner=task_owner,
@@ -624,6 +628,44 @@ def _next_occurrence(rule: RecurrenceRule, after: datetime) -> datetime | None:
     return following
 
 
+# --------------------------------------------------------------------------- reorder
+
+
+@transaction.atomic
+def reorder_subtasks(user, parent_id: int, ordered_ids: list[int]) -> list[int]:
+    """
+    Manual order for a parent's subtasks: `ordered_ids` is the list as the user arranged it, first on top.
+    Unknown or foreign ids are ignored; any sibling the client omitted stays after the ones it sent.
+    `sort_order` is written directly so `updated_at` / `version` stay put — ordering is a preference, not an edit.
+    """
+    parent = get_task_for_user(parent_id, user)
+    if parent.is_subtask:
+        raise ValidationFailed("Subtasks cannot have their own subtasks.")
+    assert_can_edit(parent, user)
+
+    seen: set[int] = set()
+    unique_ids = [tid for tid in ordered_ids if isinstance(tid, int) and not (tid in seen or seen.add(tid))]
+
+    siblings = list(Task.objects.filter(parent_id=parent.pk, deleted_at__isnull=True).order_by("sort_order", "id"))
+    by_id = {task.pk: task for task in siblings}
+    ordered: list[Task] = []
+    kept: set[int] = set()
+    for tid in unique_ids:
+        task = by_id.get(tid)
+        if task is None:
+            continue
+        ordered.append(task)
+        kept.add(tid)
+    for task in siblings:
+        if task.pk not in kept:
+            ordered.append(task)
+
+    for index, task in enumerate(ordered):
+        if task.sort_order != index:
+            Task.objects.filter(pk=task.pk).update(sort_order=index)
+    return [task.pk for task in ordered]
+
+
 # --------------------------------------------------------------------------- bulk
 
 
@@ -730,8 +772,13 @@ def snooze(actor: Actor, task_id: int, *, minutes: int) -> Task:
 # --------------------------------------------------------------------------- ongoing check-ins
 
 
-def checkin_task(actor: Actor, task_id: int, *, checked: bool = True) -> Task:
-    """Tick (or untick) an ongoing task for today. Idempotent; only meaningful for `is_ongoing` tasks."""
+def checkin_task(actor: Actor, task_id: int, *, checked: bool = True, skipped: bool = False) -> Task:
+    """
+    Today's mark on an ongoing task. Idempotent; only meaningful for `is_ongoing` tasks.
+      checked=True            -> done today
+      skipped=True            -> deliberately skipped today (counted, breaks the streak)
+      checked=False, no skip  -> clear today's mark
+    """
     from apps.tasks.models import TaskCheckin
     from common.tz import today_for
 
@@ -741,15 +788,17 @@ def checkin_task(actor: Actor, task_id: int, *, checked: bool = True) -> Task:
     if not task.is_ongoing:
         raise ValidationFailed("Only long-term tasks have daily check-ins.")
     day = today_for(user)
-    if checked:
-        TaskCheckin.objects.update_or_create(task=task, date=day, defaults={"checked_by": user})
+    if skipped:
+        TaskCheckin.objects.update_or_create(task=task, date=day, defaults={"checked_by": user, "skipped": True})
+    elif checked:
+        TaskCheckin.objects.update_or_create(task=task, date=day, defaults={"checked_by": user, "skipped": False})
     else:
         TaskCheckin.objects.filter(task=task, date=day).delete()
     return task
 
 
 def checkin_streaks(task_ids: list[int], day) -> dict[int, int]:
-    """Consecutive checked days ending today or yesterday, per task (a missed day resets to 0)."""
+    """Consecutive done days ending today or yesterday, per task (a missed or skipped day resets to 0)."""
     from datetime import timedelta
 
     from apps.tasks.models import TaskCheckin
@@ -758,12 +807,22 @@ def checkin_streaks(task_ids: list[int], day) -> dict[int, int]:
         return {}
     since = day - timedelta(days=120)
     days_by_task: dict[int, set] = {}
-    for task_id, checked_day in TaskCheckin.objects.filter(task_id__in=task_ids, date__gte=since).values_list(
-        "task_id", "date"
-    ):
+    skipped_today: set[int] = set()
+    marks = TaskCheckin.objects.filter(task_id__in=task_ids, date__gte=since).values_list(
+        "task_id", "date", "skipped"
+    )
+    for task_id, checked_day, skipped in marks:
+        if skipped:
+            if checked_day == day:
+                skipped_today.add(task_id)
+            continue
         days_by_task.setdefault(task_id, set()).add(checked_day)
     result: dict[int, int] = {}
     for task_id in task_ids:
+        if task_id in skipped_today:
+            # A deliberate skip ends the run right away - no "still counting from yesterday" grace.
+            result[task_id] = 0
+            continue
         days = days_by_task.get(task_id, set())
         cursor = day if day in days else day - timedelta(days=1)
         streak = 0

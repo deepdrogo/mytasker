@@ -181,5 +181,6 @@ export const projects: Record<string, string> = {
   'Turn on "Show empty projects" to add tasks to a project.': 'ჩართე „ცარიელი პროექტების ჩვენება“, რომ პროექტს დავალება დაუმატო.',
   'Open canvas view': 'ტილოს ხედის გახსნა',
   'with open tasks': 'ღია დავალებებით',
+  'Position {position}': 'პოზიცია {position}',
   'Time on this project counts as business time': 'ამ პროექტზე დახარჯული დრო ბიზნეს დროდ ითვლება',
 };

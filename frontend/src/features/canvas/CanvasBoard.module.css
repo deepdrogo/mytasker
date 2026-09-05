@@ -163,6 +163,54 @@ a.colTitle:hover {
   background: var(--c-hover);
 }
 
+.subtaskDragging {
+  background: var(--g-glass);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  color: var(--c-text);
+}
+
+.grip {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--c-text-faint);
+  cursor: grab;
+  opacity: 0.45;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.subtask:hover .grip,
+.grip:focus-visible,
+.subtaskDragging .grip {
+  opacity: 1;
+}
+
+.grip:hover {
+  color: var(--c-text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.grip:active,
+.subtaskDragging .grip {
+  cursor: grabbing;
+}
+
+@media (hover: none) {
+  .grip {
+    opacity: 0.8;
+    width: 24px;
+    height: 28px;
+  }
+}
+
 .subtaskSelected {
   background: rgba(255, 255, 255, 0.05);
 }
@@ -259,7 +307,8 @@ a.colTitle:hover {
 }
 
 .subtask:hover .subtaskDelete,
-.subtaskDelete:focus-visible {
+.subtaskDelete:focus-visible,
+.subtaskEdit {
   opacity: 1;
 }
 

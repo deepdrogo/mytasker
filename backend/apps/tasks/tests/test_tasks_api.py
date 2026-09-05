@@ -245,3 +245,72 @@ def test_crypto_list_is_isolated_from_mixed_views(client_for, user):
     counts = client.get("/api/v1/tasks/counts/").data
     assert counts["crypto"] == 1
     assert counts["upcoming"] == 1
+
+
+def test_is_ongoing_filter(auth_client):
+    ongoing = auth_client.post("/api/v1/tasks/", {"title": "Learn Spanish", "is_ongoing": True}, format="json")
+    assert ongoing.status_code == 201, ongoing.content
+    plain = auth_client.post("/api/v1/tasks/", {"title": "Buy milk"}, format="json").data
+
+    only_ongoing = auth_client.get("/api/v1/tasks/?is_ongoing=true").data["results"]
+    assert [t["id"] for t in only_ongoing] == [ongoing.data["id"]]
+    without = auth_client.get("/api/v1/tasks/?is_ongoing=false").data["results"]
+    assert [t["id"] for t in without] == [plain["id"]]
+
+
+def test_reorder_subtasks(client_for, user, stranger):
+    client = client_for(user)
+    parent = client.post("/api/v1/tasks/", {"title": "Launch"}, format="json").data
+    a = client.post(f"/api/v1/tasks/{parent['id']}/subtasks/", {"title": "A"}, format="json").data
+    b = client.post(f"/api/v1/tasks/{parent['id']}/subtasks/", {"title": "B"}, format="json").data
+    c = client.post(f"/api/v1/tasks/{parent['id']}/subtasks/", {"title": "C"}, format="json").data
+
+    listed = client.get(f"/api/v1/tasks/{parent['id']}/subtasks/")
+    assert [row["title"] for row in listed.data] == ["A", "B", "C"]
+
+    res = client.post(
+        f"/api/v1/tasks/{parent['id']}/subtasks/reorder/",
+        {"ids": [c["id"], a["id"], b["id"]]},
+        format="json",
+    )
+    assert res.status_code == 200, res.data
+    assert res.data["ids"] == [c["id"], a["id"], b["id"]]
+    listed = client.get(f"/api/v1/tasks/{parent['id']}/subtasks/")
+    assert [row["title"] for row in listed.data] == ["C", "A", "B"]
+
+    # New subtasks append after the current order.
+    d = client.post(f"/api/v1/tasks/{parent['id']}/subtasks/", {"title": "D"}, format="json").data
+    listed = client.get(f"/api/v1/tasks/{parent['id']}/subtasks/")
+    assert [row["title"] for row in listed.data] == ["C", "A", "B", "D"]
+    assert d["id"] == listed.data[-1]["id"]
+
+    forbidden = client_for(stranger).post(
+        f"/api/v1/tasks/{parent['id']}/subtasks/reorder/",
+        {"ids": [a["id"]]},
+        format="json",
+    )
+    assert forbidden.status_code == 404
+
+
+def test_checkin_skip_today_and_tally(auth_client):
+    task = auth_client.post("/api/v1/tasks/", {"title": "Piano", "is_ongoing": True}, format="json").data
+    url = f"/api/v1/tasks/{task['id']}/checkin/"
+
+    done = auth_client.post(url, {"checked": True}, format="json").data
+    assert done["today_checked"] is True and done["today_skipped"] is False
+    assert (done["checkin_done_count"], done["checkin_skipped_count"], done["checkin_streak"]) == (1, 0, 1)
+
+    # Skipping replaces today's tick: counted as a skip, streak broken.
+    skipped = auth_client.post(url, {"skipped": True}, format="json").data
+    assert skipped["today_checked"] is False and skipped["today_skipped"] is True
+    assert (skipped["checkin_done_count"], skipped["checkin_skipped_count"], skipped["checkin_streak"]) == (0, 1, 0)
+
+    # Clearing removes the mark entirely.
+    cleared = auth_client.post(url, {"checked": False}, format="json").data
+    assert cleared["today_checked"] is False and cleared["today_skipped"] is False
+    assert (cleared["checkin_done_count"], cleared["checkin_skipped_count"]) == (0, 0)
+
+    # The list endpoint carries the same tally and streak.
+    auth_client.post(url, {"checked": True}, format="json")
+    listed = auth_client.get("/api/v1/tasks/?is_ongoing=true").data["results"][0]
+    assert listed["today_checked"] is True and listed["checkin_streak"] == 1 and listed["checkin_done_count"] == 1

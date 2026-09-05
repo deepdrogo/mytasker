@@ -40,6 +40,8 @@ export interface UserPreferences {
   evening_summary_time: string;
   weekly_review_enabled: boolean;
   monthly_review_enabled: boolean;
+  /** Run the everyday routine on Saturday and Sunday too. Off: routine pauses, rules still count. */
+  routine_on_weekends: boolean;
 }
 
 export interface NotificationPreferences {
@@ -142,6 +144,11 @@ export interface Task {
   /** Long-term work: ticked once a day, completed only when the whole thing is finished. */
   is_ongoing: boolean;
   today_checked: boolean;
+  /** Deliberately skipped today (recorded, breaks the streak). */
+  today_skipped: boolean;
+  /** All-time tally of daily check-ins: days done vs days skipped on purpose. */
+  checkin_done_count: number;
+  checkin_skipped_count: number;
   checkin_streak: number;
   tracked_seconds: number;
   tags: string[];
@@ -437,7 +444,13 @@ export interface TodayData {
     upcoming: Task[];
     completed: Task[];
   };
-  routine: { current_item_id: ID | null; business: RoutineItem[]; personal: RoutineItem[] };
+  routine: {
+    /** Weekend with the everyday routine switched off (Preferences); rules are unaffected. */
+    paused: boolean;
+    current_item_id: ID | null;
+    business: RoutineItem[];
+    personal: RoutineItem[];
+  };
   rules: Rule[];
   active_projects: TodayProject[];
 }

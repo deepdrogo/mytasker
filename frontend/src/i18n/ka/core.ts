@@ -175,4 +175,12 @@ export const core: Record<string, string> = {
   'Could not save.': 'შენახვა ვერ მოხერხდა.',
   'Verification email sent': 'დადასტურების წერილი გაიგზავნა',
   'Could not send.': 'გაგზავნა ვერ მოხერხდა.',
+
+  // Sidebar pin (desktop)
+  'Pin sidebar': 'მენიუს დამაგრება',
+  'Unpin sidebar': 'მენიუს მოხსნა',
+  'Pin sidebar - keep it open': 'მენიუს დამაგრება - სულ ღია დარჩება',
+  'Unpin sidebar - it slides over again': 'მენიუს მოხსნა - ისევ გამოცოცდება და ჩაიკეცება',
+  'Collapse sidebar': 'მენიუს ჩაკეცვა',
+  Change: 'შეცვლა',
 };

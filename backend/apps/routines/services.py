@@ -30,13 +30,36 @@ def get_or_create_routine(user, kind: str) -> Routine:
     return routine
 
 
+WEEKDAY_MASK = 0b0011111  # Mon..Fri
+WEEKEND_MASK = 0b1100000  # Sat, Sun
+
+
+def is_weekend(day: date) -> bool:
+    return day.weekday() >= 5
+
+
+def routine_paused_on(user, day: date) -> bool:
+    """
+    The everyday routine takes Saturday and Sunday off unless the user opted in (Settings -> Preferences).
+    Rules are untouched by this - they are principles, not blocks, and count every day.
+    """
+    if not is_weekend(day):
+        return False
+    prefs = getattr(user, "preferences", None)
+    return not bool(prefs and prefs.routine_on_weekends)
+
+
 def items_for_day(user, kind: str | None, day: date | None = None):
     day = day or today_for(user)
     qs = RoutineItem.objects.filter(routine__owner=user, routine__deleted_at__isnull=True, is_active=True)
     if kind:
         qs = qs.filter(routine__kind=kind)
     weekday = day.weekday()
-    return [item for item in qs.select_related("routine") if item.occurs_on(weekday)]
+    items = [item for item in qs.select_related("routine") if item.occurs_on(weekday)]
+    if routine_paused_on(user, day):
+        # Blocks that exist only for the weekend (no weekday bit set) are deliberate - keep those.
+        items = [item for item in items if not (item.repeat_days & WEEKDAY_MASK)]
+    return items
 
 
 def current_item(user, kind: str | None = None) -> RoutineItem | None:

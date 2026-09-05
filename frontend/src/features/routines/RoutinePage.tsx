@@ -1,4 +1,5 @@
-import { Check, ChevronDown, ChevronUp, Clock, ListChecks, MoreHorizontal, Pause, Play, Plus } from 'lucide-solid';
+import { useNavigate } from '@solidjs/router';
+import { CalendarOff, Check, ChevronDown, ChevronUp, Clock, ListChecks, MoreHorizontal, Pause, Play, Plus } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { batch, createEffect, createSignal, For, Show } from 'solid-js';
 import { ApiError } from '~/api/client';
@@ -52,6 +53,7 @@ function describeRepeatLabel(mask: number): string {
 }
 
 export function RoutinePage(props: RoutinePageProps): JSX.Element {
+  const navigate = useNavigate();
   const [editing, setEditing] = createSignal<RoutineItem | null | 'new'>(null);
   const [showAll, setShowAll] = createSignal(false);
 
@@ -139,16 +141,37 @@ export function RoutinePage(props: RoutinePageProps): JSX.Element {
               <Show
                 when={items().length > 0}
                 fallback={
-                  <EmptyState
-                    icon={<ListChecks size={22} />}
-                    title={showAll() ? t('No routine items yet') : t('Nothing scheduled today')}
-                    hint={t('A routine is the shape of your day: blocks with a time window and a target.')}
-                    action={
-                      <Button size="sm" onClick={() => setEditing('new')}>
-                        {t('Add the first block')}
-                      </Button>
+                  <Show
+                    when={!showAll() && query.data()?.paused}
+                    fallback={
+                      <EmptyState
+                        icon={<ListChecks size={22} />}
+                        title={showAll() ? t('No routine items yet') : t('Nothing scheduled today')}
+                        hint={t('A routine is the shape of your day: blocks with a time window and a target.')}
+                        action={
+                          <Button size="sm" onClick={() => setEditing('new')}>
+                            {t('Add the first block')}
+                          </Button>
+                        }
+                      />
                     }
-                  />
+                  >
+                    <EmptyState
+                      icon={<CalendarOff size={22} />}
+                      title={t('Weekend - the routine takes the day off.')}
+                      hint={t('Rules still count. Turn on "Routine on weekends" in Preferences to run the routine on Saturday and Sunday.')}
+                      action={
+                        <div class={styles.actions}>
+                          <Button variant="ghost" size="sm" onClick={() => setShowAll(true)}>
+                            {t('All items')}
+                          </Button>
+                          <Button size="sm" onClick={() => navigate('/settings/preferences')}>
+                            {t('Preferences')}
+                          </Button>
+                        </div>
+                      }
+                    />
+                  </Show>
                 }
               >
                 <ul class={styles.list}>

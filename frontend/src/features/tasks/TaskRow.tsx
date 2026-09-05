@@ -3,6 +3,7 @@
 
 import { A } from '@solidjs/router';
 import {
+  Bitcoin,
   Briefcase,
   Check,
   ChevronRight,
@@ -15,9 +16,11 @@ import {
   Play,
   Repeat,
   Share2,
+  SkipForward,
   Sparkles,
   Square,
   Trash2,
+  User,
   UserPlus,
 } from 'lucide-solid';
 import type { JSX } from 'solid-js';
@@ -31,10 +34,12 @@ import { authStore } from '~/stores/auth';
 import { tx } from '~/stores/translations';
 import { startTimer, stopTimer, timerStore } from '~/stores/timer';
 import { toast } from '~/stores/ui';
-import type { Task } from '~/types';
+import type { Task, TaskKind } from '~/types';
 import { cx } from '~/utils/cx';
 import { formatDueDate, formatDuration } from '~/utils/format';
 import styles from './TaskRow.module.css';
+
+const KIND_LABEL: Record<TaskKind, string> = { personal: 'Personal', business: 'Business', crypto: 'Crypto world' };
 
 interface TaskRowProps {
   task: Task;
@@ -42,6 +47,8 @@ interface TaskRowProps {
   onShare?: (task: Task) => void;
   onChanged?: () => void;
   showProject?: boolean;
+  /** Label the list the task belongs to (Personal / Business / Crypto) - for mixed views like Today. */
+  showKind?: boolean;
   compact?: boolean;
   selectable?: boolean;
   selected?: boolean;
@@ -86,6 +93,31 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
       setBusy(false);
     }
   };
+
+  /** "Skip today": recorded as a deliberate miss so the tally stays honest; pressing again clears the mark. */
+  const toggleSkip = async (event?: MouseEvent) => {
+    event?.stopPropagation();
+    if (busy() || !props.task.can_edit) return;
+    setBusy(true);
+    try {
+      if (props.task.today_skipped) {
+        await tasksApi.checkin(props.task.id, false);
+      } else {
+        await tasksApi.skipCheckin(props.task.id);
+        toast(t('Skipped for today'), {
+          action: { label: t('Undo'), run: () => void tasksApi.checkin(props.task.id, false).then(() => props.onChanged?.()) },
+        });
+      }
+      props.onChanged?.();
+    } catch {
+      toast(t('Could not update the task.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const tallyTitle = () =>
+    t('{done} days done · {skipped} skipped', { done: props.task.checkin_done_count, skipped: props.task.checkin_skipped_count });
 
   const finishForGood = async () => {
     if (busy() || !props.task.can_edit) return;
@@ -152,6 +184,12 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
     { label: t('Open'), icon: <ChevronRight size={14} />, onSelect: () => props.onOpen?.(props.task) },
     ...(ongoing()
       ? [
+          {
+            label: props.task.today_skipped ? t('Undo skip') : t('Skip today'),
+            icon: <SkipForward size={14} />,
+            disabled: !props.task.can_edit,
+            onSelect: () => void toggleSkip(),
+          } satisfies MenuItem,
           {
             label: t('Finish for good'),
             icon: <Check size={14} />,
@@ -227,6 +265,7 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
       class={[
         styles.row,
         done() ? styles.done : '',
+        ongoing() && props.task.today_skipped ? styles.skippedToday : '',
         props.compact ? styles.compact : '',
         props.dense ? styles.dense : '',
         props.selected ? styles.selected : '',
@@ -293,8 +332,33 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
           </Show>
         </div>
 
-        <Show when={hasMeta(props.task, props.showProject)}>
+        <Show when={hasMeta(props.task, props.showProject, props.showKind)}>
           <Meta>
+            {/* Long-term tasks: the all-time tally (days done vs skipped on purpose) and today's skip, if any. */}
+            <Show when={props.task.is_ongoing && props.task.checkin_done_count + props.task.checkin_skipped_count > 0}>
+              <span class={styles.tally} title={tallyTitle()} aria-label={tallyTitle()}>
+                <span class={styles.tallyDone}>
+                  <Check size={9} /> {props.task.checkin_done_count}
+                </span>
+                <Show when={props.task.checkin_skipped_count > 0}>
+                  <span class={styles.tallySkipped}>
+                    <SkipForward size={9} /> {props.task.checkin_skipped_count}
+                  </span>
+                </Show>
+              </span>
+            </Show>
+            <Show when={ongoing() && props.task.today_skipped}>
+              <span class={styles.skippedPill}>{t('skipped today')}</span>
+            </Show>
+            <Show when={props.showKind}>
+              <span class={cx(styles.kind, styles[`kind-${props.task.kind}`])} title={t('List')}>
+                {props.task.kind === 'business' ? <Briefcase size={10} /> : props.task.kind === 'crypto' ? <Bitcoin size={10} /> : <User size={10} />}
+                {t(KIND_LABEL[props.task.kind])}
+              </span>
+              <Show when={props.task.due_at || (props.showProject !== false && props.task.project)}>
+                <Dot />
+              </Show>
+            </Show>
             <Show when={props.task.due_at}>
               <span class={props.task.is_overdue ? styles.overdueText : undefined}>
                 <Show when={props.task.is_overdue} fallback={formatDueDate(props.task.due_at, props.task.due_has_time, use12h())}>
@@ -373,6 +437,18 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
             ● rec
           </span>
         </Show>
+        <Show when={ongoing() && !props.task.today_checked && props.task.can_edit}>
+          <button
+            class={cx(styles.iconAction, styles.skipAction, props.task.today_skipped && styles.skipActionOn)}
+            onClick={(e) => void toggleSkip(e)}
+            disabled={busy()}
+            aria-pressed={props.task.today_skipped}
+            aria-label={props.task.today_skipped ? t('Undo skip') : t('Skip today')}
+            title={props.task.today_skipped ? t('Undo skip') : t('Skip today - counted as a skipped day')}
+          >
+            <SkipForward size={13} />
+          </button>
+        </Show>
         <Show when={canPolish() && !props.dense}>
           <button
             class={[styles.iconAction, polishing() ? styles.iconActionBusy : ''].filter(Boolean).join(' ')}
@@ -415,9 +491,11 @@ function addedBy(task: Task): Task['created_by'] {
   return task.created_by;
 }
 
-function hasMeta(task: Task, showProject?: boolean): boolean {
+function hasMeta(task: Task, showProject?: boolean, showKind?: boolean): boolean {
   return Boolean(
-    task.due_at ||
+    showKind ||
+      (task.is_ongoing && (task.today_skipped || task.checkin_done_count + task.checkin_skipped_count > 0)) ||
+      task.due_at ||
       (showProject !== false && task.project) ||
       task.subtask_total > 0 ||
       task.tracked_seconds > 0 ||
