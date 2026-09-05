@@ -1,5 +1,5 @@
 import type { JSX } from 'solid-js';
-import { Show, splitProps } from 'solid-js';
+import { Show, createEffect, splitProps } from 'solid-js';
 import styles from './Input.module.css';
 
 interface FieldProps {
@@ -84,10 +84,21 @@ interface SelectProps extends JSX.SelectHTMLAttributes<HTMLSelectElement> {
 }
 
 export function Select(props: SelectProps): JSX.Element {
-  const [local, rest] = splitProps(props, ['invalid', 'sizeVariant', 'class', 'children']);
+  const [local, rest] = splitProps(props, ['invalid', 'sizeVariant', 'class', 'children', 'ref']);
+  let el: HTMLSelectElement | undefined;
+  // Spread props land before the <option>s exist, so a controlled `value` would be dropped by the browser.
+  // Re-apply it once the children are in place (and whenever it changes).
+  createEffect(() => {
+    const value = rest.value;
+    if (el && value !== undefined && value !== null) el.value = String(value);
+  });
   return (
     <select
       {...rest}
+      ref={(node) => {
+        el = node;
+        if (typeof local.ref === 'function') local.ref(node);
+      }}
       class={[styles.select, styles[local.sizeVariant ?? 'md'], local.invalid ? styles.invalid : '', local.class ?? '']
         .filter(Boolean)
         .join(' ')}

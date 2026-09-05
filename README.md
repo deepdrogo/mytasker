@@ -50,7 +50,8 @@ Most task apps are either a toy or a subscription. MyTasker is neither.
 
 | | Module | What it does |
 |---|---|---|
-| ☀️ | **Today** | Greeting, quick-add composer, overdue / due today / focus, completed with undo, business & sleep timers, routines, six live metrics, active projects. |
+| ▦ | **Dashboard** | Quick-add composer, overdue / due today / focus, next 7 days, completed with undo, business & sleep timers, routines, six live metrics, active projects arranged by drag & drop. |
+| ☀️ | **Today / Tomorrow** | One day's list and nothing else: what is due today (plus overdue) and what is due tomorrow, with a composer that dates new tasks to that day. |
 | ☑️ | **Tasks** | Personal & business lists, upcoming, completed, subtasks, priorities (critical → low), due dates with optional time, reminders, estimates, recurrence, bulk actions, drag ordering. |
 | 📁 | **Projects** | Active / all / ideas boards, per-project time totals, members & roles, comments, activity feed, attachments, public share links. |
 | 📝 | **Prompts** | A versioned library for the prompts you keep re-typing: categories, tags, favorites, history & diff, share with a project, one-click copy. |
@@ -70,7 +71,7 @@ Most task apps are either a toy or a subscription. MyTasker is neither.
   <tr>
     <td width="50%">
       <img src="docs/assets/today.png" alt="Today">
-      <p align="center"><sub><b>Today</b> - the whole day on one screen</sub></p>
+      <p align="center"><sub><b>Dashboard</b> - the whole day on one screen</sub></p>
     </td>
     <td width="50%">
       <img src="docs/assets/tasks.png" alt="Business tasks">
@@ -183,7 +184,7 @@ frontend/src/
   layouts/    AppShell (dock + floating canvas), Sidebar, TopBar, MobileNav, AuthLayout
   components/ ui (Button, Input, Modal, Drawer, Dropdown, Feedback) · shared (Page, Logo, Indicators)
   features/   tasks, projects, prompts, routines, timer, insights, ai, collab, command, notifications, sharing
-  routes/     Landing, Today, AI, Donate, auth/*, projects/*, prompts/*, routine/*, insights/*, settings/*, share/*
+  routes/     Landing, Dashboard, AI, Donate, auth/*, tasks/* (Today, Tomorrow, lists), projects/*, prompts/*, routine/*, insights/*, settings/*, share/*
   stores/     auth, ui, timer, notifications (Solid signals)
   api/        typed fetch client with CSRF, retries and error mapping
 ```

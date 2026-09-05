@@ -833,10 +833,87 @@
 
 /* Projects */
 .projects {
+  position: relative; /* rows measure against this while dragging */
   list-style: none;
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+/* While a card is being dragged, freeze hover effects on the rest so nothing flickers underneath. */
+.projects[data-sorting] .projectCard:not(.projectDragging) {
+  pointer-events: none;
+}
+
+.projectHeadRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.projectHeadRow .projectHead {
+  flex: 1;
+  min-width: 0;
+}
+
+.grip {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 24px;
+  margin-left: calc(var(--s-2) * -1);
+  padding: 0;
+  border: none;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--c-text-faint);
+  cursor: grab;
+  opacity: 0.45;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  transition:
+    opacity var(--t-fast),
+    color var(--t-fast),
+    background var(--t-fast);
+}
+
+.projectCard:hover .grip,
+.grip:focus-visible {
+  opacity: 1;
+}
+
+.grip:hover {
+  color: var(--c-text);
+  background: var(--c-hover);
+}
+
+.grip:active {
+  cursor: grabbing;
+}
+
+.projectDragging {
+  border-color: var(--c-border-strong);
+  box-shadow:
+    var(--shadow-card),
+    0 18px 40px rgba(0, 0, 0, 0.55);
+  cursor: grabbing;
+}
+
+.projectDragging .grip {
+  opacity: 1;
+  color: var(--c-text);
+  cursor: grabbing;
+}
+
+@media (hover: none) {
+  .grip {
+    opacity: 0.8;
+    width: 28px;
+    height: 32px;
+  }
 }
 
 .projectLink {

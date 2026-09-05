@@ -10,7 +10,7 @@ import {
   Columns3,
   Coins,
   FolderKanban,
-  Home,
+  LayoutDashboard,
   LayoutGrid,
   Lightbulb,
   ListChecks,
@@ -19,6 +19,8 @@ import {
   ScrollText,
   Settings,
   Sparkles,
+  Sun,
+  Sunrise,
   TrendingUp,
   User,
   X,
@@ -45,7 +47,11 @@ interface NavSection {
 
 const SECTIONS: NavSection[] = [
   {
-    links: [{ label: 'Today', href: '/today', icon: () => <Home size={15} /> }],
+    links: [
+      { label: 'Dashboard', href: '/dashboard', icon: () => <LayoutDashboard size={15} /> },
+      { label: 'Today', href: '/today', icon: () => <Sun size={15} /> },
+      { label: 'Tomorrow', href: '/tomorrow', icon: () => <Sunrise size={15} /> },
+    ],
   },
   {
     label: 'Tasks',
@@ -132,7 +138,7 @@ export function Sidebar(props: { onNavigate?: () => void }): JSX.Element {
   return (
     <aside class={styles.sidebar} aria-label={t('Main navigation')}>
       <div class={styles.brand}>
-        <A href="/today" class={styles.brandLink} onClick={props.onNavigate} aria-label={t('MyTasker - Today')}>
+        <A href="/dashboard" class={styles.brandLink} onClick={props.onNavigate} aria-label={t('MyTasker - Dashboard')}>
           <Logo size={22} />
         </A>
         <Show when={props.onNavigate}>

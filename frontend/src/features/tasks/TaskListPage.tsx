@@ -35,7 +35,7 @@ interface TaskListPageProps {
 const SORTS = [
   { value: 'manual', label: 'Manual' },
   { value: 'due', label: 'Deadline' },
-  { value: '-priority', label: 'Priority' },
+  { value: 'priority', label: 'Priority' }, // priority_rank asc: critical first
   { value: '-created', label: 'Recently created' },
   { value: '-updated', label: 'Recently updated' },
   { value: 'title', label: 'Title' },

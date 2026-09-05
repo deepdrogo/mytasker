@@ -33,7 +33,7 @@ export default function Register(): JSX.Element {
         full_name: fullName().trim(),
         timezone: guessTimezone(),
       });
-      navigate('/today', { replace: true });
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.isValidation ? t('Check the fields below.') : err.message);

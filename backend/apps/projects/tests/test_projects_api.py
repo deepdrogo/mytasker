@@ -44,6 +44,31 @@ def test_startup_category_is_stored_and_filterable(auth_client):
     assert moved.data["category"] == "startup"
 
 
+def test_reorder_projects_drives_dashboard_order(auth_client, client_for, stranger):
+    ids = [auth_client.post(BASE, {"name": name}, format="json").data["id"] for name in ("A", "B", "C")]
+    for pid in ids:
+        auth_client.post("/api/v1/tasks/", {"title": f"t{pid}", "kind": "business", "project_id": pid}, format="json")
+    foreign = client_for(stranger).post(BASE, {"name": "Not mine"}, format="json").data["id"]
+
+    # Unknown / foreign ids are ignored, the rest gets the new order; nothing about the projects "changes".
+    before = auth_client.get(f"{BASE}{ids[0]}/").data
+    res = auth_client.post(f"{BASE}reorder/", {"ids": [ids[2], foreign, ids[0], ids[1], 999999]}, format="json")
+    assert res.status_code == 200, res.content
+    assert res.data["ids"] == [ids[2], ids[0], ids[1]]
+    after = auth_client.get(f"{BASE}{ids[0]}/").data
+    assert after["version"] == before["version"]
+    assert after["updated_at"] == before["updated_at"]
+    assert Project.objects.get(pk=foreign).sort_order == 0
+
+    listed = [p["id"] for p in auth_client.get(f"{BASE}?ordering=manual").data["results"]]
+    assert listed == [ids[2], ids[0], ids[1]]
+    dashboard = [p["id"] for p in auth_client.get("/api/v1/today/").data["active_projects"]]
+    assert dashboard == [ids[2], ids[0], ids[1]]
+
+    assert auth_client.post(f"{BASE}reorder/", {"ids": []}, format="json").status_code == 400
+    assert auth_client.post(f"{BASE}reorder/", {"ids": ["x"]}, format="json").status_code == 400
+
+
 def test_invite_join_and_group_visibility(client_for, user, other_user, stranger):
     owner = client_for(user)
     project = owner.post(BASE, {"name": "Team", "mode": "group"}, format="json").data

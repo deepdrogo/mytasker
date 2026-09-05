@@ -20,7 +20,7 @@ export function AuthLayout(props: RouteSectionProps): JSX.Element {
   // Honour ?next= here as well: this redirect fires the instant the session appears, before Login's own navigate.
   const target = () => {
     const next = typeof params.next === 'string' ? params.next : '';
-    return next.startsWith('/') && !next.startsWith('//') ? next : '/today';
+    return next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard';
   };
   return (
     <Show when={!authStore.isAuthenticated()} fallback={<Navigate href={target()} />}>

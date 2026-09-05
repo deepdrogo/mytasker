@@ -89,8 +89,8 @@ export const tasks: Record<string, string> = {
   'Could not change the deadline.': 'ვადის შეცვლა ვერ მოხერხდა.',
 
   // Crypto world
-  'A private list for crypto work. It never appears on Today.':
-    'კრიპტო საქმეების ცალკე სია. დღევანდელ დეშბორდზე არ ჩანს.',
+  'A private list for crypto work. It never appears on the Dashboard or Today.':
+    'კრიპტო საქმეების ცალკე სია. არც დეშბორდზე და არც „დღეს“ გვერდზე არ ჩანს.',
   'Add a crypto task…': 'დაამატე კრიპტო დავალება…',
   'Nothing in the crypto world yet.': 'კრიპტოსამყაროში ჯერ არაფერია.',
 
@@ -149,7 +149,15 @@ export const tasks: Record<string, string> = {
   'Everything has a date.': 'ყველაფერს თარიღი აქვს.',
   'Tasks you add without a deadline will show up here.': 'ვადის გარეშე დამატებული დავალებები აქ გამოჩნდება.',
 
-  // Today
+  // Dashboard
   'Next 7 days': 'მომდევნო 7 დღე',
   'No business tasks pending.': 'ბიზნეს დავალებები არ არის.',
+
+  // Today / Tomorrow day lists
+  'Due today, plus anything overdue. Crypto world stays out.': 'დღეს ვადიანი და ვადაგადაცილებული საქმეები. კრიპტოსამყარო აქ არ ჩანს.',
+  'Add a task above, or plan ahead on Tomorrow.': 'დაამატე დავალება ზემოთ ან დაგეგმე „ხვალ“ გვერდზე.',
+  'Only what is due tomorrow.': 'მხოლოდ ის, რასაც ხვალ აქვს ვადა.',
+  'Add a task for tomorrow…': 'დაამატე დავალება ხვალისთვის…',
+  'Nothing due tomorrow.': 'ხვალ ვადიანი არაფერია.',
+  'Add a task above and it lands on tomorrow’s list.': 'დაამატე დავალება ზემოთ და ხვალინდელ სიაში მოხვდება.',
 };

@@ -11,7 +11,7 @@ import { Breakdown, Stat } from '~/features/insights/Charts';
 import { Block, InsightsPage, StatGrid, TwoCol, shortDate } from '~/features/insights/InsightsPage';
 import { ProjectSelector } from '~/features/projects/ProjectSelector';
 import { timeApi } from '~/features/routines/api';
-import { analyticsApi, isoDay, shiftDays, shiftMonths } from '~/features/today/api';
+import { analyticsApi, isoDay, shiftDays, shiftMonths } from '~/features/dashboard/api';
 import { createQuery } from '~/hooks/createQuery';
 import { t, tn } from '~/i18n';
 import { tx } from '~/stores/translations';

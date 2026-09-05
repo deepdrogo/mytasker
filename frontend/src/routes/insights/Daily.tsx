@@ -2,7 +2,7 @@ import type { JSX } from 'solid-js';
 import { createSignal } from 'solid-js';
 import { BarChart, Breakdown, Meter, Stat } from '~/features/insights/Charts';
 import { Block, InsightsPage, StatGrid, TwoCol, longDate, minutesFmt } from '~/features/insights/InsightsPage';
-import { analyticsApi, isoDay, shiftDays } from '~/features/today/api';
+import { analyticsApi, isoDay, shiftDays } from '~/features/dashboard/api';
 import { createQuery } from '~/hooks/createQuery';
 import { t } from '~/i18n';
 import { tx } from '~/stores/translations';

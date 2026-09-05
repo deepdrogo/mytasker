@@ -2,7 +2,9 @@
 export const command: Record<string, string> = {
   // Palette commands (nav items already in core: Ask AI, Upcoming, Active projects, routines, Rules, Insights, Settings)
   'New task': 'ახალი დავალება',
+  'Go to Dashboard': 'დეშბორდზე გადასვლა',
   'Go to Today': 'დღევანდელ დღეზე გადასვლა',
+  'Go to Tomorrow': 'ხვალინდელ დღეზე გადასვლა',
   'Personal tasks': 'პირადი დავალებები',
   'Business tasks': 'ბიზნეს დავალებები',
   'Crypto world tasks': 'კრიპტოსამყაროს დავალებები',

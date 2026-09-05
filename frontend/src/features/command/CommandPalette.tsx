@@ -9,6 +9,7 @@ import {
   CornerDownLeft,
   FileText,
   FolderKanban,
+  LayoutDashboard,
   Lightbulb,
   ListChecks,
   Plus,
@@ -76,7 +77,9 @@ export function CommandPalette(): JSX.Element {
     ...(authStore.isAdmin()
       ? [{ id: 'ai', label: 'Ask AI', hint: 'A', icon: <Sparkles size={15} />, keywords: 'assistant claude command', run: () => { uiStore.closePalette(); uiStore.openAI(); } }]
       : []),
-    { id: 'today', label: 'Go to Today', icon: <Calendar size={15} />, keywords: 'dashboard home', run: go('/today') },
+    { id: 'dashboard', label: 'Go to Dashboard', icon: <LayoutDashboard size={15} />, keywords: 'home overview დეშბორდი', run: go('/dashboard') },
+    { id: 'today', label: 'Go to Today', icon: <Calendar size={15} />, keywords: 'due today დღეს', run: go('/today') },
+    { id: 'tomorrow', label: 'Go to Tomorrow', icon: <Calendar size={15} />, keywords: 'due tomorrow ხვალ', run: go('/tomorrow') },
     { id: 'personal', label: 'Personal tasks', icon: <CheckSquare size={15} />, run: go('/tasks/personal') },
     { id: 'business', label: 'Business tasks', icon: <CheckSquare size={15} />, run: go('/tasks/business') },
     { id: 'crypto', label: 'Crypto world tasks', icon: <CheckSquare size={15} />, keywords: 'crypto cryptoworld კრიპტო კრიპტოსამყარო', run: go('/tasks/crypto') },

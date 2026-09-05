@@ -2,6 +2,7 @@
 // Keys are the English source strings exactly as they appear in the components.
 export const core: Record<string, string> = {
   // Navigation
+  Dashboard: 'დეშბორდი',
   Today: 'დღეს',
   Tasks: 'დავალებები',
   Personal: 'პირადი',
@@ -27,7 +28,7 @@ export const core: Record<string, string> = {
   Settings: 'პარამეტრები',
   'Main navigation': 'მთავარი ნავიგაცია',
   Primary: 'მთავარი',
-  'MyTasker - Today': 'MyTasker — დღეს',
+  'MyTasker - Dashboard': 'MyTasker — დეშბორდი',
   'Open navigation': 'ნავიგაციის გახსნა',
   'Close navigation': 'ნავიგაციის დახურვა',
   Section: 'სექცია',
@@ -42,13 +43,17 @@ export const core: Record<string, string> = {
   'Quick add': 'სწრაფი დამატება',
   Add: 'დამატება',
 
-  // Today
+  // Dashboard
   'Good night': 'ღამე მშვიდობისა',
   'Good morning': 'დილა მშვიდობისა',
   'Good afternoon': 'შუადღე მშვიდობისა',
   'Good evening': 'საღამო მშვიდობისა',
-  'Could not load today.': 'დღევანდელი დღის ჩატვირთვა ვერ მოხერხდა.',
+  'Could not load the dashboard.': 'დეშბორდის ჩატვირთვა ვერ მოხერხდა.',
   'Add a task for today…': 'დაამატე დავალება დღეისთვის…',
+  'drag to reorder': 'გადაათრიე დასალაგებლად',
+  'Drag to reorder · arrow keys to move': 'გადაათრიე დასალაგებლად · ისრებით გადაადგილება',
+  'Reorder {name} ({position} of {total})': '{name} — გადაადგილება ({position} / {total})',
+  'Could not save the order.': 'თანმიმდევრობის შენახვა ვერ მოხერხდა.',
   Overdue: 'ვადაგადაცილებული',
   'Due today': 'დღეს შესასრულებელი',
   'Nothing due today.': 'დღეს ვადიანი არაფერია.',

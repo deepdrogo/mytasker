@@ -149,6 +149,25 @@ def change_mode(actor: Actor, project_id: int, *, mode: str) -> Project:
 
 
 @transaction.atomic
+def reorder_projects(user, ordered_ids: list[int]) -> list[int]:
+    """
+    Manual order for the dashboard / Active projects: `ordered_ids` is the full list as the user arranged it,
+    first id on top. Only projects the user can see are touched; unknown ids are ignored. `sort_order` is
+    written directly so `updated_at` / `version` stay put - ordering is a preference, not an edit.
+    Returns the ids that were actually reordered.
+    """
+    seen: set[int] = set()
+    unique_ids = [pid for pid in ordered_ids if not (pid in seen or seen.add(pid))]
+    visible = set(Project.objects.visible_to(user).filter(pk__in=unique_ids).values_list("pk", flat=True))
+    applied = [pid for pid in unique_ids if pid in visible]
+    current = dict(Project.objects.filter(pk__in=applied).values_list("pk", "sort_order"))
+    for index, pid in enumerate(applied):
+        if current.get(pid) != index:
+            Project.objects.filter(pk=pid).update(sort_order=index)
+    return applied
+
+
+@transaction.atomic
 def delete_project(actor: Actor, project_id: int) -> None:
     project = get_project_for_user(project_id, actor.user, capability=Capability.DELETE_PROJECT, for_update=True)
     from apps.tasks.models import Task

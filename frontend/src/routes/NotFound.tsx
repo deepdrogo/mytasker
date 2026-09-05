@@ -18,8 +18,8 @@ export default function NotFound(): JSX.Element {
     >
       <span style={{ 'font-family': 'var(--font-mono)', 'font-size': 'var(--fs-2xl)', color: 'var(--c-text)' }}>404</span>
       <p>{t('This page does not exist.')}</p>
-      <A href="/today" style={{ color: 'var(--c-text)' }}>
-        {t('Back to Today')}
+      <A href="/dashboard" style={{ color: 'var(--c-text)' }}>
+        {t('Back to Dashboard')}
       </A>
     </div>
   );

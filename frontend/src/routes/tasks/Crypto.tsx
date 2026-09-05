@@ -6,7 +6,7 @@ export default function Crypto(): JSX.Element {
   return (
     <TaskListPage
       title={t('Crypto world')}
-      subtitle={t('A private list for crypto work. It never appears on Today.')}
+      subtitle={t('A private list for crypto work. It never appears on the Dashboard or Today.')}
       queryName="crypto"
       params={() => ({ kind: 'crypto', top_level: true, completed: false })}
       composerDefaults={{ kind: 'crypto' }}

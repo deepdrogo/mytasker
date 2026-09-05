@@ -130,6 +130,28 @@ def test_view_filters(client_for, user):
     assert [row["title"] for row in no_date["results"]] == ["Someday"]
 
 
+def test_today_and_tomorrow_views(client_for, user):
+    """Today = due today (plus anything overdue); Tomorrow = due tomorrow only. Both show open work only."""
+    client = client_for(user)
+    now = timezone.now()
+    days = timezone.timedelta
+
+    def add(title: str, due) -> dict:
+        return client.post("/api/v1/tasks/", {"title": title, "due_at": due.isoformat()}, format="json").data
+
+    add("Now", now)
+    add("Late", now - days(days=2))
+    tmr = add("Tmr", now + days(days=1))
+    done_tmr = add("Tmr done", now + days(days=1))
+    client.post(f"/api/v1/tasks/{done_tmr['id']}/complete/")
+    add("Later", now + days(days=3))
+
+    today = {row["title"] for row in client.get("/api/v1/tasks/", {"view": "today"}).data["results"]}
+    assert today == {"Now", "Late"}
+    tomorrow = [row["id"] for row in client.get("/api/v1/tasks/", {"view": "tomorrow"}).data["results"]]
+    assert tomorrow == [tmr["id"]]
+
+
 def test_counts_endpoint(client_for, user):
     client = client_for(user)
     client.post("/api/v1/tasks/", {"title": "A", "kind": "personal"}, format="json")

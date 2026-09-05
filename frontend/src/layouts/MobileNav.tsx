@@ -1,5 +1,5 @@
 import { A, useLocation } from '@solidjs/router';
-import { BookText, Briefcase, FolderKanban, Home, ListTodo, Settings, Sparkles, TrendingUp, User } from 'lucide-solid';
+import { Briefcase, FolderKanban, LayoutDashboard, ListTodo, Settings, Sparkles, Sun, TrendingUp, User } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For, onCleanup, onMount } from 'solid-js';
 import { t } from '~/i18n';
@@ -9,15 +9,17 @@ import styles from './MobileNav.module.css';
 interface Item {
   label: string;
   href: string;
-  match?: string;
+  /** Path prefix(es) that light this item up; defaults to `href`. */
+  match?: string | string[];
   icon: () => JSX.Element;
 }
 
 const BASE_ITEMS: Item[] = [
-  { label: 'Today', href: '/today', icon: () => <Home size={18} /> },
+  { label: 'Dashboard', href: '/dashboard', icon: () => <LayoutDashboard size={18} /> },
+  { label: 'Today', href: '/today', match: ['/today', '/tomorrow'], icon: () => <Sun size={18} /> },
   { label: 'Tasks', href: '/tasks/personal', match: '/tasks', icon: () => <ListTodo size={18} /> },
   { label: 'Projects', href: '/projects/active', match: '/projects', icon: () => <FolderKanban size={18} /> },
-  { label: 'Prompts', href: '/prompts', icon: () => <BookText size={18} /> },
+  // Prompts moved to the drawer to make room for Today; five slots is all a phone-width dock fits legibly.
 ];
 const AI_ITEM: Item = { label: 'AI', href: '/ai', icon: () => <Sparkles size={18} /> };
 const INSIGHTS_ITEM: Item = { label: 'Insights', href: '/insights/daily', match: '/insights', icon: () => <TrendingUp size={18} /> };
@@ -71,8 +73,8 @@ export function MobileNav(): JSX.Element {
     return [...BASE_ITEMS, authStore.isAdmin() ? AI_ITEM : INSIGHTS_ITEM];
   };
   const isActive = (item: Item) => {
-    const base = item.match ?? item.href;
-    return location.pathname === base || location.pathname.startsWith(`${base}/`);
+    const bases = item.match === undefined ? [item.href] : Array.isArray(item.match) ? item.match : [item.match];
+    return bases.some((base) => location.pathname === base || location.pathname.startsWith(`${base}/`));
   };
 
   return (

@@ -43,7 +43,7 @@ export const projects: Record<string, string> = {
   Name: 'სახელი',
   Description: 'აღწერა',
   Type: 'ტიპი',
-  'Shown on Today and in Active Projects.': 'ჩანს „დღეს“ გვერდზე და აქტიურ პროექტებში.',
+  'Shown on the Dashboard and in Active Projects.': 'ჩანს დეშბორდზე და აქტიურ პროექტებში.',
   Project: 'პროექტი',
   'Active project': 'აქტიური პროექტი',
   Status: 'სტატუსი',
@@ -70,8 +70,8 @@ export const projects: Record<string, string> = {
   'Active Projects': 'აქტიური პროექტები',
   'What you are pushing forward right now': 'რაზეც ახლა აქტიურად მუშაობ',
   'No active projects': 'აქტიური პროექტები არ არის',
-  'Mark a project as Active to keep it in focus here and on Today.':
-    'მონიშნე პროექტი აქტიურად, რომ ის აქ და „დღეს“ გვერდზე ფოკუსში დარჩეს.',
+  'Mark a project as Active to keep it in focus here and on the Dashboard.':
+    'მონიშნე პროექტი აქტიურად, რომ ის აქ და დეშბორდზე ფოკუსში დარჩეს.',
   'Everything you own or collaborate on': 'ყველაფერი, რასაც ფლობ ან რაშიც მონაწილეობ',
   'No projects yet': 'პროექტები ჯერ არ არის',
   'Projects group tasks, prompts, time and people.': 'პროექტი აერთიანებს დავალებებს, პრომპტებს, დროსა და ადამიანებს.',

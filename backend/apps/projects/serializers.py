@@ -120,6 +120,10 @@ class ModeChangeSerializer(serializers.Serializer):
     mode = serializers.ChoiceField(choices=Project.Mode.choices)
 
 
+class ProjectReorderSerializer(serializers.Serializer):
+    ids = serializers.ListField(child=serializers.IntegerField(min_value=1), min_length=1, max_length=500)
+
+
 class MembershipSerializer(serializers.ModelSerializer):
     user = UserRefSerializer(read_only=True)
 

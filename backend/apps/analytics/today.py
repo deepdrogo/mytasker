@@ -79,12 +79,13 @@ def today_snapshot(user, request=None) -> dict:
     business_items = [i for i in routine_items if i.routine.kind == Routine.Kind.BUSINESS]
     personal_items = [i for i in routine_items if i.routine.kind == Routine.Kind.PERSONAL]
 
-    # Only projects that still have something to do; a project with zero open tasks is noise on Today.
+    # Only projects that still have something to do; a project with zero open tasks is noise on the dashboard.
+    # The user arranges these by hand (drag & drop -> sort_order); recently touched projects break ties.
     active_projects = list(
         Project.objects.visible_to(user)
         .with_progress(user)
         .filter(status__in=[Project.Status.ACTIVE, Project.Status.PAUSED], task_open__gt=0)
-        .order_by("-updated_at")
+        .order_by("sort_order", "-updated_at")
         .values(
             "id", "name", "priority", "kind", "category", "status", "deadline", "task_total", "task_done", "task_open"
         )[:12]

@@ -14,6 +14,7 @@ from apps.projects.serializers import (
     MembershipSerializer,
     ModeChangeSerializer,
     ProjectCreateSerializer,
+    ProjectReorderSerializer,
     ProjectSerializer,
     ProjectUpdateSerializer,
     RoleSerializer,
@@ -99,6 +100,14 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         services.delete_project(self._actor(), int(kwargs["pk"]))
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=["post"])
+    def reorder(self, request):
+        """Manual order (dashboard drag & drop): every project id in the new order, first on top."""
+        serializer = ProjectReorderSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        applied = services.reorder_projects(request.user, serializer.validated_data["ids"])
+        return Response({"ids": applied})
 
     @action(detail=True, methods=["post"])
     def mode(self, request, pk=None):

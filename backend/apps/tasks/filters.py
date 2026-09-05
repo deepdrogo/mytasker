@@ -75,7 +75,9 @@ class TaskFilter(filters.FilterSet):
             from common.tz import today_for
 
             start, end = day_bounds(user, today_for(user) + timedelta(days=1))
-            return queryset.filter(due_at__gte=start, due_at__lt=end)
+            return queryset.filter(due_at__gte=start, due_at__lt=end).exclude(
+                status__in=[Task.Status.DONE, Task.Status.CANCELLED]
+            )
         if value == "week":
             start, end, _, _ = week_bounds(user)
             return queryset.filter(due_at__lt=end).exclude(status__in=[Task.Status.DONE, Task.Status.CANCELLED])

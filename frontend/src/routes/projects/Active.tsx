@@ -11,7 +11,7 @@ export default function ProjectsActive(): JSX.Element {
       params={{ view: 'active' }}
       defaultKind="active"
       emptyTitle={t('No active projects')}
-      emptyHint={t('Mark a project as Active to keep it in focus here and on Today.')}
+      emptyHint={t('Mark a project as Active to keep it in focus here and on the Dashboard.')}
     />
   );
 }

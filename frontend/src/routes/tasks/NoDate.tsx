@@ -12,7 +12,7 @@ export default function NoDate(): JSX.Element {
       params={() => ({ view: 'no_date', top_level: true })}
       hideComposer
       showProject
-      defaultOrdering="-priority"
+      defaultOrdering="priority"
       emptyTitle={t('Everything has a date.')}
       emptyHint={t('Tasks you add without a deadline will show up here.')}
     />

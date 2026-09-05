@@ -27,8 +27,8 @@ export default function Login(): JSX.Element {
     setBusy(true);
     try {
       await login(email().trim(), password());
-      const next = typeof params.next === 'string' ? params.next : '/today';
-      navigate(next.startsWith('/') ? next : '/today', { replace: true });
+      const next = typeof params.next === 'string' ? params.next : '/dashboard';
+      navigate(next.startsWith('/') ? next : '/dashboard', { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);

@@ -1,7 +1,7 @@
 import { api } from '~/api/client';
 import type { DailyReview, DayMetrics, MonthlyReview, TodayData, WeeklyReview } from '~/types';
 
-export const todayApi = {
+export const dashboardApi = {
   snapshot: () => api.get<TodayData>('/today/'),
 };
 

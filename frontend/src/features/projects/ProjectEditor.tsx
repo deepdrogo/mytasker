@@ -150,7 +150,7 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
         </Field>
 
         <div class={styles.grid}>
-          <Field label={t('Type')} hint={kind() === 'active' ? t('Shown on Today and in Active Projects.') : undefined}>
+          <Field label={t('Type')} hint={kind() === 'active' ? t('Shown on the Dashboard and in Active Projects.') : undefined}>
             <Select value={kind()} onChange={(e) => setKind(e.currentTarget.value as ProjectKind)} disabled={!canManage()}>
               <option value="project">{t('Project')}</option>
               <option value="active">{t('Active project')}</option>

@@ -6,7 +6,9 @@ import { lazy } from 'solid-js';
 import { AuthLayout } from '~/layouts/AuthLayout';
 import { ProtectedLayout } from '~/app/ProtectedLayout';
 
-const Today = lazy(() => import('~/routes/Today'));
+const Dashboard = lazy(() => import('~/routes/Dashboard'));
+const TasksToday = lazy(() => import('~/routes/tasks/Today'));
+const TasksTomorrow = lazy(() => import('~/routes/tasks/Tomorrow'));
 const TasksPersonal = lazy(() => import('~/routes/tasks/Personal'));
 const TasksBusiness = lazy(() => import('~/routes/tasks/Business'));
 const TasksCrypto = lazy(() => import('~/routes/tasks/Crypto'));
@@ -43,7 +45,7 @@ const Support = lazy(() => import('~/routes/Support'));
 const NotFound = lazy(() => import('~/routes/NotFound'));
 
 export const routes: RouteDefinition[] = [
-  // Public landing; signed-in users are bounced straight to /today inside the component.
+  // Public landing; signed-in users are bounced straight to /dashboard inside the component.
   { path: '/', component: Landing },
   // Public: donation addresses + author contact, reachable from the landing without an account.
   { path: '/support', component: Support },
@@ -51,7 +53,10 @@ export const routes: RouteDefinition[] = [
     path: '/',
     component: ProtectedLayout,
     children: [
-      { path: '/today', component: Today },
+      { path: '/dashboard', component: Dashboard },
+      // Today / Tomorrow are plain task lists: only what is due on that day (Today also carries overdue work).
+      { path: '/today', component: TasksToday },
+      { path: '/tomorrow', component: TasksTomorrow },
       { path: '/tasks', component: () => <Navigate href="/tasks/personal" /> },
       { path: '/tasks/personal', component: TasksPersonal },
       { path: '/tasks/business', component: TasksBusiness },

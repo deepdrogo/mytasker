@@ -58,7 +58,7 @@ const WEEK_BARS = [42, 70, 55, 88, 64, 30, 18];
 
 export default function Landing(): JSX.Element {
   return (
-    <Show when={!authStore.isAuthenticated()} fallback={<Navigate href="/today" />}>
+    <Show when={!authStore.isAuthenticated()} fallback={<Navigate href="/dashboard" />}>
       <LandingView />
     </Show>
   );

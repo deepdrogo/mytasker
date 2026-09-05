@@ -1,21 +1,23 @@
-// MyTasker — the Today screen. The whole day, one page, no scrolling on desktop.
+// MyTasker — the Dashboard. The whole day on one page: dated work, the week ahead, active projects, timers, routine.
 // Built by drogoz · https://github.com/deepdrogo/mytasker
 
 import { A } from '@solidjs/router';
-import { Check, Circle, Flame, Moon, Play, Rocket, ScrollText, Square, Undo2, X } from 'lucide-solid';
+import { Check, Circle, Flame, GripVertical, Moon, Play, Rocket, ScrollText, Square, Undo2, X } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For, Show, createMemo, createSignal, onCleanup } from 'solid-js';
 import { Page } from '~/components/shared/Page';
 import { PriorityMark } from '~/components/shared/Indicators';
 import { ErrorNote, Skeleton } from '~/components/ui/Feedback';
+import { dashboardApi } from '~/features/dashboard/api';
+import { projectsApi } from '~/features/projects/api';
 import { routinesApi, rulesApi } from '~/features/routines/api';
 import { ShareDialog } from '~/features/sharing/ShareDialog';
 import { tasksApi } from '~/features/tasks/api';
 import { TaskComposer } from '~/features/tasks/TaskComposer';
 import { TaskEditor } from '~/features/tasks/TaskEditor';
 import { TaskList } from '~/features/tasks/TaskList';
-import { todayApi } from '~/features/today/api';
 import { createQuery, invalidate } from '~/hooks/createQuery';
+import { createSortable, type Sortable } from '~/hooks/createSortable';
 import { intlLocale, t, tn } from '~/i18n';
 import { authStore } from '~/stores/auth';
 import { tx } from '~/stores/translations';
@@ -23,13 +25,29 @@ import { startSleep, stopSleep, timerStore, toggleTimer } from '~/stores/timer';
 import { toast } from '~/stores/ui';
 import type { RoutineItem, Rule, Task, TodayData, TodayProject } from '~/types';
 import { formatClock, formatDateFull, formatDueDate, formatMinutes, percent } from '~/utils/format';
-import styles from './Today.module.css';
+import styles from './Dashboard.module.css';
 import { cx } from '~/utils/cx';
 
-export default function Today(): JSX.Element {
-  const query = createQuery<TodayData>(() => 'today', () => todayApi.snapshot());
+export default function Dashboard(): JSX.Element {
+  const query = createQuery<TodayData>(() => 'today', () => dashboardApi.snapshot());
   const [activeTask, setActiveTask] = createSignal<Task | null>(null);
   const [shareTasks, setShareTasks] = createSignal<Task[] | null>(null);
+
+  // Active projects are arranged by hand: drag the grip (or use arrow keys on it), the order is saved per user list.
+  const projectOrder = createSortable<TodayProject>({
+    items: () => query.data()?.active_projects ?? [],
+    key: (project) => project.id,
+    onReorder: async (projects) => {
+      // Keep the snapshot in step so any re-render shows the arranged order before the refetch lands.
+      query.mutate((current) => (current ? { ...current, active_projects: projects } : current));
+      try {
+        await projectsApi.reorder(projects.map((project) => project.id));
+      } catch {
+        toast(t('Could not save the order.'));
+        query.refetch();
+      }
+    },
+  });
 
   // Live clock so elapsed timers tick without refetching.
   const [tick, setTick] = createSignal(0);
@@ -83,8 +101,8 @@ export default function Today(): JSX.Element {
   const share = (task: Task) => setShareTasks([task]);
 
   return (
-    <Page title={t('Today')} subtitle={formatDateFull(new Date().toISOString())}>
-      <Show when={!query.error()} fallback={<ErrorNote message={t('Could not load today.')} onRetry={refresh} />}>
+    <Page title={t('Dashboard')} subtitle={formatDateFull(new Date().toISOString())}>
+      <Show when={!query.error()} fallback={<ErrorNote message={t('Could not load the dashboard.')} onRetry={refresh} />}>
         <Show when={data()} fallback={<Skeleton rows={8} height={40} />}>
           {(d) => (
             <div class={styles.grid}>
@@ -105,7 +123,7 @@ export default function Today(): JSX.Element {
                   </Section>
                 </Show>
 
-                <Section title={t('Due today')} count={d().tasks.due_today.length}>
+                <Section title={t('Due today')} count={d().tasks.due_today.length} link={{ href: '/today', label: t('Today') }}>
                   <TaskList
                     tasks={d().tasks.due_today}
                     compact
@@ -219,16 +237,30 @@ export default function Today(): JSX.Element {
                 </Section>
               </section>
 
-              {/* Column 2: active projects, expanded vertically */}
+              {/* Column 2: active projects, expanded vertically, in the user's own order */}
               <section class={styles.col}>
-                <Section title={t('Active projects')} count={d().active_projects.length} hint={t('with open tasks')} link={{ href: '/projects/canvas', label: t('Canvas') }}>
+                <Section
+                  title={t('Active projects')}
+                  count={projectOrder.items().length}
+                  hint={projectOrder.items().length > 1 ? t('drag to reorder') : t('with open tasks')}
+                  link={{ href: '/projects/canvas', label: t('Canvas') }}
+                >
                   <Show
-                    when={d().active_projects.length > 0}
+                    when={projectOrder.items().length > 0}
                     fallback={<p class={styles.dim}>{t('No project has open tasks right now.')}</p>}
                   >
-                    <ul class={styles.projects}>
-                      <For each={d().active_projects}>
-                        {(p) => <ProjectCardMini project={p} minutes={d().metrics.project_minutes[String(p.id)] ?? 0} onOpenTask={(id) => void tasksApi.get(id).then(setActiveTask)} />}
+                    <ul class={styles.projects} ref={projectOrder.setContainer}>
+                      <For each={projectOrder.items()}>
+                        {(p, index) => (
+                          <ProjectCardMini
+                            project={p}
+                            minutes={d().metrics.project_minutes[String(p.id)] ?? 0}
+                            onOpenTask={(id) => void tasksApi.get(id).then(setActiveTask)}
+                            sortable={projectOrder}
+                            position={index() + 1}
+                            total={projectOrder.items().length}
+                          />
+                        )}
                       </For>
                     </ul>
                   </Show>
@@ -536,25 +568,50 @@ function RulesBlock(props: { rules: Rule[]; onChanged: () => void }): JSX.Elemen
   );
 }
 
-/** Compact project card for Today: progress, next open tasks, tracked minutes. */
-function ProjectCardMini(props: { project: TodayProject; minutes: number; onOpenTask: (id: number) => void }): JSX.Element {
+/** Compact project card for the dashboard: progress, next open tasks, tracked minutes, drag grip to reorder. */
+function ProjectCardMini(props: {
+  project: TodayProject;
+  minutes: number;
+  onOpenTask: (id: number) => void;
+  sortable: Sortable<TodayProject>;
+  position: number;
+  total: number;
+}): JSX.Element {
   const total = () => props.project.task_total ?? 0;
   const done = () => props.project.task_done ?? 0;
   const use12h = () => authStore.user()?.preferences.time_format === '12h';
+  const name = () => tx('project', props.project.id, 'name', props.project.name);
   return (
-    <li class={styles.projectCard}>
-      <A href={`/projects/${props.project.id}/tasks`} class={styles.projectHead}>
-        <span class={styles.projectName}>
-          <Show when={props.project.category === 'startup'}>
-            <Rocket size={12} />
-          </Show>
-          {tx('project', props.project.id, 'name', props.project.name)}
-        </span>
-        <span class={styles.mono}>
-          {t('{count} open', { count: props.project.task_open ?? 0 })}
-          <Show when={props.minutes > 0}> · {formatMinutes(props.minutes)}</Show>
-        </span>
-      </A>
+    <li
+      class={cx(styles.projectCard, props.sortable.isDragging(props.project) && styles.projectDragging)}
+      {...props.sortable.itemProps(props.project)}
+      style={props.sortable.itemStyle(props.project)}
+    >
+      <div class={styles.projectHeadRow}>
+        <Show when={props.total > 1}>
+          <button
+            type="button"
+            class={styles.grip}
+            {...props.sortable.handleProps(props.project)}
+            aria-label={t('Reorder {name} ({position} of {total})', { name: name(), position: props.position, total: props.total })}
+            title={t('Drag to reorder · arrow keys to move')}
+          >
+            <GripVertical size={14} />
+          </button>
+        </Show>
+        <A href={`/projects/${props.project.id}/tasks`} class={styles.projectHead}>
+          <span class={styles.projectName}>
+            <Show when={props.project.category === 'startup'}>
+              <Rocket size={12} />
+            </Show>
+            {name()}
+          </span>
+          <span class={styles.mono}>
+            {t('{count} open', { count: props.project.task_open ?? 0 })}
+            <Show when={props.minutes > 0}> · {formatMinutes(props.minutes)}</Show>
+          </span>
+        </A>
+      </div>
       <Show when={total() > 0}>
         <div class={styles.miniBar}>
           <div class={styles.miniBarFill} style={{ width: `${percent(done(), total())}%` }} />

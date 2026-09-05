@@ -66,5 +66,5 @@ export const auth: Record<string, string> = {
 
   // 404
   'This page does not exist.': 'ეს გვერდი არ არსებობს.',
-  'Back to Today': 'დღევანდელზე დაბრუნება',
+  'Back to Dashboard': 'დეშბორდზე დაბრუნება',
 };

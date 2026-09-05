@@ -76,6 +76,13 @@ export const projectsApi = {
     invalidate(...SCOPES);
     return project;
   },
+  /** Manual order (dashboard / Active projects): every visible project id in the new order, first on top. */
+  reorder: async (ids: ID[]) => {
+    const result = await api.post<{ ids: ID[] }>('/projects/reorder/', { ids });
+    // The dashboard keeps its own optimistic copy; only the project lists need to refetch.
+    invalidate('projects');
+    return result.ids;
+  },
   changeMode: async (id: ID, mode: ProjectMode) => {
     const project = await api.post<Project>(`/projects/${id}/mode/`, { mode });
     invalidate(...SCOPES, 'prompts');
