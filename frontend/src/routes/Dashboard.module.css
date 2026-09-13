@@ -312,6 +312,19 @@
   font-size: var(--fs-xs);
 }
 
+.sectionAction {
+  display: inline-flex;
+  margin-left: var(--s-2);
+}
+
+.sectionAction button {
+  height: 26px;
+  padding: 0 var(--s-3);
+  font-size: var(--fs-xs);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 .dim {
   font-size: var(--fs-sm);
   color: var(--c-text-dim);

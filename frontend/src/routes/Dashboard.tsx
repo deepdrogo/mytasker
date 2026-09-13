@@ -2,12 +2,13 @@
 // Built by drogoz · https://github.com/deepdrogo/mytasker
 
 import { A } from '@solidjs/router';
-import { CalendarOff, Check, Circle, Flame, GripVertical, Moon, Play, Rocket, ScrollText, Square, Undo2, X } from 'lucide-solid';
+import { CalendarOff, CalendarRange, Check, Circle, Flame, GripVertical, Moon, Play, Rocket, ScrollText, Square, Undo2, X } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For, Show, createMemo, createSignal, onCleanup } from 'solid-js';
 import { Page } from '~/components/shared/Page';
 import { PriorityMark } from '~/components/shared/Indicators';
 import { ErrorNote, Skeleton } from '~/components/ui/Feedback';
+import { Button } from '~/components/ui/Button';
 import { dashboardApi } from '~/features/dashboard/api';
 import { projectsApi } from '~/features/projects/api';
 import { routinesApi, rulesApi } from '~/features/routines/api';
@@ -32,6 +33,7 @@ export default function Dashboard(): JSX.Element {
   const query = createQuery<TodayData>(() => 'today', () => dashboardApi.snapshot());
   const [activeTask, setActiveTask] = createSignal<Task | null>(null);
   const [shareTasks, setShareTasks] = createSignal<Task[] | null>(null);
+  const [aligningProjects, setAligningProjects] = createSignal(false);
 
   // Active projects are arranged by hand: drag the grip (or use arrow keys on it), the order is saved per user list.
   const projectOrder = createSortable<TodayProject>({
@@ -56,6 +58,29 @@ export default function Dashboard(): JSX.Element {
 
   const data = () => query.data();
   const refresh = () => query.refetch();
+
+  const alignProjectsWithCalendar = async () => {
+    const projects = [...projectOrder.items()].sort((a, b) => {
+      if (a.start_date && b.start_date) {
+        if (a.start_date !== b.start_date) return a.start_date < b.start_date ? -1 : 1;
+        return a.name.localeCompare(b.name);
+      }
+      if (a.start_date) return -1;
+      if (b.start_date) return 1;
+      return a.name.localeCompare(b.name);
+    });
+    setAligningProjects(true);
+    query.mutate((current) => (current ? { ...current, active_projects: projects } : current));
+    try {
+      await projectsApi.reorder(projects.map((project) => project.id));
+      toast(t('Projects aligned with calendar'));
+    } catch {
+      toast(t('Could not save the order.'));
+      query.refetch();
+    } finally {
+      setAligningProjects(false);
+    }
+  };
 
   const undo = async (task: Task) => {
     try {
@@ -122,19 +147,6 @@ export default function Dashboard(): JSX.Element {
                     <TaskList tasks={d().tasks.overdue} compact showProject onOpen={setActiveTask} onChanged={refresh} onShare={share} />
                   </Section>
                 </Show>
-
-                <Section title={t('Due today')} count={d().tasks.due_today.length} link={{ href: '/today', label: t('Today') }}>
-                  <TaskList
-                    tasks={d().tasks.due_today}
-                    compact
-                    showProject
-                    emptyTitle={t('Nothing due today.')}
-                    emptyHint={t('Add a task above or pull one from Focus.')}
-                    onOpen={setActiveTask}
-                    onChanged={refresh}
-                    onShare={share}
-                  />
-                </Section>
 
                 <Show when={d().tasks.ongoing.length > 0}>
                   <Section
@@ -242,7 +254,18 @@ export default function Dashboard(): JSX.Element {
                 <Section
                   title={t('Active projects')}
                   count={projectOrder.items().length}
-                  hint={projectOrder.items().length > 1 ? t('drag to reorder') : t('with open tasks')}
+                  hint={projectOrder.items().length > 1 ? t('Calendar order · drag to customize') : t('with open tasks')}
+                  action={
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      loading={aligningProjects()}
+                      onClick={() => void alignProjectsWithCalendar()}
+                    >
+                      <CalendarRange size={13} />
+                      {t('Align with calendar')}
+                    </Button>
+                  }
                   link={{ href: '/projects/canvas', label: t('Canvas') }}
                 >
                   <Show
@@ -397,6 +420,7 @@ function Section(props: {
   count?: number;
   hint?: string;
   tone?: 'strong';
+  action?: JSX.Element;
   link?: { href: string; label: string };
   children: JSX.Element;
 }): JSX.Element {
@@ -409,6 +433,9 @@ function Section(props: {
         </Show>
         <Show when={props.hint}>
           <span class={styles.hint}>{props.hint}</span>
+        </Show>
+        <Show when={props.action}>
+          <span class={styles.sectionAction}>{props.action}</span>
         </Show>
         <Show when={props.link}>
           {(link) => (

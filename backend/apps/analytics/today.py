@@ -80,15 +80,36 @@ def today_snapshot(user, request=None) -> dict:
     personal_items = [i for i in routine_items if i.routine.kind == Routine.Kind.PERSONAL]
 
     # Every project that still has something to do; a project with zero open tasks is noise on the dashboard.
-    # The user arranges these by hand (drag & drop -> sort_order); recently touched projects break ties.
-    # No cap: the dashboard list scrolls, and the order the user set is the order they plan the day by.
-    active_projects = list(
+    # Untouched lists follow the project calendar. Once the user drags (or explicitly aligns by calendar),
+    # reorder_projects writes non-zero sort positions and that saved manual sequence becomes authoritative.
+    # No cap: the dashboard list scrolls.
+    active_qs = (
         Project.objects.visible_to(user)
         .with_progress(user)
         .filter(status__in=[Project.Status.ACTIVE, Project.Status.PAUSED], task_open__gt=0)
-        .order_by("sort_order", "-updated_at")
-        .values(
-            "id", "name", "priority", "kind", "category", "status", "deadline", "task_total", "task_done", "task_open"
+    )
+    manually_ordered = active_qs.exclude(sort_order=0).exists()
+    ordering = (
+        ("sort_order", "-updated_at")
+        if manually_ordered
+        else (
+            models_f_nulls_last("start_date"),
+            "name",
+        )
+    )
+    active_projects = list(
+        active_qs.order_by(*ordering).values(
+            "id",
+            "name",
+            "priority",
+            "kind",
+            "category",
+            "status",
+            "start_date",
+            "deadline",
+            "task_total",
+            "task_done",
+            "task_open",
         )
     )
     project_ids = [p["id"] for p in active_projects]

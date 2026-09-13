@@ -256,6 +256,9 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
   const rangeTitle = (dates: DateRange): string =>
     `${dates.start} → ${dates.end ?? t('ongoing')}`;
 
+  const projectColor = (project: Project): JSX.CSSProperties =>
+    ({ '--project-hue': String((project.id * 47 + 185) % 360) }) as JSX.CSSProperties;
+
   const placeManually = () => {
     const project = props.projects().find((item) => String(item.id) === selected());
     if (!project || !manualStart()) return;
@@ -372,14 +375,15 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
               const dragging = () => drag()?.id === project.id;
               return (
                 <>
-                  <A class={styles.rowLabel} href={`/projects/${project.id}/tasks`} title={project.name}>
+                  <A class={styles.rowLabel} href={`/projects/${project.id}/tasks`} title={project.name} style={projectColor(project)}>
                     <span class={styles.projectDot} data-priority={project.priority} />
                     <span class={styles.rowName}>{project.name}</span>
                   </A>
                   <div
-                    class={[styles.track, editable() ? styles.editable : '', saving() === project.id ? styles.busy : '']
+                    class={[styles.track, styles.projectTrack, editable() ? styles.editable : '', saving() === project.id ? styles.busy : '']
                       .filter(Boolean)
                       .join(' ')}
+                    style={projectColor(project)}
                     onPointerDown={(event) => {
                       // Only unscheduled rows can be drawn on; dated work is moved by its own bar,
                       // so a stray click on a row whose dates sit off-screen never reschedules it.
@@ -491,9 +495,6 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
                 </A>
               )}
             </For>
-            <Show when={!crypto.loading() && cryptoByDate().length === 0}>
-              <span class={styles.rowHint}>{t('No dated crypto work in this range')}</span>
-            </Show>
           </div>
         </div>
       </div>

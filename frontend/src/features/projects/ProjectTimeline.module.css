@@ -269,22 +269,20 @@
   height: 7px;
   flex: none;
   border-radius: 50%;
-  background: var(--c-text-faint);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.04);
-}
-
-.projectDot[data-priority='critical'] {
-  background: #ff6b6b;
-}
-
-.projectDot[data-priority='high'] {
-  background: #f0a85d;
+  background: hsl(var(--project-hue) 72% 62%);
+  box-shadow: 0 0 0 3px hsl(var(--project-hue) 70% 55% / 0.12);
 }
 
 .track {
   height: var(--row-h);
   border-bottom: 1px solid var(--c-border);
   background: rgba(0, 0, 0, 0.08);
+}
+
+.projectTrack {
+  background:
+    linear-gradient(90deg, hsl(var(--project-hue) 70% 55% / 0.035), transparent 55%),
+    rgba(0, 0, 0, 0.08);
 }
 
 .editable {
@@ -349,12 +347,16 @@
   padding: 0 12px;
   /* `clip`, not `hidden`: hidden would turn the bar into the scrollport for its sticky label. */
   overflow: clip;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid hsl(var(--project-hue) 72% 74% / 0.48);
   border-radius: var(--r-md);
-  background: linear-gradient(135deg, rgba(116, 116, 132, 0.78), rgba(67, 67, 78, 0.84));
+  background: linear-gradient(
+    135deg,
+    hsl(var(--project-hue) 54% 46% / 0.9),
+    hsl(var(--project-hue) 42% 27% / 0.92)
+  );
   box-shadow:
     var(--rim-top-strong),
-    0 7px 18px rgba(0, 0, 0, 0.35);
+    0 7px 18px hsl(var(--project-hue) 65% 30% / 0.28);
   color: #fff;
   cursor: grab;
   touch-action: none;
@@ -381,7 +383,11 @@
 
 .openEnded {
   border-right-style: dashed;
-  background: linear-gradient(90deg, rgba(99, 99, 114, 0.84), rgba(61, 61, 71, 0.28));
+  background: linear-gradient(
+    90deg,
+    hsl(var(--project-hue) 54% 43% / 0.9),
+    hsl(var(--project-hue) 42% 28% / 0.18)
+  );
 }
 
 /* Long bars keep their name in view while their left edge is scrolled past. */
@@ -462,7 +468,9 @@
 }
 
 .cryptoTrack {
-  background: rgba(244, 185, 65, 0.03);
+  background:
+    linear-gradient(90deg, rgba(244, 185, 65, 0.055), transparent 60%),
+    rgba(244, 185, 65, 0.025);
 }
 
 .cryptoMark {

@@ -69,6 +69,22 @@ def test_reorder_projects_drives_dashboard_order(auth_client, client_for, strang
     assert auth_client.post(f"{BASE}reorder/", {"ids": ["x"]}, format="json").status_code == 400
 
 
+def test_dashboard_defaults_to_project_calendar_order(auth_client):
+    later = auth_client.post(BASE, {"name": "Later", "start_date": "2026-11-10"}, format="json").data
+    unscheduled = auth_client.post(BASE, {"name": "Unscheduled"}, format="json").data
+    sooner = auth_client.post(BASE, {"name": "Sooner", "start_date": "2026-09-20"}, format="json").data
+    for project in (later, unscheduled, sooner):
+        auth_client.post(
+            "/api/v1/tasks/",
+            {"title": f"Task {project['id']}", "kind": "business", "project_id": project["id"]},
+            format="json",
+        )
+
+    projects = auth_client.get("/api/v1/today/").data["active_projects"]
+    assert [project["id"] for project in projects] == [sooner["id"], later["id"], unscheduled["id"]]
+    assert str(projects[0]["start_date"]) == "2026-09-20"
+
+
 def test_invite_join_and_group_visibility(client_for, user, other_user, stranger):
     owner = client_for(user)
     project = owner.post(BASE, {"name": "Team", "mode": "group"}, format="json").data

@@ -462,6 +462,7 @@ export interface TodayProject {
   kind: ProjectKind;
   category: ProjectCategory;
   status: ProjectStatus;
+  start_date: ISODate | null;
   deadline: ISODate | null;
   task_total: number | null;
   task_done: number | null;
