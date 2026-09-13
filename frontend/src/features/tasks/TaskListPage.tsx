@@ -32,6 +32,8 @@ interface TaskListPageProps {
   emptyHint?: string;
   tabs?: Array<{ label: string; href: string }>;
   defaultOrdering?: string;
+  /** Number of rows per server-backed page. Defaults to 50. */
+  pageSize?: number;
   /** Extra block rendered between the composer and the list (e.g. Today's daily check-ins). */
   beforeList?: (ctx: { openTask: (task: Task) => void; shareTask: (task: Task) => void }) => JSX.Element;
 }
@@ -52,12 +54,13 @@ export function TaskListPage(props: TaskListPageProps): JSX.Element {
   const [selected, setSelected] = createSignal<Set<number>>(new Set());
   const [activeTask, setActiveTask] = createSignal<Task | null>(null);
   const [shareTasks, setShareTasks] = createSignal<Task[] | null>(null);
+  const pageSize = () => props.pageSize ?? 50;
 
   const params = (): TaskListParams => ({
     ...props.params(),
     ordering: ordering(),
     page: page(),
-    page_size: 50,
+    page_size: pageSize(),
   });
 
   const query = createQuery(
@@ -144,13 +147,13 @@ export function TaskListPage(props: TaskListPageProps): JSX.Element {
             emptyHint={props.emptyHint}
           />
 
-          <Show when={(query.data()?.count ?? 0) > 50}>
+          <Show when={(query.data()?.count ?? 0) > pageSize()}>
             <div class={styles.pager}>
               <Button variant="ghost" size="sm" disabled={page() === 1} onClick={() => setPage((p) => p - 1)}>
                 {t('Previous')}
               </Button>
               <span class="mt-mono mt-dim">
-                {page()} / {Math.ceil((query.data()?.count ?? 0) / 50)}
+                {page()} / {Math.ceil((query.data()?.count ?? 0) / pageSize())}
               </span>
               <Button
                 variant="ghost"

@@ -137,6 +137,14 @@ class TaskViewSet(viewsets.ModelViewSet):
         task = services.snooze(self._actor(), int(pk), minutes=max(1, min(minutes, 60 * 24 * 30)))
         return self._respond(task)
 
+    @action(detail=False, methods=["post"], url_path="reorder")
+    def reorder(self, request):
+        """Manual order for one top-level Personal/Business/Crypto list or project."""
+        serializer = ReorderIdsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        applied = services.reorder_tasks(request.user, serializer.validated_data["ids"])
+        return Response({"ids": applied})
+
     @action(detail=True, methods=["get", "post"], url_path="subtasks")
     def subtasks(self, request, pk=None):
         if request.method == "POST":

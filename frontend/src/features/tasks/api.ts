@@ -153,6 +153,13 @@ export const tasksApi = {
 
   subtasks: (id: ID) => api.get<Task[]>(`/tasks/${id}/subtasks/`),
 
+  /** Persist the manual order for one top-level list or project column. */
+  reorder: async (ids: ID[]): Promise<{ ids: ID[] }> => {
+    const result = await api.post<{ ids: ID[] }>('/tasks/reorder/', { ids });
+    invalidate('tasks');
+    return result;
+  },
+
   /** Persist a new subtask order (first id on top). Ordering is a preference — versions stay put. */
   reorderSubtasks: async (parentId: ID, ids: ID[]): Promise<{ ids: ID[] }> => {
     const result = await api.post<{ ids: ID[] }>(`/tasks/${parentId}/subtasks/reorder/`, { ids });

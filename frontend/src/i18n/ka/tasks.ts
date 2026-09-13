@@ -124,8 +124,10 @@ export const tasks: Record<string, string> = {
 
   // Canvas
   'All tasks': 'ყველა დავალება',
-  'Personal, business, crypto world and projects on one canvas.':
-    'პირადი, ბიზნესი, კრიპტოსამყარო და პროექტები ერთ ტილოზე.',
+  'Personal and business first, then every project.': 'ჯერ პირადი და ბიზნესი, შემდეგ ყველა პროექტი.',
+  'Task order': 'დავალებების მიმდევრობა',
+  'By date': 'თარიღის მიხედვით',
+  'Manual · drag to reorder': 'ხელით · გადაათრიე დასალაგებლად',
   'No open tasks.': 'ღია დავალებები არ არის.',
   '{done}/{total} subtasks': '{done}/{total} ქვედავალება',
   'Add a task to {name}…': 'დაამატე დავალება {name}-ში…',
@@ -155,6 +157,7 @@ export const tasks: Record<string, string> = {
 
   // No date
   'No date': 'თარიღის გარეშე',
+  'Grouped by personal, business and project.': 'დაჯგუფებული პირადი, ბიზნესისა და პროექტების მიხედვით.',
   'Open tasks without a deadline. Give them a day or let them go.': 'ღია დავალებები ვადის გარეშე. მიეცი დღე ან გაუშვი.',
   'Everything has a date.': 'ყველაფერს თარიღი აქვს.',
   'Tasks you add without a deadline will show up here.': 'ვადის გარეშე დამატებული დავალებები აქ გამოჩნდება.',

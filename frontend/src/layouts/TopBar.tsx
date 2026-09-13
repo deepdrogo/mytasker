@@ -1,4 +1,3 @@
-import { useNavigate } from '@solidjs/router';
 import { Bell, Menu, PanelLeftClose, Plus, Search, Sparkles } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
@@ -13,7 +12,6 @@ import styles from './TopBar.module.css';
 
 export function TopBar(): JSX.Element {
   const isMobile = useIsMobile();
-  const navigate = useNavigate();
   const searchLabel = () => (authStore.aiEnabled() ? t('Search or ask AI') : t('Search'));
   // Desktop with a pinned sidebar: the dock is always visible, so the menu button collapses it (unpins) instead.
   const docked = () => !isMobile() && uiStore.sidebarPinned();
@@ -49,7 +47,7 @@ export function TopBar(): JSX.Element {
         </Show>
 
         <Show when={!isMobile() && authStore.isAdmin()}>
-          <Button variant="ghost" size="icon" aria-label={t('Ask AI')} onClick={() => navigate('/ai')}>
+          <Button variant="ghost" size="icon" aria-label={t('Ask AI')} onClick={() => uiStore.openAI()}>
             <Sparkles size={15} />
           </Button>
         </Show>

@@ -10,6 +10,7 @@ export default function Completed(): JSX.Element {
       queryName="completed"
       params={() => ({ view: 'completed', top_level: true })}
       defaultOrdering="-completed"
+      pageSize={25}
       hideComposer
       emptyTitle={t('No completed tasks yet.')}
     />

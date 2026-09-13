@@ -57,7 +57,7 @@ export const routes: RouteDefinition[] = [
       // Today / Tomorrow are plain task lists: only what is due on that day (Today also carries overdue work).
       { path: '/today', component: TasksToday },
       { path: '/tomorrow', component: TasksTomorrow },
-      { path: '/tasks', component: () => <Navigate href="/tasks/personal" /> },
+      { path: '/tasks', component: () => <Navigate href="/tasks/all" /> },
       { path: '/tasks/personal', component: TasksPersonal },
       { path: '/tasks/business', component: TasksBusiness },
       { path: '/tasks/crypto', component: TasksCrypto },

@@ -33,6 +33,7 @@ import { LanguageSwitch } from '~/components/shared/LanguageSwitch';
 import { Logo } from '~/components/shared/Logo';
 import { t } from '~/i18n';
 import { authStore } from '~/stores/auth';
+import { uiStore } from '~/stores/ui';
 import styles from './Sidebar.module.css';
 
 interface NavLink {
@@ -58,22 +59,22 @@ const SECTIONS: NavSection[] = [
   {
     label: 'Tasks',
     links: [
+      { label: 'All', href: '/tasks/all', icon: () => <LayoutGrid size={15} /> },
       { label: 'Personal', href: '/tasks/personal', icon: () => <User size={15} /> },
       { label: 'Business', href: '/tasks/business', icon: () => <Briefcase size={15} /> },
       { label: 'Crypto world', href: '/tasks/crypto', icon: () => <Bitcoin size={15} /> },
       { label: 'Upcoming', href: '/tasks/upcoming', icon: () => <CalendarClock size={15} /> },
       { label: 'No date', href: '/tasks/no-date', icon: () => <CalendarOff size={15} /> },
       { label: 'Completed', href: '/tasks/completed', icon: () => <CheckCircle2 size={15} /> },
-      { label: 'All', href: '/tasks/all', icon: () => <LayoutGrid size={15} /> },
     ],
   },
   {
     label: 'Projects',
     links: [
-      { label: 'Active', href: '/projects/active', icon: () => <CircleDashed size={15} /> },
-      { label: 'Startups', href: '/projects/startups', icon: () => <Rocket size={15} /> },
       { label: 'All', href: '/projects/all', icon: () => <FolderKanban size={15} /> },
       { label: 'Canvas', href: '/projects/canvas', icon: () => <Columns3 size={15} /> },
+      { label: 'Active', href: '/projects/active', icon: () => <CircleDashed size={15} /> },
+      { label: 'Startups', href: '/projects/startups', icon: () => <Rocket size={15} /> },
       { label: 'Ideas', href: '/projects/ideas', icon: () => <Lightbulb size={15} /> },
     ],
   },
@@ -104,22 +105,22 @@ const ASSISTANT_SECTIONS: NavSection[] = [
   {
     label: 'Tasks',
     links: [
+      { label: 'All', href: '/tasks/all', icon: () => <LayoutGrid size={15} /> },
       { label: 'Personal', href: '/tasks/personal', icon: () => <User size={15} /> },
       { label: 'Business', href: '/tasks/business', icon: () => <Briefcase size={15} /> },
       { label: 'Crypto world', href: '/tasks/crypto', icon: () => <Bitcoin size={15} /> },
       { label: 'Upcoming', href: '/tasks/upcoming', icon: () => <CalendarClock size={15} /> },
       { label: 'No date', href: '/tasks/no-date', icon: () => <CalendarOff size={15} /> },
       { label: 'Completed', href: '/tasks/completed', icon: () => <CheckCircle2 size={15} /> },
-      { label: 'All', href: '/tasks/all', icon: () => <LayoutGrid size={15} /> },
     ],
   },
   {
     label: 'Projects',
     links: [
-      { label: 'Active', href: '/projects/active', icon: () => <CircleDashed size={15} /> },
-      { label: 'Startups', href: '/projects/startups', icon: () => <Rocket size={15} /> },
       { label: 'All', href: '/projects/all', icon: () => <FolderKanban size={15} /> },
       { label: 'Canvas', href: '/projects/canvas', icon: () => <Columns3 size={15} /> },
+      { label: 'Active', href: '/projects/active', icon: () => <CircleDashed size={15} /> },
+      { label: 'Startups', href: '/projects/startups', icon: () => <Rocket size={15} /> },
     ],
   },
 ];
@@ -208,14 +209,31 @@ export function Sidebar(props: {
       <div class={styles.footer}>
         <For each={footerLinks()}>
           {(link) => (
-            <A
-              href={link.href}
-              class={[styles.link, isActive(link.href) ? styles.linkActive : ''].filter(Boolean).join(' ')}
-              onClick={props.onNavigate}
+            <Show
+              when={link.label === 'AI'}
+              fallback={
+                <A
+                  href={link.href}
+                  class={[styles.link, isActive(link.href) ? styles.linkActive : ''].filter(Boolean).join(' ')}
+                  onClick={props.onNavigate}
+                >
+                  <span class={styles.linkIcon}>{link.icon()}</span>
+                  <span class={styles.linkLabel}>{t(link.label)}</span>
+                </A>
+              }
             >
-              <span class={styles.linkIcon}>{link.icon()}</span>
-              <span class={styles.linkLabel}>{t(link.label)}</span>
-            </A>
+              <button
+                type="button"
+                class={styles.link}
+                onClick={() => {
+                  props.onNavigate?.();
+                  uiStore.openAI();
+                }}
+              >
+                <span class={styles.linkIcon}>{link.icon()}</span>
+                <span class={styles.linkLabel}>{t(link.label)}</span>
+              </button>
+            </Show>
           )}
         </For>
         <Show when={props.onNavigate}>

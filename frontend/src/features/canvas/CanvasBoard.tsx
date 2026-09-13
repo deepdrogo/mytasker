@@ -38,6 +38,9 @@ export interface CanvasColumn {
   composerPlaceholder?: string;
   /** Show the task's project chip inside this column (for mixed columns). */
   showProject?: boolean;
+  /** Show top-level drag handles and persist the resulting order. */
+  reorderable?: boolean;
+  onReorder?: (tasks: Task[]) => void | Promise<void>;
 }
 
 interface CanvasBoardProps {
@@ -126,75 +129,16 @@ export function CanvasBoard(props: CanvasBoardProps): JSX.Element {
             <div class={styles.board}>
               <For each={props.columns()}>
                 {(col) => (
-                  <section class={styles.column} aria-label={col.title}>
-                    <header class={styles.colHead}>
-                      <Show when={col.href} fallback={<span class={styles.colTitle}>{col.icon}{col.title}</span>}>
-                        <A href={col.href!} class={styles.colTitle}>
-                          {col.icon}
-                          {col.title}
-                        </A>
-                      </Show>
-                      <span class={styles.colMeta}>{col.meta ?? t('{count} open', { count: col.tasks.length })}</span>
-                    </header>
-                    <Show when={col.progress !== undefined}>
-                      <div class={styles.progress}>
-                        <div class={styles.progressFill} style={{ width: `${Math.min(100, col.progress ?? 0)}%` }} />
-                      </div>
-                    </Show>
-
-                    <Show when={col.composerDefaults}>
-                      <div class={styles.composer}>
-                        <TaskComposer defaults={col.composerDefaults} placeholder={col.composerPlaceholder ?? t('Add a task…')} onCreated={props.onRefresh} />
-                      </div>
-                    </Show>
-
-                    <Show when={col.tasks.length > 0} fallback={<p class={styles.colEmpty}>{t('No open tasks.')}</p>}>
-                      <div class={styles.tasks} role="list">
-                        <For each={col.tasks}>
-                          {(task) => (
-                            <div class={styles.taskGroup}>
-                              <TaskRow
-                                task={task}
-                                compact
-                                dense
-                                showProject={col.showProject ?? false}
-                                selectable
-                                selected={selected().has(task.id)}
-                                onToggleSelect={toggleSelect}
-                                onOpen={openTask}
-                                onShare={(item) => setShareTasks([item])}
-                                onChanged={props.onRefresh}
-                              />
-                              <Show when={(task.subtasks?.length ?? 0) > 0}>
-                                <div class={styles.subtasks}>
-                                  <button
-                                    type="button"
-                                    class={styles.subtaskToggle}
-                                    onClick={() => toggleCollapsed(task.id)}
-                                    aria-expanded={!collapsed().has(task.id)}
-                                  >
-                                    <Show when={collapsed().has(task.id)} fallback={<ChevronDown size={12} />}>
-                                      <ChevronRight size={12} />
-                                    </Show>
-                                    {t('{done}/{total} subtasks', { done: task.subtask_done, total: task.subtask_total })}
-                                  </button>
-                                  <Show when={!collapsed().has(task.id)}>
-                                    <SubtaskList
-                                      parent={task}
-                                      selected={selected()}
-                                      onToggleSelect={toggleSelect}
-                                      onOpen={openTask}
-                                      onChanged={props.onRefresh}
-                                    />
-                                  </Show>
-                                </div>
-                              </Show>
-                            </div>
-                          )}
-                        </For>
-                      </div>
-                    </Show>
-                  </section>
+                  <CanvasColumnView
+                    column={col}
+                    selected={selected()}
+                    collapsed={collapsed()}
+                    onToggleSelect={toggleSelect}
+                    onToggleCollapsed={toggleCollapsed}
+                    onOpen={openTask}
+                    onShare={(item) => setShareTasks([item])}
+                    onRefresh={props.onRefresh}
+                  />
                 )}
               </For>
             </div>
@@ -223,6 +167,129 @@ export function CanvasBoard(props: CanvasBoardProps): JSX.Element {
         }}
       />
     </>
+  );
+}
+
+function CanvasColumnView(props: {
+  column: CanvasColumn;
+  selected: Set<number>;
+  collapsed: Set<number>;
+  onToggleSelect: (task: Task) => void;
+  onToggleCollapsed: (id: number) => void;
+  onOpen: (task: Task) => void;
+  onShare: (task: Task) => void;
+  onRefresh: () => void;
+}): JSX.Element {
+  const canReorder = () => Boolean(props.column.reorderable && props.column.onReorder && props.column.tasks.length > 1);
+  const sortable = createSortable<Task>({
+    items: () => props.column.tasks,
+    key: (task) => task.id,
+    enabled: canReorder,
+    onReorder: async (items) => {
+      try {
+        await props.column.onReorder?.(items);
+      } catch {
+        toast(t('Could not save the order.'));
+        props.onRefresh();
+      }
+    },
+  });
+
+  return (
+    <section class={styles.column} aria-label={props.column.title}>
+      <header class={styles.colHead}>
+        <Show when={props.column.href} fallback={<span class={styles.colTitle}>{props.column.icon}{props.column.title}</span>}>
+          <A href={props.column.href!} class={styles.colTitle}>
+            {props.column.icon}
+            {props.column.title}
+          </A>
+        </Show>
+        <span class={styles.colMeta}>{props.column.meta ?? t('{count} open', { count: props.column.tasks.length })}</span>
+      </header>
+      <Show when={props.column.progress !== undefined}>
+        <div class={styles.progress}>
+          <div class={styles.progressFill} style={{ width: `${Math.min(100, props.column.progress ?? 0)}%` }} />
+        </div>
+      </Show>
+
+      <Show when={props.column.composerDefaults}>
+        <div class={styles.composer}>
+          <TaskComposer
+            defaults={props.column.composerDefaults}
+            placeholder={props.column.composerPlaceholder ?? t('Add a task…')}
+            onCreated={props.onRefresh}
+          />
+        </div>
+      </Show>
+
+      <Show when={props.column.tasks.length > 0} fallback={<p class={styles.colEmpty}>{t('No open tasks.')}</p>}>
+        <div class={styles.tasks} role="list" ref={sortable.setContainer}>
+          <For each={sortable.items()}>
+            {(task, index) => (
+              <div
+                class={cx(styles.taskGroup, canReorder() && styles.taskGroupSortable, sortable.isDragging(task) && styles.taskGroupDragging)}
+                {...sortable.itemProps(task)}
+                style={sortable.itemStyle(task)}
+              >
+                <Show when={canReorder()}>
+                  <button
+                    type="button"
+                    class={styles.topGrip}
+                    {...sortable.handleProps(task)}
+                    aria-label={t('Reorder {name} ({position} of {total})', {
+                      name: tx('task', task.id, 'title', task.title),
+                      position: index() + 1,
+                      total: sortable.items().length,
+                    })}
+                    title={t('Drag to reorder · arrow keys to move')}
+                  >
+                    <GripVertical size={13} />
+                  </button>
+                </Show>
+                <div class={styles.topTask}>
+                  <TaskRow
+                    task={task}
+                    compact
+                    dense
+                    showProject={props.column.showProject ?? false}
+                    selectable
+                    selected={props.selected.has(task.id)}
+                    onToggleSelect={props.onToggleSelect}
+                    onOpen={props.onOpen}
+                    onShare={props.onShare}
+                    onChanged={props.onRefresh}
+                  />
+                </div>
+                <Show when={(task.subtasks?.length ?? 0) > 0}>
+                  <div class={styles.subtasks}>
+                    <button
+                      type="button"
+                      class={styles.subtaskToggle}
+                      onClick={() => props.onToggleCollapsed(task.id)}
+                      aria-expanded={!props.collapsed.has(task.id)}
+                    >
+                      <Show when={props.collapsed.has(task.id)} fallback={<ChevronDown size={12} />}>
+                        <ChevronRight size={12} />
+                      </Show>
+                      {t('{done}/{total} subtasks', { done: task.subtask_done, total: task.subtask_total })}
+                    </button>
+                    <Show when={!props.collapsed.has(task.id)}>
+                      <SubtaskList
+                        parent={task}
+                        selected={props.selected}
+                        onToggleSelect={props.onToggleSelect}
+                        onOpen={props.onOpen}
+                        onChanged={props.onRefresh}
+                      />
+                    </Show>
+                  </div>
+                </Show>
+              </div>
+            )}
+          </For>
+        </div>
+      </Show>
+    </section>
   );
 }
 

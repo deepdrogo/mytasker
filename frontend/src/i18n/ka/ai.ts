@@ -31,6 +31,8 @@ export const ai: Record<string, string> = {
   'The AI assistant is available to administrators only.': 'AI ასისტენტი მხოლოდ ადმინისტრატორებისთვისაა ხელმისაწვდომი.',
   'Natural language → real actions. Destructive steps ask first.': 'ბუნებრივი ენა → რეალური მოქმედებები. სარისკო ნაბიჯები წინასწარ დასტურს ითხოვს.',
   'Open full page': 'სრულ გვერდზე გახსნა',
+  'AI assistant': 'AI ასისტენტი',
+  'Your conversation stays here while you work.': 'საუბარი აქ დარჩება, სანამ შენ მუშაობ.',
 
   // Task tools (Improve / Break down)
   'AI request failed.': 'AI მოთხოვნა ვერ შესრულდა.',

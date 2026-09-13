@@ -3,8 +3,9 @@
 
 import { Bitcoin, Briefcase, Rocket, User } from 'lucide-solid';
 import type { JSX } from 'solid-js';
-import { createMemo } from 'solid-js';
+import { createMemo, createSignal } from 'solid-js';
 import { Page } from '~/components/shared/Page';
+import { Select } from '~/components/ui/Input';
 import { CanvasBoard, progressOf, type CanvasColumn } from '~/features/canvas/CanvasBoard';
 import { projectsApi } from '~/features/projects/api';
 import { tasksApi } from '~/features/tasks/api';
@@ -15,14 +16,15 @@ import { tx } from '~/stores/translations';
 import type { Task } from '~/types';
 
 export default function TasksAll(): JSX.Element {
+  const [ordering, setOrdering] = createSignal('due');
   const tasks = createQuery(
-    () => 'tasks:canvas:all',
+    () => `tasks:canvas:all:${ordering()}`,
     () =>
       tasksApi.list({
         top_level: true,
         completed: false,
         include_subtasks: '1',
-        ordering: 'manual',
+        ordering: ordering(),
         page_size: 200,
       }),
   );
@@ -47,6 +49,11 @@ export default function TasksAll(): JSX.Element {
       else if (task.kind === 'business') business.push(task);
     }
 
+    const manual = ordering() === 'manual';
+    const reorder = async (items: Task[]) => {
+      await tasksApi.reorder(items.map((task) => task.id));
+    };
+    const reorderProps = { reorderable: manual, onReorder: reorder };
     const cols: CanvasColumn[] = [];
     // Assistants only ever see what they added; the personal/business split still applies.
     cols.push({
@@ -55,6 +62,7 @@ export default function TasksAll(): JSX.Element {
       href: '/tasks/personal',
       icon: <User size={13} />,
       tasks: personal,
+      ...reorderProps,
       composerDefaults: { kind: 'personal' },
       composerPlaceholder: t('Add a personal task…'),
     });
@@ -64,19 +72,10 @@ export default function TasksAll(): JSX.Element {
       href: '/tasks/business',
       icon: <Briefcase size={13} />,
       tasks: business,
+      ...reorderProps,
       composerDefaults: { kind: 'business', origin: 'list' },
       composerPlaceholder: t('Add a business task…'),
     });
-    cols.push({
-      key: 'crypto',
-      title: t('Crypto world'),
-      href: '/tasks/crypto',
-      icon: <Bitcoin size={13} />,
-      tasks: crypto,
-      composerDefaults: { kind: 'crypto' },
-      composerPlaceholder: t('Add a crypto task…'),
-    });
-
     const known = new Map((projects.data()?.results ?? []).map((p) => [p.id, p] as const));
     // Projects in list order first, then any project the task list references but the project list did not return.
     const ordered = [
@@ -93,11 +92,22 @@ export default function TasksAll(): JSX.Element {
         href: authStore.isAssistant() ? undefined : `/projects/${id}/tasks`,
         icon: project?.category === 'startup' ? <Rocket size={13} /> : undefined,
         tasks: open,
+        ...reorderProps,
         progress: project ? progressOf(project.task_done, project.task_total) : undefined,
         composerDefaults: { kind: 'business', origin: 'project', project_id: id },
         composerPlaceholder: t('Add a task to {name}…', { name }),
       });
     }
+    cols.push({
+      key: 'crypto',
+      title: t('Crypto world'),
+      href: '/tasks/crypto',
+      icon: <Bitcoin size={13} />,
+      tasks: crypto,
+      ...reorderProps,
+      composerDefaults: { kind: 'crypto' },
+      composerPlaceholder: t('Add a crypto task…'),
+    });
     return cols;
   });
 
@@ -107,7 +117,21 @@ export default function TasksAll(): JSX.Element {
   };
 
   return (
-    <Page title={t('All tasks')} subtitle={t('Personal, business, crypto world and projects on one canvas.')}>
+    <Page
+      title={t('All tasks')}
+      subtitle={t('Personal and business first, then every project.')}
+      actions={
+        <Select
+          sizeVariant="sm"
+          value={ordering()}
+          onChange={(event) => setOrdering(event.currentTarget.value)}
+          aria-label={t('Task order')}
+        >
+          <option value="due">{t('By date')}</option>
+          <option value="manual">{t('Manual · drag to reorder')}</option>
+        </Select>
+      }
+    >
       <CanvasBoard
         columns={columns}
         loading={() => tasks.loading()}

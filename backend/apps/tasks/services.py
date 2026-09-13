@@ -632,6 +632,52 @@ def _next_occurrence(rule: RecurrenceRule, after: datetime) -> datetime | None:
 
 
 @transaction.atomic
+def reorder_tasks(user, ordered_ids: list[int]) -> list[int]:
+    """
+    Manual order for one top-level list/project bucket.
+
+    Every supplied task must be visible, editable and belong to the same bucket: either the same
+    project, or the same unprojected Personal/Business/Crypto list. Tasks omitted by the client keep
+    their relative order after the submitted ones. Updating only ``sort_order`` deliberately avoids
+    changing task versions/timestamps — order is a view preference, not task content.
+    """
+    seen: set[int] = set()
+    unique_ids = [tid for tid in ordered_ids if isinstance(tid, int) and not (tid in seen or seen.add(tid))]
+    selected: list[Task] = []
+    for task_id in unique_ids:
+        task = get_task_for_user(task_id, user)
+        if task.is_subtask:
+            raise ValidationFailed("Only top-level tasks can be reordered here.")
+        assert_can_edit(task, user)
+        selected.append(task)
+
+    if not selected:
+        return []
+
+    first = selected[0]
+    scope = ("project", first.project_id) if first.project_id else ("list", first.kind)
+    if any((("project", task.project_id) if task.project_id else ("list", task.kind)) != scope for task in selected):
+        raise ValidationFailed("Tasks from different lists or projects cannot be reordered together.")
+
+    siblings = Task.objects.visible_to(user).filter(parent__isnull=True)
+    if first.project_id:
+        siblings = siblings.filter(project_id=first.project_id)
+    else:
+        siblings = siblings.filter(project__isnull=True, kind=first.kind)
+    siblings = list(siblings.order_by("sort_order", "id"))
+
+    by_id = {task.pk: task for task in siblings}
+    ordered = [by_id[task_id] for task_id in unique_ids if task_id in by_id]
+    submitted = {task.pk for task in ordered}
+    ordered.extend(task for task in siblings if task.pk not in submitted)
+
+    for index, task in enumerate(ordered):
+        if task.sort_order != index:
+            Task.objects.filter(pk=task.pk).update(sort_order=index)
+    return [task.pk for task in ordered]
+
+
+@transaction.atomic
 def reorder_subtasks(user, parent_id: int, ordered_ids: list[int]) -> list[int]:
     """
     Manual order for a parent's subtasks: `ordered_ids` is the list as the user arranged it, first on top.

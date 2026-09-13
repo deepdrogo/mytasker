@@ -292,6 +292,33 @@ def test_reorder_subtasks(client_for, user, stranger):
     assert forbidden.status_code == 404
 
 
+def test_reorder_top_level_tasks_within_one_list(auth_client):
+    a = auth_client.post("/api/v1/tasks/", {"title": "A", "kind": "personal", "sort_order": 0}, format="json").data
+    b = auth_client.post("/api/v1/tasks/", {"title": "B", "kind": "personal", "sort_order": 1}, format="json").data
+    c = auth_client.post("/api/v1/tasks/", {"title": "C", "kind": "personal", "sort_order": 2}, format="json").data
+    # A different bucket must not be pulled into the reordered list.
+    auth_client.post("/api/v1/tasks/", {"title": "Business", "kind": "business"}, format="json")
+
+    res = auth_client.post("/api/v1/tasks/reorder/", {"ids": [c["id"], a["id"], b["id"]]}, format="json")
+    assert res.status_code == 200, res.data
+    assert res.data["ids"] == [c["id"], a["id"], b["id"]]
+
+    listed = auth_client.get("/api/v1/tasks/?kind=personal&top_level=true&ordering=manual").data["results"]
+    assert [row["title"] for row in listed] == ["C", "A", "B"]
+
+
+def test_reorder_top_level_tasks_rejects_mixed_buckets(auth_client):
+    personal = auth_client.post("/api/v1/tasks/", {"title": "Personal", "kind": "personal"}, format="json").data
+    business = auth_client.post("/api/v1/tasks/", {"title": "Business", "kind": "business"}, format="json").data
+
+    res = auth_client.post(
+        "/api/v1/tasks/reorder/",
+        {"ids": [personal["id"], business["id"]]},
+        format="json",
+    )
+    assert res.status_code == 400
+
+
 def test_checkin_skip_today_and_tally(auth_client):
     task = auth_client.post("/api/v1/tasks/", {"title": "Piano", "is_ongoing": True}, format="json").data
     url = f"/api/v1/tasks/{task['id']}/checkin/"

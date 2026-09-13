@@ -8,16 +8,17 @@ import { Input, Select } from '~/components/ui/Input';
 import { projectListKey, projectsApi, type ProjectListParams } from '~/features/projects/api';
 import { ProjectCard } from '~/features/projects/ProjectCard';
 import { ProjectEditor } from '~/features/projects/ProjectEditor';
+import { ProjectTimeline } from '~/features/projects/ProjectTimeline';
 import { createQuery } from '~/hooks/createQuery';
 import { t } from '~/i18n';
 import type { ProjectCategory, ProjectKind } from '~/types';
 import styles from './ProjectListPage.module.css';
 
 const PROJECT_TABS = [
-  { label: 'Active', href: '/projects/active' },
-  { label: 'Startups', href: '/projects/startups' },
   { label: 'All', href: '/projects/all' },
   { label: 'Canvas', href: '/projects/canvas' },
+  { label: 'Active', href: '/projects/active' },
+  { label: 'Startups', href: '/projects/startups' },
   { label: 'Ideas', href: '/projects/ideas' },
 ];
 
@@ -45,6 +46,7 @@ interface ProjectListPageProps {
   emptyTitle: string;
   emptyHint?: string;
   showStatusFilter?: boolean;
+  showTimeline?: boolean;
 }
 
 export function ProjectListPage(props: ProjectListPageProps): JSX.Element {
@@ -106,25 +108,30 @@ export function ProjectListPage(props: ProjectListPageProps): JSX.Element {
         <Show when={!query.error()} fallback={<ErrorNote message={t('Could not load projects.')} onRetry={query.refetch} />}>
           <Show when={query.data()} fallback={<Skeleton rows={4} height={120} />}>
             {(data) => (
-              <Show
-                when={data().results.length > 0}
-                fallback={
-                  <EmptyState
-                    icon={<FolderKanban size={22} />}
-                    title={props.emptyTitle}
-                    hint={props.emptyHint}
-                    action={
-                      <Button size="sm" onClick={() => setCreating(true)}>
-                        {t('Create a project')}
-                      </Button>
-                    }
-                  />
-                }
-              >
-                <div class={styles.grid}>
-                  <For each={data().results}>{(project) => <ProjectCard project={project} />}</For>
-                </div>
-              </Show>
+              <>
+                <Show when={props.showTimeline && data().results.length > 0}>
+                  <ProjectTimeline projects={() => data().results} onChanged={query.refetch} />
+                </Show>
+                <Show
+                  when={data().results.length > 0}
+                  fallback={
+                    <EmptyState
+                      icon={<FolderKanban size={22} />}
+                      title={props.emptyTitle}
+                      hint={props.emptyHint}
+                      action={
+                        <Button size="sm" onClick={() => setCreating(true)}>
+                          {t('Create a project')}
+                        </Button>
+                      }
+                    />
+                  }
+                >
+                  <div class={styles.grid}>
+                    <For each={data().results}>{(project) => <ProjectCard project={project} />}</For>
+                  </div>
+                </Show>
+              </>
             )}
           </Show>
         </Show>

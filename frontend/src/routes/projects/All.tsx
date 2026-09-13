@@ -12,6 +12,7 @@ export default function ProjectsAll(): JSX.Element {
       emptyTitle={t('No projects yet')}
       emptyHint={t('Projects group tasks, prompts, time and people.')}
       showStatusFilter
+      showTimeline
     />
   );
 }

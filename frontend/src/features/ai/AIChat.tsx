@@ -6,6 +6,7 @@ import { Button } from '~/components/ui/Button';
 import { AIActionPreview, ToolTrace } from '~/features/ai/AIActionPreview';
 import { aiApi, type ChatTurn } from '~/features/ai/api';
 import { t } from '~/i18n';
+import { authStore } from '~/stores/auth';
 import { toast } from '~/stores/ui';
 import type { AIPending, AIToolCall, ID } from '~/types';
 import styles from './AIChat.module.css';
@@ -37,13 +38,41 @@ const SUGGESTIONS: Suggestion[] = [
 
 const MAX_INPUT_HEIGHT = 200;
 
+const [chatMessages, setChatMessages] = createSignal<ChatMessage[]>([]);
+const [chatInput, setChatInput] = createSignal('');
+const [chatBusy, setChatBusy] = createSignal(false);
+const [chatConfirming, setChatConfirming] = createSignal<ID | null>(null);
+let hydratedFor: ID | null = null;
 let nextId = 1;
 
+function storageKey(userId: ID): string {
+  return `mt_ai_thread_${userId}`;
+}
+
+function hydrateThread(): void {
+  const userId = authStore.user()?.id;
+  if (!userId || hydratedFor === userId) return;
+  hydratedFor = userId;
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(storageKey(userId)) ?? '[]') as ChatMessage[];
+    const valid = Array.isArray(parsed) ? parsed.filter((message) => message?.role === 'user' || message?.role === 'assistant').slice(-80) : [];
+    setChatMessages(valid);
+    nextId = Math.max(1, ...valid.map((message) => message.id + 1));
+  } catch {
+    setChatMessages([]);
+  }
+}
+
 export function AIChat(props: { prefill?: string; compact?: boolean; autofocus?: boolean }): JSX.Element {
-  const [messages, setMessages] = createSignal<ChatMessage[]>([]);
-  const [input, setInput] = createSignal('');
-  const [busy, setBusy] = createSignal(false);
-  const [confirming, setConfirming] = createSignal<ID | null>(null);
+  hydrateThread();
+  const messages = chatMessages;
+  const setMessages = setChatMessages;
+  const input = chatInput;
+  const setInput = setChatInput;
+  const busy = chatBusy;
+  const setBusy = setChatBusy;
+  const confirming = chatConfirming;
+  const setConfirming = setChatConfirming;
   let textarea: HTMLTextAreaElement | undefined;
   let scroller: HTMLDivElement | undefined;
 
@@ -63,6 +92,16 @@ export function AIChat(props: { prefill?: string; compact?: boolean; autofocus?:
         textarea?.focus();
         autoSize();
       });
+    }
+  });
+
+  createEffect(() => {
+    const userId = authStore.user()?.id;
+    if (!userId || hydratedFor !== userId) return;
+    try {
+      sessionStorage.setItem(storageKey(userId), JSON.stringify(messages().slice(-80)));
+    } catch {
+      /* Storage can be unavailable in private browsing; in-memory history still survives navigation. */
     }
   });
 

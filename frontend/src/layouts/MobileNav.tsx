@@ -17,7 +17,7 @@ interface Item {
 const BASE_ITEMS: Item[] = [
   { label: 'Dashboard', href: '/dashboard', icon: () => <LayoutDashboard size={18} /> },
   { label: 'Today', href: '/today', match: ['/today', '/tomorrow'], icon: () => <Sun size={18} /> },
-  { label: 'Tasks', href: '/tasks/personal', match: '/tasks', icon: () => <ListTodo size={18} /> },
+  { label: 'Tasks', href: '/tasks/all', match: '/tasks', icon: () => <ListTodo size={18} /> },
   { label: 'Projects', href: '/projects/active', match: '/projects', icon: () => <FolderKanban size={18} /> },
   // Prompts moved to the drawer to make room for Today; five slots is all a phone-width dock fits legibly.
 ];

@@ -3,6 +3,55 @@
   flex-direction: column;
   height: 100%;
   min-height: 0;
+  padding: 0 var(--s-6) var(--s-6);
+}
+
+.dock {
+  flex: 0 0 min(440px, 34vw);
+  min-width: 340px;
+  height: calc(100% - 2 * var(--canvas-gap));
+  margin: var(--canvas-gap) var(--canvas-gap) var(--canvas-gap) 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--r-xl);
+  background: var(--g-surface);
+  box-shadow: var(--shadow-lg), var(--rim-top);
+  animation: dockIn var(--t-slow) ease-out;
+}
+
+@keyframes dockIn {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+}
+
+.dockHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: none;
+  height: var(--topbar-h);
+  padding: 0 var(--s-5) 0 var(--s-6);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.dockTitle,
+.dockActions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.dockTitle {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+}
+
+.dockTitle svg {
+  color: var(--c-text-dim);
 }
 
 .head {
@@ -10,7 +59,10 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--s-4);
-  padding-bottom: var(--s-4);
+  flex: none;
+  min-height: 46px;
+  padding: var(--s-4) 0;
+  border-bottom: 1px solid var(--c-border);
 }
 
 .hint {
@@ -21,10 +73,17 @@
 .body {
   flex: 1;
   min-height: 0;
+  padding-top: var(--s-4);
 }
 
 .unavailable {
   font-size: var(--fs-md);
   color: var(--c-text-dim);
   line-height: var(--lh-normal);
+}
+
+@media (max-width: 899px) {
+  .panel {
+    min-height: min(70dvh, 680px);
+  }
 }

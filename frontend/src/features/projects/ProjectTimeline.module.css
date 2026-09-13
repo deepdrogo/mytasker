@@ -1,0 +1,582 @@
+.timeline {
+  --day: 40px;
+  --label: 190px;
+  --band-h: 26px;
+  --row-h: 50px;
+  margin-bottom: var(--s-8);
+  overflow: hidden;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
+  background:
+    radial-gradient(circle at 88% 0%, rgba(120, 119, 198, 0.09), transparent 36%),
+    var(--g-surface);
+  box-shadow:
+    var(--shadow-card),
+    var(--rim-top);
+  animation: timelineIn var(--t-slow) ease-out;
+}
+
+@keyframes timelineIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-6);
+  padding: var(--s-6) var(--s-6) var(--s-5);
+}
+
+.heading h2 {
+  margin-top: var(--s-2);
+  font-size: var(--fs-xl);
+  letter-spacing: -0.03em;
+  text-transform: capitalize;
+}
+
+.heading p {
+  margin-top: var(--s-2);
+  color: var(--c-text-dim);
+  font-size: var(--fs-sm);
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  color: var(--c-text-dim);
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.monthActions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex: none;
+}
+
+/* Where am I today: the date plus whatever is running right now. */
+.todayBar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-6);
+  overflow-x: auto;
+  border-top: 1px solid var(--c-border);
+  background: rgba(255, 255, 255, 0.016);
+  font-size: var(--fs-xs);
+  scrollbar-width: none;
+}
+
+.todayBar::-webkit-scrollbar {
+  display: none;
+}
+
+.todayDate {
+  flex: none;
+  padding-right: var(--s-4);
+  border-right: 1px solid var(--c-border);
+  color: var(--c-text);
+  font-weight: var(--fw-semibold);
+  text-transform: capitalize;
+}
+
+.todayLabel,
+.todayEmpty {
+  flex: none;
+  color: var(--c-text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.todayChip {
+  flex: none;
+  padding: 3px var(--s-4);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-full);
+  background: var(--g-glass);
+  color: var(--c-text-dim);
+  transition:
+    color var(--t-fast),
+    border-color var(--t-fast),
+    transform var(--t-fast);
+}
+
+.todayChip:hover {
+  color: var(--c-text);
+  border-color: var(--c-border-strong);
+  transform: translateY(-1px);
+}
+
+.planner {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 160px 180px auto;
+  gap: var(--s-3);
+  padding: var(--s-5) var(--s-6);
+  border-top: 1px solid var(--c-border);
+}
+
+.scroller {
+  overflow: auto;
+  max-height: min(62vh, 560px);
+  border-top: 1px solid var(--c-border);
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+
+.calendar {
+  display: grid;
+  grid-template-columns: var(--label) calc(var(--days) * var(--day));
+  min-width: max-content;
+}
+
+.labelCell,
+.rowLabel {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+  padding: 0 var(--s-5);
+  border-right: 1px solid var(--c-border);
+  border-bottom: 1px solid var(--c-border);
+  /* Opaque: bars scroll underneath this column and must not shine through. */
+  background: #111112;
+}
+
+.cornerTop,
+.corner {
+  position: sticky;
+  z-index: 6;
+  color: var(--c-text-faint);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.cornerTop {
+  top: 0;
+  height: var(--band-h);
+}
+
+.corner {
+  top: var(--band-h);
+  height: 44px;
+}
+
+.monthBand,
+.dayHeader,
+.track {
+  display: grid;
+  grid-template-columns: repeat(var(--days), var(--day));
+  position: relative;
+}
+
+.monthBand {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  height: var(--band-h);
+  border-bottom: 1px solid var(--c-border);
+  background: #111112;
+}
+
+.monthCell {
+  grid-column: span var(--span);
+  display: flex;
+  align-items: center;
+  border-right: 1px solid var(--c-border);
+  color: var(--c-text-dim);
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* The month name rides along while its own month is on screen, then hands over to the next one. */
+.monthCell span {
+  position: sticky;
+  left: calc(var(--label) + var(--s-4));
+  padding-right: var(--s-4);
+}
+
+.dayHeader {
+  position: sticky;
+  top: var(--band-h);
+  z-index: 4;
+  height: 44px;
+  border-bottom: 1px solid var(--c-border);
+  background: #111112;
+}
+
+.day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-right: 1px solid rgba(255, 255, 255, 0.035);
+  color: var(--c-text-faint);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.day b {
+  color: var(--c-text-dim);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: var(--fw-medium);
+}
+
+.today {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--c-text);
+  box-shadow: inset 2px 0 rgba(255, 255, 255, 0.55);
+}
+
+.today b {
+  color: var(--c-text);
+}
+
+.rowLabel {
+  height: var(--row-h);
+  color: var(--c-text-dim);
+  font-size: var(--fs-sm);
+}
+
+.rowLabel:hover {
+  color: var(--c-text);
+}
+
+.rowName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.projectDot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--c-text-faint);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.04);
+}
+
+.projectDot[data-priority='critical'] {
+  background: #ff6b6b;
+}
+
+.projectDot[data-priority='high'] {
+  background: #f0a85d;
+}
+
+.track {
+  height: var(--row-h);
+  border-bottom: 1px solid var(--c-border);
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.editable {
+  cursor: crosshair;
+}
+
+.busy {
+  opacity: 0.72;
+}
+
+.cell {
+  border-right: 1px solid rgba(255, 255, 255, 0.035);
+}
+
+.weekend {
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.todayCell {
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 2px 0 rgba(255, 255, 255, 0.45);
+}
+
+.editable .cell:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Hints and jump buttons ride the sticky label column so they stay readable at any scroll offset. */
+.rowHint,
+.jump {
+  position: sticky;
+  left: calc(var(--label) + 14px);
+  grid-row: 1;
+  grid-column: 1 / -1;
+  justify-self: start;
+  align-self: center;
+}
+
+.rowHint {
+  z-index: 1;
+  pointer-events: none;
+  color: var(--c-text-faint);
+  font-size: var(--fs-xs);
+}
+
+.editable:hover .rowHint {
+  color: var(--c-text-dim);
+}
+
+/* The project bar: drag the body to move it, the edges to stretch it. */
+.block {
+  position: absolute;
+  z-index: 2;
+  top: 8px;
+  left: calc(var(--start) * var(--day) + 4px);
+  width: calc(var(--span) * var(--day) - 8px);
+  min-width: 24px;
+  height: calc(var(--row-h) - 17px);
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 0 12px;
+  /* `clip`, not `hidden`: hidden would turn the bar into the scrollport for its sticky label. */
+  overflow: clip;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--r-md);
+  background: linear-gradient(135deg, rgba(116, 116, 132, 0.78), rgba(67, 67, 78, 0.84));
+  box-shadow:
+    var(--rim-top-strong),
+    0 7px 18px rgba(0, 0, 0, 0.35);
+  color: #fff;
+  cursor: grab;
+  touch-action: none;
+  transition:
+    filter var(--t-fast),
+    box-shadow var(--t-fast);
+}
+
+.block:hover {
+  filter: brightness(1.13);
+  box-shadow:
+    var(--rim-top-strong),
+    0 9px 22px rgba(0, 0, 0, 0.46);
+}
+
+.dragging {
+  z-index: 5;
+  cursor: grabbing;
+  filter: brightness(1.22);
+  box-shadow:
+    var(--rim-top-strong),
+    0 12px 28px rgba(0, 0, 0, 0.55);
+}
+
+.openEnded {
+  border-right-style: dashed;
+  background: linear-gradient(90deg, rgba(99, 99, 114, 0.84), rgba(61, 61, 71, 0.28));
+}
+
+/* Long bars keep their name in view while their left edge is scrolled past. */
+.blockLabel {
+  position: sticky;
+  left: calc(var(--label) + 12px);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.blockText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+}
+
+.openIcon {
+  flex: none;
+  opacity: 0.8;
+}
+
+.handle {
+  position: absolute;
+  z-index: 2;
+  inset: 4px auto 4px 2px;
+  width: 8px;
+  border-radius: var(--r-xs);
+  cursor: ew-resize;
+  touch-action: none;
+  transition: background var(--t-fast);
+}
+
+.handle:hover {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.handleEnd {
+  right: 2px;
+  left: auto;
+}
+
+/* Project scheduled outside the visible window: one click brings the board to it. */
+.jump {
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 var(--s-4);
+  border: 1px dashed var(--c-border-strong);
+  border-radius: var(--r-full);
+  background: var(--g-glass);
+  color: var(--c-text-dim);
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+  transition:
+    color var(--t-fast),
+    background var(--t-fast);
+}
+
+.jump:hover {
+  color: var(--c-text);
+  background: var(--g-glass-hover);
+}
+
+.cryptoLabel {
+  color: var(--c-text);
+}
+
+.cryptoLabel svg {
+  flex: none;
+  color: #f4b941;
+}
+
+.cryptoTrack {
+  background: rgba(244, 185, 65, 0.03);
+}
+
+.cryptoMark {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: calc(var(--start) * var(--day) + 5px);
+  transform: translateY(-50%);
+  width: calc(var(--day) - 10px);
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 1px solid rgba(244, 185, 65, 0.36);
+  border-radius: var(--r-sm);
+  background: rgba(244, 185, 65, 0.14);
+  color: #eac06b;
+  font-size: 10px;
+  transition:
+    background var(--t-fast),
+    transform var(--t-fast);
+}
+
+.cryptoMark:hover {
+  background: rgba(244, 185, 65, 0.24);
+  transform: translateY(-50%) scale(1.06);
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: var(--s-6);
+  padding: var(--s-4) var(--s-6);
+  border-top: 1px solid var(--c-border);
+  color: var(--c-text-faint);
+  font-size: 10px;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.todayKey {
+  width: 2px;
+  height: 13px;
+  background: var(--c-text);
+}
+
+@media (max-width: 899px) {
+  .timeline {
+    margin-right: calc(-1 * var(--s-5));
+    margin-left: calc(-1 * var(--s-5));
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
+  }
+
+  .top {
+    flex-direction: column;
+    gap: var(--s-4);
+    padding: var(--s-5);
+  }
+
+  .heading p {
+    display: none;
+  }
+
+  .planner {
+    grid-template-columns: 1fr 1fr;
+    padding: var(--s-4) var(--s-5);
+  }
+
+  .planner > :first-child,
+  .planner > :last-child {
+    grid-column: 1 / -1;
+  }
+
+  .todayBar,
+  .legend {
+    padding-right: var(--s-5);
+    padding-left: var(--s-5);
+    white-space: nowrap;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 700px) {
+  .timeline {
+    --day: 34px;
+    --label: 132px;
+    --row-h: 46px;
+  }
+
+  .rowLabel {
+    padding: 0 var(--s-4);
+    font-size: var(--fs-xs);
+  }
+
+  .scroller {
+    max-height: 58vh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timeline {
+    animation: none;
+  }
+
+  .block,
+  .todayChip,
+  .cryptoMark {
+    transition: none;
+  }
+}

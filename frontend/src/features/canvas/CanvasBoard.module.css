@@ -105,6 +105,65 @@ a.colTitle:hover {
   flex-direction: column;
 }
 
+.taskGroupSortable {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: start;
+}
+
+.taskGroupDragging {
+  border-radius: var(--r-md);
+  background: var(--g-surface-raised);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
+}
+
+.topGrip {
+  grid-column: 1;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 30px;
+  margin-top: 3px;
+  border: 0;
+  border-radius: var(--r-sm);
+  color: var(--c-text-faint);
+  cursor: grab;
+  opacity: 0.45;
+  touch-action: none;
+  transition:
+    opacity var(--t-fast),
+    color var(--t-fast),
+    background var(--t-fast);
+}
+
+.taskGroupSortable:hover .topGrip,
+.topGrip:focus-visible,
+.taskGroupDragging .topGrip {
+  opacity: 1;
+}
+
+.topGrip:hover {
+  color: var(--c-text);
+  background: var(--c-hover);
+}
+
+.topGrip:active {
+  cursor: grabbing;
+}
+
+.topTask {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.taskGroupSortable > .topTask {
+  grid-column: 2;
+}
+
+.taskGroupSortable > .subtasks {
+  grid-column: 2;
+}
+
 .colEmpty {
   padding: var(--s-4) var(--s-6) var(--s-6);
   font-size: var(--fs-sm);
