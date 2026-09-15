@@ -67,8 +67,8 @@ export const projects: Record<string, string> = {
   'Create a project': 'პროექტის შექმნა',
   'Project calendar': 'პროექტების კალენდარი',
   'Project timeline': 'პროექტების თაიმლაინი',
-  'Draw across a row to schedule a project, then drag it or stretch its edges.':
-    'გაავლე მაუსი ხაზზე პროექტის დასაგეგმად, შემდეგ გადაადგილე ან კიდეებით გაწელე.',
+  'Draw across a row to schedule a project. Drag, stretch, or remove it from the calendar.':
+    'გაავლე მაუსი ხაზზე პროექტის დასაგეგმად. გადაადგილე, გაწელე კიდეებით ან კალენდრიდან მოხსენი.',
   'Drag across this row to schedule it': 'გაავლე ამ ხაზზე დასაგეგმად',
   'Jump to dates': 'თარიღებზე გადასვლა',
   'In progress today': 'დღეს მიმდინარე',
@@ -79,6 +79,8 @@ export const projects: Record<string, string> = {
   'Start date': 'დაწყების თარიღი',
   'End date (optional)': 'დასრულების თარიღი (არასავალდებულო)',
   'Place on calendar': 'კალენდარში ჩასმა',
+  'Remove from calendar': 'კალენდრიდან წაშლა',
+  'Removed from calendar': 'კალენდრიდან წაიშალა',
   'Not scheduled': 'დაუგეგმავი',
   ongoing: 'მიმდინარე',
   'No end date': 'დასრულების თარიღის გარეშე',

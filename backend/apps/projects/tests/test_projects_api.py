@@ -152,3 +152,22 @@ def test_idea_conversion(auth_client):
     assert converted.data["name"] == "Podcast"
     again = auth_client.post(f"/api/v1/ideas/{idea.data['id']}/convert/")
     assert again.status_code in (400, 409)
+
+
+def test_clearing_calendar_dates_unschedules_project(auth_client):
+    project = auth_client.post(
+        BASE,
+        {"name": "Roadmap", "start_date": "2026-09-10", "deadline": "2026-09-20"},
+        format="json",
+    ).data
+    assert project["start_date"] == "2026-09-10"
+    assert project["deadline"] == "2026-09-20"
+
+    cleared = auth_client.patch(
+        f"{BASE}{project['id']}/",
+        {"start_date": None, "deadline": None, "version": project["version"]},
+        format="json",
+    )
+    assert cleared.status_code == 200, cleared.content
+    assert cleared.data["start_date"] is None
+    assert cleared.data["deadline"] is None

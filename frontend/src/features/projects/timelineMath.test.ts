@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, diffDays, overlapsWindow, previewRange, windowColumns } from './timelineMath';
+import { addDays, diffDays, overlapsWindow, previewRange, rangeForSave, sameRange, windowColumns } from './timelineMath';
 
 const WINDOW_START = '2026-09-01';
 const WINDOW_END = '2026-11-30';
@@ -49,6 +49,13 @@ describe('timeline date maths', () => {
     expect(overlapsWindow({ start: '2026-08-01', end: '2026-09-02' }, WINDOW_START, WINDOW_END)).toBe(true);
     expect(overlapsWindow({ start: '2026-07-01', end: null }, WINDOW_START, WINDOW_END)).toBe(true);
     expect(overlapsWindow({ start: '2027-01-05', end: null }, WINDOW_START, WINDOW_END)).toBe(false);
+  });
+
+  it('clears both ends when a project is taken off the calendar', () => {
+    expect(rangeForSave({ start: '2026-09-07', end: '2026-09-10' })).toEqual({ start: '2026-09-07', end: '2026-09-10' });
+    expect(rangeForSave({ start: '2026-09-07', end: null })).toEqual({ start: '2026-09-07', end: null });
+    expect(rangeForSave({ start: null, end: '2026-09-10' })).toEqual({ start: null, end: null });
+    expect(sameRange({ start: null, end: null }, rangeForSave({ start: null, end: '2026-09-10' }))).toBe(true);
   });
 
   it('clips ranges to the window when positioning a bar', () => {

@@ -72,3 +72,15 @@ export function windowColumns(
   const end = !range.end || range.end > windowEnd ? windowEnd : range.end;
   return { offset: diffDays(windowStart, start), span: Math.max(1, diffDays(start, end) + 1) };
 }
+
+export function sameRange(a: DateRange, b: DateRange): boolean {
+  return a.start === b.start && a.end === b.end;
+}
+
+/**
+ * Payload we persist for a timeline edit. A missing start means the project is off the calendar:
+ * both ends are cleared so a leftover deadline cannot keep a ghost bar.
+ */
+export function rangeForSave(range: DateRange): DateRange {
+  return range.start ? { start: range.start, end: range.end } : { start: null, end: null };
+}

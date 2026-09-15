@@ -1,5 +1,5 @@
 import { A } from '@solidjs/router';
-import { Bitcoin, CalendarDays, ChevronLeft, ChevronRight, Infinity as InfinityIcon } from 'lucide-solid';
+import { Bitcoin, CalendarDays, CalendarX, ChevronLeft, ChevronRight, Infinity as InfinityIcon } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For, Show, createMemo, createSignal, onCleanup, onMount } from 'solid-js';
 import { Button } from '~/components/ui/Button';
@@ -18,6 +18,8 @@ import {
   overlapsWindow,
   parseDate,
   previewRange,
+  rangeForSave,
+  sameRange,
   windowColumns,
   type DateRange,
   type DragMode,
@@ -143,29 +145,45 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
     return [...map.entries()].sort(([a], [b]) => (a < b ? -1 : 1));
   });
 
-  const save = async (project: Project, dates: DateRange) => {
+  const chosen = () => props.projects().find((item) => String(item.id) === selected());
+
+  const save = async (project: Project, dates: DateRange, options?: { removed?: boolean }) => {
+    // No start means "not on the calendar" — clear both ends together so a leftover deadline
+    // cannot keep a ghost bar after the user takes the project off.
+    const next = rangeForSave(dates);
     const base = baseDates(project);
-    if (!dates.start || (base.start === dates.start && base.end === dates.end)) return;
-    setPending((all) => ({ ...all, [project.id]: dates }));
+    if (sameRange(base, next)) return;
+    setPending((all) => ({ ...all, [project.id]: next }));
     setSaving(project.id);
     try {
       const fresh = await projectsApi.update(project.id, {
-        start_date: dates.start,
-        deadline: dates.end,
+        start_date: next.start,
+        deadline: next.end,
         version: resolve(project).version,
       });
       setPatched((all) => ({ ...all, [project.id]: fresh }));
       props.onChanged();
+      if (options?.removed) toast(t('Removed from calendar'));
     } catch {
       toast(t('Could not save the project schedule.'));
     } finally {
       setPending((all) => {
-        const next = { ...all };
-        delete next[project.id];
-        return next;
+        const remaining = { ...all };
+        delete remaining[project.id];
+        return remaining;
       });
       setSaving(null);
     }
+  };
+
+  const unschedule = (project: Project) => {
+    if (!project.capabilities.manage_project || saving() === project.id) return;
+    if (drag()?.id === project.id) setDrag(null);
+    void save(project, { start: null, end: null }, { removed: true });
+  };
+
+  const stopBarGesture = (event: PointerEvent) => {
+    event.stopPropagation();
   };
 
   /** Which calendar day sits under this x coordinate, clamped to the visible window. */
@@ -276,7 +294,7 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
           <h2>
             {months()[0]?.label} – {months()[months().length - 1]?.label}
           </h2>
-          <p>{t('Draw across a row to schedule a project, then drag it or stretch its edges.')}</p>
+          <p>{t('Draw across a row to schedule a project. Drag, stretch, or remove it from the calendar.')}</p>
         </div>
         <div class={styles.monthActions}>
           <Button variant="ghost" size="icon-sm" onClick={() => shiftMonths(-1)} aria-label={t('Previous month')}>
@@ -330,9 +348,22 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
           onInput={(event) => setManualEnd(event.currentTarget.value)}
           aria-label={t('End date (optional)')}
         />
-        <Button size="sm" disabled={!selected() || !manualStart()} onClick={placeManually}>
-          {t('Place on calendar')}
-        </Button>
+        <div class={styles.plannerActions}>
+          <Button size="sm" disabled={!selected() || !manualStart()} onClick={placeManually}>
+            {t('Place on calendar')}
+          </Button>
+          <Show when={chosen() && baseDates(chosen()!).start && chosen()!.capabilities.manage_project}>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={saving() === chosen()?.id}
+              onClick={() => unschedule(chosen()!)}
+            >
+              <CalendarX size={14} />
+              {t('Remove from calendar')}
+            </Button>
+          </Show>
+        </div>
       </div>
 
       <div class={styles.scroller} ref={scroller}>
@@ -411,18 +442,33 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
                     </Show>
 
                     <Show when={dates().start && !visible(dates()) && !dragging()}>
-                      <button
-                        type="button"
-                        class={styles.jump}
-                        onPointerDown={(event) => event.stopPropagation()}
-                        onClick={() => jumpTo(dates().start!)}
-                        title={rangeTitle(dates())}
-                      >
-                        <Show when={dates().start! < rangeStart()} fallback={<ChevronRight size={13} />}>
-                          <ChevronLeft size={13} />
+                      <div class={styles.offscreen}>
+                        <button
+                          type="button"
+                          class={styles.jump}
+                          onPointerDown={stopBarGesture}
+                          onClick={() => jumpTo(dates().start!)}
+                          title={rangeTitle(dates())}
+                        >
+                          <Show when={dates().start! < rangeStart()} fallback={<ChevronRight size={13} />}>
+                            <ChevronLeft size={13} />
+                          </Show>
+                          {t('Jump to dates')}
+                        </button>
+                        <Show when={editable()}>
+                          <button
+                            type="button"
+                            class={styles.jump}
+                            onPointerDown={stopBarGesture}
+                            onClick={() => unschedule(project)}
+                            aria-label={t('Remove from calendar')}
+                            title={t('Remove from calendar')}
+                          >
+                            <CalendarX size={13} />
+                            {t('Remove from calendar')}
+                          </button>
                         </Show>
-                        {t('Jump to dates')}
-                      </button>
+                      </div>
                     </Show>
 
                     <Show when={dates().start && visible(dates())}>
@@ -445,6 +491,21 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
                           <span class={styles.blockText}>{project.name}</span>
                           <Show when={!dates().end}>
                             <InfinityIcon size={13} class={styles.openIcon} />
+                          </Show>
+                          <Show when={editable() && !dragging()}>
+                            <button
+                              type="button"
+                              class={styles.remove}
+                              onPointerDown={stopBarGesture}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                unschedule(project);
+                              }}
+                              aria-label={t('Remove from calendar')}
+                              title={t('Remove from calendar')}
+                            >
+                              <CalendarX size={12} />
+                            </button>
                           </Show>
                         </span>
                         <Show when={editable()}>
@@ -505,6 +566,9 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
         </span>
         <span>
           <InfinityIcon size={12} /> {t('No end date')}
+        </span>
+        <span>
+          <CalendarX size={12} /> {t('Remove from calendar')}
         </span>
         <span>{t('Overlapping projects stay visible on separate rows.')}</span>
       </div>

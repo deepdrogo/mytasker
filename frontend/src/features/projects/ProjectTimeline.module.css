@@ -123,6 +123,13 @@
   border-top: 1px solid var(--c-border);
 }
 
+.plannerActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+}
+
 .scroller {
   overflow: auto;
   max-height: min(62vh, 560px);
@@ -312,7 +319,7 @@
 
 /* Hints and jump buttons ride the sticky label column so they stay readable at any scroll offset. */
 .rowHint,
-.jump {
+.offscreen {
   position: sticky;
   left: calc(var(--label) + 14px);
   grid-row: 1;
@@ -326,6 +333,13 @@
   pointer-events: none;
   color: var(--c-text-faint);
   font-size: var(--fs-xs);
+}
+
+.offscreen {
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
 }
 
 .editable:hover .rowHint {
@@ -412,6 +426,34 @@
 .openIcon {
   flex: none;
   opacity: 0.8;
+}
+
+.remove {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.88);
+  background: rgba(0, 0, 0, 0.28);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background var(--t-fast),
+    color var(--t-fast);
+}
+
+.remove:hover,
+.remove:focus-visible {
+  color: #fff;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.block:has(.remove) {
+  min-width: 88px;
+  padding-right: 16px;
 }
 
 .handle {
@@ -584,7 +626,8 @@
 
   .block,
   .todayChip,
-  .cryptoMark {
+  .cryptoMark,
+  .remove {
     transition: none;
   }
 }
