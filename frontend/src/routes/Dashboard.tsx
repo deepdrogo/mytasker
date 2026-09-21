@@ -2,7 +2,7 @@
 // Built by drogoz · https://github.com/deepdrogo/mytasker
 
 import { A } from '@solidjs/router';
-import { CalendarOff, CalendarRange, Check, Circle, Flame, GripVertical, Moon, Play, Rocket, ScrollText, Square, Undo2, X } from 'lucide-solid';
+import { CalendarOff, CalendarRange, Check, Circle, Flame, GripVertical, Handshake, Moon, Play, Rocket, ScrollText, Square, Undo2, UserCheck, X } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For, Show, createMemo, createSignal, onCleanup } from 'solid-js';
 import { Page } from '~/components/shared/Page';
@@ -125,6 +125,33 @@ export default function Dashboard(): JSX.Element {
 
   const share = (task: Task) => setShareTasks([task]);
 
+  /** Work other people handed to me, one block per giver (server orders by giver). */
+  const delegatedGroups = createMemo(() => {
+    const groups = new Map<number, { label: string; href: string; tasks: Task[] }>();
+    for (const task of data()?.tasks.delegated ?? []) {
+      const group = groups.get(task.owner.id) ?? { label: task.owner.display_name, href: `/from/${task.owner.id}`, tasks: [] };
+      group.tasks.push(task);
+      groups.set(task.owner.id, group);
+    }
+    return [...groups.values()];
+  });
+
+  /** Client work grouped by project (server already orders by project name); loose tasks last. */
+  const clientGroups = createMemo(() => {
+    const groups = new Map<string, { label: string; href?: string; tasks: Task[] }>();
+    for (const task of data()?.tasks.clients ?? []) {
+      const key = task.project ? `p${task.project.id}` : 'loose';
+      const group = groups.get(key) ?? {
+        label: task.project ? tx('project', task.project.id, 'name', task.project.name) : t('Without a project'),
+        href: task.project ? `/projects/${task.project.id}/tasks` : '/tasks/clients',
+        tasks: [],
+      };
+      group.tasks.push(task);
+      groups.set(key, group);
+    }
+    return [...groups.values()];
+  });
+
   return (
     <Page title={t('Dashboard')} subtitle={formatDateFull(new Date().toISOString())}>
       <Show when={!query.error()} fallback={<ErrorNote message={t('Could not load the dashboard.')} onRetry={refresh} />}>
@@ -141,6 +168,50 @@ export default function Dashboard(): JSX.Element {
                     invalidate('tasks');
                   }}
                 />
+
+                <Show when={(d().tasks.delegated?.length ?? 0) > 0}>
+                  <Section title={t('Handed to you')} count={d().tasks.delegated.length} tone="strong" hint={t('by other people')}>
+                    <div class={styles.clientGroups}>
+                      <For each={delegatedGroups()}>
+                        {(group) => (
+                          <div class={styles.clientGroup}>
+                            <A href={group.href} class={styles.clientGroupLabel}>
+                              <UserCheck size={11} />
+                              <span>{t('From {name}', { name: group.label })}</span>
+                              <span class={styles.count}>{group.tasks.length}</span>
+                            </A>
+                            <TaskList tasks={group.tasks} compact showProject showKind onOpen={setActiveTask} onChanged={refresh} onShare={share} />
+                          </div>
+                        )}
+                      </For>
+                    </div>
+                  </Section>
+                </Show>
+
+                <Show when={d().tasks.clients.length > 0}>
+                  <Section
+                    title={t('Clients')}
+                    count={d().tasks.clients.length}
+                    tone="strong"
+                    hint={t('promised to someone')}
+                    link={{ href: '/tasks/clients', label: t('All') }}
+                  >
+                    <div class={styles.clientGroups}>
+                      <For each={clientGroups()}>
+                        {(group) => (
+                          <div class={styles.clientGroup}>
+                            <A href={group.href ?? '/tasks/clients'} class={styles.clientGroupLabel}>
+                              <Handshake size={11} />
+                              <span>{group.label}</span>
+                              <span class={styles.count}>{group.tasks.length}</span>
+                            </A>
+                            <TaskList tasks={group.tasks} compact showProject={false} onOpen={setActiveTask} onChanged={refresh} onShare={share} />
+                          </div>
+                        )}
+                      </For>
+                    </div>
+                  </Section>
+                </Show>
 
                 <Show when={d().tasks.overdue.length > 0}>
                   <Section title={t('Overdue')} count={d().tasks.overdue.length} tone="strong">

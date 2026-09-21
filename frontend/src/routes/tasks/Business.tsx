@@ -12,7 +12,7 @@ export default function Business(): JSX.Element {
       title={t('Business')}
       subtitle={t('Work tasks you add here. Pick a project to file a task there as well.')}
       queryName="business"
-      params={() => ({ kind: 'business', origin: 'list', top_level: true, completed: false })}
+      params={() => ({ kind: 'business', origin: 'list', top_level: true, completed: false, delegated: false })}
       composerDefaults={{ kind: 'business', origin: 'list' }}
       composerPlaceholder={t('Add a business task…')}
       composerProjectPicker

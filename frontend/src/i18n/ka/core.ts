@@ -36,7 +36,6 @@ export const core: Record<string, string> = {
 
   // Top bar
   Search: 'ძიება',
-  'Search or ask AI': 'მოძებნე ან ჰკითხე AI-ს',
   'Ask AI': 'ჰკითხე AI-ს',
   Notifications: 'შეტყობინებები',
   'Notifications ({count} unread)': 'შეტყობინებები ({count} წაუკითხავი)',

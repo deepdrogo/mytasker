@@ -65,6 +65,45 @@
   opacity: 0.45;
 }
 
+/* Client work: a promise to someone else. A bright rim on the left edge so it reads first in any list. */
+.client {
+  background: var(--g-glass);
+  border-color: var(--c-border);
+  box-shadow: inset 2px 0 0 var(--c-text);
+}
+
+.client:hover {
+  border-color: var(--c-border-strong);
+  box-shadow:
+    inset 2px 0 0 var(--c-text),
+    var(--rim-top);
+}
+
+.clientMark {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 17px;
+  padding: 0 7px;
+  border-radius: var(--r-full);
+  background: var(--g-primary);
+  color: var(--c-invert-text);
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex: none;
+}
+
+.dense .clientMark {
+  padding: 0 5px;
+}
+
+.dense .clientMarkText {
+  display: none;
+}
+
 .done .title {
   text-decoration: line-through;
   text-decoration-thickness: 1px;
@@ -383,4 +422,19 @@
     -webkit-box-orient: vertical;
     line-clamp: 2;
   }
+}
+
+.addedOn {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--c-text-faint);
+  white-space: nowrap;
+}
+
+.assignees {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--c-text);
+  white-space: nowrap;
 }

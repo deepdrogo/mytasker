@@ -3,6 +3,7 @@ import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
 import { LanguageSwitch } from '~/components/shared/LanguageSwitch';
 import { Button } from '~/components/ui/Button';
+import { GlobalSearch } from '~/features/search/GlobalSearch';
 import { TimerIndicator } from '~/features/timer/TimerIndicator';
 import { t } from '~/i18n';
 import { authStore } from '~/stores/auth';
@@ -12,7 +13,6 @@ import styles from './TopBar.module.css';
 
 export function TopBar(): JSX.Element {
   const isMobile = useIsMobile();
-  const searchLabel = () => (authStore.aiEnabled() ? t('Search or ask AI') : t('Search'));
   // Desktop with a pinned sidebar: the dock is always visible, so the menu button collapses it (unpins) instead.
   const docked = () => !isMobile() && uiStore.sidebarPinned();
   const navOpen = () => docked() || uiStore.sidebarOpen();
@@ -31,13 +31,15 @@ export function TopBar(): JSX.Element {
         </Show>
       </button>
 
-      <button class={styles.search} onClick={uiStore.openPalette} aria-label={searchLabel()}>
-        <Search size={14} />
-        <span class={styles.searchText}>{searchLabel()}</span>
-        <Show when={!isMobile()}>
-          <kbd class={styles.kbd}>⌘K</kbd>
-        </Show>
-      </button>
+      {/* Desktop: a real search box that answers as you type. Phones: the palette, which searches the same way. */}
+      <Show when={!isMobile()} fallback={
+        <button class={styles.search} onClick={uiStore.openPalette} aria-label={t('Search')}>
+          <Search size={14} />
+          <span class={styles.searchText}>{t('Search everything…')}</span>
+        </button>
+      }>
+        <GlobalSearch />
+      </Show>
 
       <div class={styles.right}>
         <TimerIndicator />

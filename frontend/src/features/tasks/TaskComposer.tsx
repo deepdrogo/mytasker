@@ -4,6 +4,7 @@ import { createSignal, Show } from 'solid-js';
 import { ApiError } from '~/api/client';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
+import { PeoplePicker } from '~/features/people/PeoplePicker';
 import { ProjectSelector } from '~/features/projects/ProjectSelector';
 import { tasksApi, type TaskInput } from '~/features/tasks/api';
 import { t } from '~/i18n';
@@ -19,6 +20,8 @@ interface TaskComposerProps {
   autofocus?: boolean;
   /** Show an optional project dropdown; the chosen project sticks between entries. */
   projectPicker?: boolean;
+  /** Administrators: hand the new task to someone on the People list (sticks between entries). */
+  personPicker?: boolean;
 }
 
 /**
@@ -29,11 +32,13 @@ export function TaskComposer(props: TaskComposerProps): JSX.Element {
   const [busy, setBusy] = createSignal(false);
   const [error, setError] = createSignal('');
   const [projectId, setProjectId] = createSignal<ID | null>(null);
+  const [personIds, setPersonIds] = createSignal<ID[]>([]);
   let input: HTMLInputElement | undefined;
 
   const payload = (value: string): TaskInput => {
     const base: TaskInput = { ...props.defaults, title: value };
     if (props.projectPicker && projectId() !== null) base.project_id = projectId();
+    if (props.personPicker && personIds().length > 0) base.assignee_ids = personIds();
     return base;
   };
 
@@ -84,6 +89,11 @@ export function TaskComposer(props: TaskComposerProps): JSX.Element {
       <Show when={props.projectPicker}>
         <div class={styles.project} title={t('Also file this task under a project')}>
           <ProjectSelector value={projectId()} onChange={setProjectId} />
+        </div>
+      </Show>
+      <Show when={props.personPicker}>
+        <div class={styles.people} title={t('Hand this task to someone on People')}>
+          <PeoplePicker value={personIds()} onChange={setPersonIds} compact />
         </div>
       </Show>
       <Show when={title().trim()}>

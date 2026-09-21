@@ -32,7 +32,7 @@ export const authStore = {
 };
 
 /** Route prefixes an assistant may open. Anything else redirects to /tasks/personal. */
-export const ASSISTANT_ROUTES = ['/tasks', '/projects', '/settings'];
+export const ASSISTANT_ROUTES = ['/tasks', '/projects', '/settings', '/from'];
 
 export function assistantMayOpen(pathname: string): boolean {
   if (pathname === '/projects/ideas' || pathname.startsWith('/projects/ideas/')) return false;

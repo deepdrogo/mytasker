@@ -9,6 +9,7 @@ import {
   CornerDownLeft,
   FileText,
   FolderKanban,
+  Handshake,
   LayoutDashboard,
   Lightbulb,
   ListChecks,
@@ -16,12 +17,13 @@ import {
   Rocket,
   Search,
   Sparkles,
+  Users,
 } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { createEffect, createMemo, createSignal, For, on, onCleanup, Show } from 'solid-js';
 import { Portal } from 'solid-js/web';
-import { api } from '~/api/client';
 import { PriorityMark } from '~/components/shared/Indicators';
+import { EMPTY_RESULTS, normalizeTerm, SEARCH_DEBOUNCE_MS, SEARCH_MIN_CHARS, searchEverything } from '~/features/search/searchClient';
 import { TaskEditor } from '~/features/tasks/TaskEditor';
 import { tasksApi } from '~/features/tasks/api';
 import { t } from '~/i18n';
@@ -50,7 +52,7 @@ interface ResultRow {
   run: () => void;
 }
 
-const EMPTY: SearchResults = { tasks: [], projects: [], prompts: [], ideas: [], routine_items: [] };
+const EMPTY: SearchResults = EMPTY_RESULTS;
 
 /**
  * ⌘K palette: navigation + commands + global search. Prefix with ">" to talk to the AI.
@@ -80,6 +82,10 @@ export function CommandPalette(): JSX.Element {
     { id: 'dashboard', label: 'Go to Dashboard', icon: <LayoutDashboard size={15} />, keywords: 'home overview დეშბორდი', run: go('/dashboard') },
     { id: 'today', label: 'Go to Today', icon: <Calendar size={15} />, keywords: 'due today დღეს', run: go('/today') },
     { id: 'tomorrow', label: 'Go to Tomorrow', icon: <Calendar size={15} />, keywords: 'due tomorrow ხვალ', run: go('/tomorrow') },
+    { id: 'clients', label: 'Clients', icon: <Handshake size={15} />, keywords: 'client customer კლიენტი კლიენტები', run: go('/tasks/clients') },
+    ...(authStore.isAdmin()
+      ? [{ id: 'people', label: 'People', icon: <Users size={15} />, keywords: 'delegate assign ხალხი ასისტენტი', run: go('/people') }]
+      : []),
     { id: 'personal', label: 'Personal tasks', icon: <CheckSquare size={15} />, run: go('/tasks/personal') },
     { id: 'business', label: 'Business tasks', icon: <CheckSquare size={15} />, run: go('/tasks/business') },
     { id: 'crypto', label: 'Crypto world tasks', icon: <CheckSquare size={15} />, keywords: 'crypto cryptoworld კრიპტო კრიპტოსამყარო', run: go('/tasks/crypto') },
@@ -133,7 +139,9 @@ export function CommandPalette(): JSX.Element {
         id: `task-${task.id}`,
         group: t('Tasks'),
         label: tx('task', task.id, 'title', task.title),
-        hint: task.project ? tx('project', task.project.id, 'name', task.project.name) : taskKindLabel(task.kind),
+        hint: [task.is_client ? t('Client') : '', task.project ? tx('project', task.project.id, 'name', task.project.name) : taskKindLabel(task.kind)]
+          .filter(Boolean)
+          .join(' · '),
         icon: <PriorityMark priority={task.priority} />,
         run: () => {
           uiStore.closePalette();
@@ -166,8 +174,8 @@ export function CommandPalette(): JSX.Element {
       setIndex(0);
       window.clearTimeout(debounce);
       abort?.abort();
-      const term = q.trim();
-      if (term.length < 2 || isAI()) {
+      const term = normalizeTerm(q);
+      if (term.length < SEARCH_MIN_CHARS || isAI()) {
         setResults(EMPTY);
         setSearching(false);
         return;
@@ -175,15 +183,16 @@ export function CommandPalette(): JSX.Element {
       setSearching(true);
       debounce = window.setTimeout(async () => {
         abort = new AbortController();
+        const mine = abort;
         try {
-          const data = await api.get<SearchResults>('/search/', { params: { q: term, limit: 6 }, signal: abort.signal });
-          setResults(data);
+          const data = await searchEverything(term, mine.signal, 6);
+          if (!mine.signal.aborted) setResults(data);
         } catch {
           /* aborted or failed - keep previous */
         } finally {
-          setSearching(false);
+          if (!mine.signal.aborted) setSearching(false);
         }
-      }, 160);
+      }, SEARCH_DEBOUNCE_MS);
     }),
   );
 

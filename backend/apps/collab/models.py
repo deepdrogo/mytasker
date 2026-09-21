@@ -21,7 +21,7 @@ class CommentQuerySet(SoftDeleteQuerySet):
         if user is None or not getattr(user, "is_authenticated", False):
             return self.none()
         if getattr(user, "assistant_for_id", None) is not None:
-            return self.filter(author=user)
+            return self.filter(Q(author=user) | Q(task__assignee=user) | Q(task__assignees=user)).distinct()
         from apps.projects.models import Project
 
         member_projects = Q(
@@ -34,6 +34,9 @@ class CommentQuerySet(SoftDeleteQuerySet):
         return self.filter(
             Q(author=user)
             | Q(project__owner=user)
+            | Q(task__owner=user)
+            | Q(task__assignee=user)
+            | Q(task__assignees=user)
             | (member_projects & (Q(task__isnull=True) | Q(task__visibility=Visibility.GROUP)))
         ).distinct()
 

@@ -114,8 +114,7 @@ def recipients_for(event: ActivityEvent) -> set[int]:
         task = Task.all_objects.filter(pk=event.target_id).select_related("project").first()
         if task is not None:
             users.add(task.owner_id)
-            if task.assignee_id:
-                users.add(task.assignee_id)
+            users.update(task.assignee_ids())
             if task.project_id and task.project and task.project.owner_id:
                 users.add(task.project.owner_id)
             # Guest completion is interesting to the whole group (visibility permitting).
@@ -147,6 +146,7 @@ def recipients_for(event: ActivityEvent) -> set[int]:
     # Private (Group Plus) events stay with the owner regardless of who else was found.
     if event.visibility == Visibility.PRIVATE and event.project_id:
         users = {event.owner_user_id} | ({payload.get("assignee_id")} if payload.get("assignee_id") else set())
+        users |= {uid for uid in (payload.get("assignee_ids") or []) if isinstance(uid, int)}
     if event.actor_kind == ActorKind.USER and event.actor_user_id:
         users.discard(event.actor_user_id)
     return {u for u in users if u}

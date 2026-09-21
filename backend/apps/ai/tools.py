@@ -48,6 +48,10 @@ class CreateTaskIn(BaseModel):
         None,
         description="Long-term work (გრძელვადიანი): no deadline, ticked off once a day, completed only when finished",
     )
+    is_client: bool | None = Field(
+        None,
+        description="Client work (კლიენტის საქმე): a job promised to a customer, pinned to the top and on Clients",
+    )
     subtasks: list[str] | None = Field(None, description="Optional subtask titles", max_length=20)
 
 
@@ -70,6 +74,7 @@ class UpdateTaskIn(BaseModel):
     project_id: int | None = None
     estimated_minutes: int | None = Field(None, ge=1, le=1440)
     is_ongoing: bool | None = None
+    is_client: bool | None = None
 
 
 class BulkCompleteIn(BaseModel):
@@ -211,6 +216,7 @@ def _task_row(task: Task, user) -> dict[str, Any]:
         else None,
         "project": task.project.name if task.project_id and task.project else None,
         "project_id": task.project_id,
+        "is_client": task.is_client,
         "subtasks": getattr(task, "subtask_total", None),
     }
 
@@ -274,6 +280,8 @@ def create_task(actor: Actor, args: CreateTaskIn) -> dict:
         fields["estimated_minutes"] = args.estimated_minutes
     if args.is_ongoing is not None:
         fields["is_ongoing"] = args.is_ongoing
+    if args.is_client is not None:
+        fields["is_client"] = args.is_client
     task = services.create_task(actor, title=args.title, kind=args.kind, project_id=args.project_id, **fields)
     created = [_task_row(task, actor.user)]
     for title in args.subtasks or []:
@@ -313,7 +321,7 @@ def update_task(actor: Actor, args: UpdateTaskIn) -> dict:
     from apps.tasks import services
 
     fields: dict[str, Any] = _resolve_when(actor.user, args.when)
-    for key in ("title", "priority", "kind", "description", "estimated_minutes", "is_ongoing"):
+    for key in ("title", "priority", "kind", "description", "estimated_minutes", "is_ongoing", "is_client"):
         value = getattr(args, key)
         if value is not None:
             fields[key] = value

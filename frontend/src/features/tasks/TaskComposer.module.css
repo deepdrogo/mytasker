@@ -87,3 +87,11 @@
     flex: 1 1 100%;
   }
 }
+
+/* People chips inside the composer: wrap onto a second line when there are several. */
+.people {
+  flex: 0 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}

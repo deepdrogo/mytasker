@@ -9,9 +9,12 @@ from apps.tasks import selectors, services
 from apps.tasks.filters import TaskFilter
 from apps.tasks.models import Task
 from apps.tasks.serializers import (
+    BulkAssignSerializer,
     BulkIdsSerializer,
+    BulkMoveSerializer,
     BulkRescheduleSerializer,
     CheckinSerializer,
+    MoveDestinationSerializer,
     ReorderIdsSerializer,
     TaskCreateSerializer,
     TaskSerializer,
@@ -49,6 +52,16 @@ class TaskViewSet(viewsets.ModelViewSet):
                 )
             )
         return qs
+
+    def filter_queryset(self, queryset):
+        """Client work floats to the top of every list, whatever the chosen sort. `pin_clients=0` opts out."""
+        qs = super().filter_queryset(queryset)
+        if self.action != "list" or self.request.query_params.get("pin_clients") == "0":
+            return qs
+        current = [
+            term for term in qs.query.order_by if not (isinstance(term, str) and term.lstrip("-") == "is_client")
+        ]
+        return qs.order_by("-is_client", *current)
 
     def get_serializer_class(self):
         if self.action == "retrieve" or self.request.query_params.get("include_subtasks") == "1":
@@ -132,6 +145,34 @@ class TaskViewSet(viewsets.ModelViewSet):
         return self._respond(task, status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"])
+    def move(self, request, pk=None):
+        """Move a task to a list (`{"kind": "personal"}`) or into a project (`{"project_id": 7}`)."""
+        serializer = MoveDestinationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        task = services.move_task(self._actor(), int(pk), kind=data.get("kind"), project_id=data.get("project_id"))
+        return self._respond(task)
+
+    @action(detail=False, methods=["post"], url_path="bulk-assign")
+    def bulk_assign(self, request):
+        """Hand the selected tasks to one or more People (`assignee_ids: []` takes them back)."""
+        serializer = BulkAssignSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        return Response(services.bulk_assign(self._actor(), data["task_ids"], assignee_ids=data["assignee_ids"]))
+
+    @action(detail=False, methods=["post"], url_path="bulk-move")
+    def bulk_move(self, request):
+        serializer = BulkMoveSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        return Response(
+            services.bulk_move(
+                self._actor(), data["task_ids"], kind=data.get("kind"), project_id=data.get("project_id")
+            )
+        )
+
+    @action(detail=True, methods=["post"])
     def snooze(self, request, pk=None):
         minutes = int(request.data.get("minutes", 60))
         task = services.snooze(self._actor(), int(pk), minutes=max(1, min(minutes, 60 * 24 * 30)))
@@ -207,6 +248,7 @@ class TaskViewSet(viewsets.ModelViewSet):
                 filter=Q(kind=Task.Kind.BUSINESS, origin=Task.Origin.LIST) & ~Q(status__in=["done", "cancelled"]),
             ),
             crypto=Count("id", filter=Q(kind=Task.Kind.CRYPTO) & ~Q(status__in=["done", "cancelled"])),
+            clients=Count("id", filter=Q(is_client=True) & ~Q(status__in=["done", "cancelled"])),
             today=Count("id", filter=Q(due_at__lt=end_of_today) & open_not_crypto),
             overdue=Count("id", filter=Q(due_at__lt=now) & open_not_crypto),
             upcoming=Count("id", filter=Q(due_at__gte=end_of_today) & open_not_crypto),

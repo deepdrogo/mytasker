@@ -58,6 +58,7 @@ def base_queryset(user):
             "recurrence",
             "parent",
         )
+        .prefetch_related("assignees")
         .annotate(
             subtask_total=Coalesce(
                 Subquery(

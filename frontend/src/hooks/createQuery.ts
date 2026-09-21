@@ -4,12 +4,23 @@
  *
  * Keys are namespaced with ":" (e.g. "tasks:personal:page=1"). Invalidating "tasks" refetches
  * every mounted query whose key starts with "tasks" - and only those.
+ *
+ * Built on plain signals rather than `createResource` on purpose: a resource that refetches under a
+ * `<Suspense>` boundary flips the boundary back to its fallback, so every completed task used to blank
+ * the whole page and re-render it from scratch. Here a refetch keeps the current data on screen and
+ * swaps it for the fresh copy when it lands - the list simply updates in place.
+ *
+ * Refetch requests are coalesced: `invalidate()` from the API layer, `refetch()` from a component
+ * callback and a WebSocket echo arriving in the same tick collapse into a single request, and any
+ * invalidation that arrives while a request is in flight results in exactly one follow-up request.
  */
 
-import { createResource, createSignal, type Accessor, type Resource, type Setter, type Signal } from 'solid-js';
+import { batch, createEffect, createSignal, on, onCleanup, type Accessor, type Signal } from 'solid-js';
 
 const cache = new Map<string, { value: unknown; at: number }>();
 const generations = new Map<string, Signal<number>>();
+/** One network request per key at a time, shared by every query mounted on that key. */
+const inflight = new Map<string, Promise<unknown>>();
 
 function generation(key: string): Signal<number> {
   let sig = generations.get(key);
@@ -24,16 +35,47 @@ function matches(key: string, prefix: string): boolean {
   return key === prefix || key.startsWith(`${prefix}:`);
 }
 
-/** Invalidate every query whose key equals or starts with any prefix. */
+let pendingPrefixes: Set<string> | null = null;
+
+/**
+ * Invalidations are flushed on a short timer rather than a microtask: an API helper invalidates while the
+ * awaiting caller's continuation (which typically calls `refetch()` too) only runs a few microtasks later.
+ * Waiting one macrotask lets both land in the same flush - one request instead of two.
+ */
+const FLUSH_DELAY_MS = 8;
+
+function flushInvalidations(): void {
+  const prefixes = pendingPrefixes;
+  pendingPrefixes = null;
+  if (!prefixes) return;
+  batch(() => {
+    for (const [key, [get, set]] of generations) {
+      for (const prefix of prefixes) {
+        if (matches(key, prefix)) {
+          set(get() + 1);
+          break;
+        }
+      }
+    }
+  });
+}
+
+/**
+ * Invalidate every query whose key equals or starts with any prefix.
+ * Cached values are dropped at once; the refetch itself is scheduled on the microtask queue so several
+ * invalidations in one tick trigger one request per query.
+ */
 export function invalidate(...prefixes: string[]): void {
   for (const prefix of prefixes) {
     for (const key of [...cache.keys()]) {
       if (matches(key, prefix)) cache.delete(key);
     }
-    for (const [key, [get, set]] of generations) {
-      if (matches(key, prefix)) set(get() + 1);
-    }
   }
+  if (!pendingPrefixes) {
+    pendingPrefixes = new Set();
+    setTimeout(flushInvalidations, FLUSH_DELAY_MS);
+  }
+  for (const prefix of prefixes) pendingPrefixes.add(prefix);
 }
 
 export function setCached<T>(key: string, value: T): void {
@@ -46,7 +88,9 @@ export function getCached<T>(key: string): T | undefined {
 
 export function clearCache(): void {
   cache.clear();
-  for (const [get, set] of generations.values()) set(get() + 1);
+  batch(() => {
+    for (const [get, set] of generations.values()) set(get() + 1);
+  });
 }
 
 export interface QueryOptions {
@@ -55,12 +99,25 @@ export interface QueryOptions {
   enabled?: Accessor<boolean>;
 }
 
+export type QueryMutator<T> = (value: T | undefined | ((previous: T | undefined) => T | undefined)) => void;
+
 export interface QueryResult<T> {
-  data: Resource<T | undefined>;
+  data: Accessor<T | undefined>;
   refetch: () => void;
-  mutate: Setter<T | undefined>;
+  /** Replace the local copy (optimistic updates); the cache is kept in step. */
+  mutate: QueryMutator<T>;
   loading: Accessor<boolean>;
   error: Accessor<unknown>;
+}
+
+function fetchShared<T>(key: string, fetcher: (key: string) => Promise<T>): Promise<T> {
+  const running = inflight.get(key) as Promise<T> | undefined;
+  if (running) return running;
+  const promise = fetcher(key).finally(() => {
+    if (inflight.get(key) === promise) inflight.delete(key);
+  });
+  inflight.set(key, promise);
+  return promise;
 }
 
 export function createQuery<T>(
@@ -69,6 +126,14 @@ export function createQuery<T>(
   options: QueryOptions = {},
 ): QueryResult<T> {
   const staleMs = options.staleMs ?? 0;
+  const [data, setData] = createSignal<T | undefined>(undefined);
+  const [loading, setLoading] = createSignal(false);
+  const [error, setError] = createSignal<unknown>(undefined);
+
+  let sequence = 0;
+  let activeKey: string | null = null;
+  let loadingKey: string | null = null;
+  let dirty = false;
 
   const source = (): { key: string; gen: number } | null => {
     if (options.enabled && !options.enabled()) return null;
@@ -78,22 +143,95 @@ export function createQuery<T>(
     return { key: k, gen: gen() };
   };
 
-  const [data, { refetch, mutate }] = createResource(
-    source,
-    async ({ key: k }: { key: string; gen: number }) => {
+  const load = (k: string): void => {
+    if (loadingKey === k) {
+      // Already fetching this key: remember to go once more when it lands, never twice at once.
+      dirty = true;
+      return;
+    }
+    dirty = false;
+    loadingKey = k;
+    const seq = ++sequence;
+    setLoading(true);
+    fetchShared(k, fetcher).then(
+      (value) => {
+        if (seq !== sequence) return;
+        cache.set(k, { value, at: Date.now() });
+        batch(() => {
+          setData(() => value);
+          setError(undefined);
+        });
+        settle(k);
+      },
+      (err: unknown) => {
+        if (seq !== sequence) return;
+        setError(err);
+        settle(k);
+      },
+    );
+  };
+
+  const settle = (k: string): void => {
+    loadingKey = null;
+    if (dirty && activeKey === k) {
+      load(k);
+      return;
+    }
+    dirty = false;
+    setLoading(false);
+  };
+
+  createEffect(
+    on(source, (src) => {
+      if (!src) return;
+      const k = src.key;
+      const keyChanged = k !== activeKey;
+      activeKey = k;
       const cached = cache.get(k);
-      if (cached && staleMs > 0 && Date.now() - cached.at < staleMs) return cached.value as T;
-      const value = await fetcher(k);
-      cache.set(k, { value, at: Date.now() });
-      return value;
-    },
+      if (cached && staleMs > 0 && Date.now() - cached.at < staleMs) {
+        // Fresh enough: show it, cancel anything still in flight for an older key.
+        sequence += 1;
+        loadingKey = null;
+        dirty = false;
+        batch(() => {
+          setData(() => cached.value as T);
+          setError(undefined);
+          setLoading(false);
+        });
+        return;
+      }
+      // Switching keys: show what we already know for the new key while the fresh copy loads.
+      if (keyChanged && cached) setData(() => cached.value as T);
+      if (keyChanged) {
+        loadingKey = null;
+        dirty = false;
+      }
+      load(k);
+    }),
   );
+
+  onCleanup(() => {
+    sequence += 1;
+  });
+
+  const mutate: QueryMutator<T> = (value) => {
+    const next = typeof value === 'function' ? (value as (previous: T | undefined) => T | undefined)(data()) : value;
+    setData(() => next);
+    if (activeKey) {
+      if (next === undefined) cache.delete(activeKey);
+      else cache.set(activeKey, { value: next, at: Date.now() });
+    }
+  };
 
   return {
     data,
-    mutate: mutate as Setter<T | undefined>,
-    refetch: () => void refetch(),
-    loading: () => data.loading,
-    error: () => data.error,
+    mutate,
+    /** Same coalescing path as `invalidate`, so a callback refetch and an API invalidation cost one request. */
+    refetch: () => {
+      const k = key();
+      if (k) invalidate(k);
+    },
+    loading,
+    error,
   };
 }

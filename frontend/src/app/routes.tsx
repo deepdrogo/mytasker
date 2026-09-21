@@ -16,6 +16,9 @@ const TasksUpcoming = lazy(() => import('~/routes/tasks/Upcoming'));
 const TasksCompleted = lazy(() => import('~/routes/tasks/Completed'));
 const TasksAll = lazy(() => import('~/routes/tasks/All'));
 const TasksNoDate = lazy(() => import('~/routes/tasks/NoDate'));
+const TasksClients = lazy(() => import('~/routes/tasks/Clients'));
+const People = lazy(() => import('~/routes/People'));
+const From = lazy(() => import('~/routes/From'));
 const ProjectsActive = lazy(() => import('~/routes/projects/Active'));
 const ProjectsAll = lazy(() => import('~/routes/projects/All'));
 const ProjectsCanvas = lazy(() => import('~/routes/projects/Canvas'));
@@ -58,6 +61,10 @@ export const routes: RouteDefinition[] = [
       { path: '/today', component: TasksToday },
       { path: '/tomorrow', component: TasksTomorrow },
       { path: '/tasks', component: () => <Navigate href="/tasks/all" /> },
+      { path: '/tasks/clients', component: TasksClients },
+      // People: administrators hand work to other accounts; each receiver gets a "From <name>" page.
+      { path: '/people', component: People },
+      { path: '/from/:ownerId', component: From },
       { path: '/tasks/personal', component: TasksPersonal },
       { path: '/tasks/business', component: TasksBusiness },
       { path: '/tasks/crypto', component: TasksCrypto },

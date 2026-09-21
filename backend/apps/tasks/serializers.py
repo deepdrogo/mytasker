@@ -40,6 +40,7 @@ class RecurrenceInputSerializer(serializers.Serializer):
 class TaskSerializer(serializers.ModelSerializer):
     owner = UserRefSerializer(read_only=True)
     assignee = UserRefSerializer(read_only=True)
+    assignees = UserRefSerializer(read_only=True, many=True)
     created_by = UserRefSerializer(read_only=True)
     completed_by = UserRefSerializer(read_only=True)
     project = ProjectRefSerializer(read_only=True)
@@ -74,6 +75,7 @@ class TaskSerializer(serializers.ModelSerializer):
             "parent",
             "owner",
             "assignee",
+            "assignees",
             "created_by",
             "start_at",
             "due_at",
@@ -81,6 +83,7 @@ class TaskSerializer(serializers.ModelSerializer):
             "reminder_at",
             "estimated_minutes",
             "is_ongoing",
+            "is_client",
             "today_checked",
             "today_skipped",
             "checkin_done_count",
@@ -130,6 +133,7 @@ class TaskSerializer(serializers.ModelSerializer):
             project=obj.project,
             visibility=obj.visibility,
             created_by_id=obj.created_by_id,
+            assignee_ids=obj.assignee_ids(),
         )
 
     def get_can_delete(self, obj: Task) -> bool:
@@ -145,6 +149,7 @@ class TaskSerializer(serializers.ModelSerializer):
             visibility=obj.visibility,
             capability=Capability.DELETE_TASK,
             created_by_id=obj.created_by_id,
+            assignee_ids=obj.assignee_ids(),
         )
 
 
@@ -175,12 +180,14 @@ class TaskCreateSerializer(serializers.Serializer):
     project_id = serializers.IntegerField(required=False, allow_null=True)
     parent_id = serializers.IntegerField(required=False, allow_null=True)
     assignee_id = serializers.IntegerField(required=False, allow_null=True)
+    assignee_ids = serializers.ListField(child=serializers.IntegerField(min_value=1), required=False, max_length=50)
     start_at = serializers.DateTimeField(required=False, allow_null=True)
     due_at = serializers.DateTimeField(required=False, allow_null=True)
     due_has_time = serializers.BooleanField(required=False, default=False)
     reminder_at = serializers.DateTimeField(required=False, allow_null=True)
     estimated_minutes = serializers.IntegerField(required=False, allow_null=True, min_value=1, max_value=100000)
     is_ongoing = serializers.BooleanField(required=False, default=False)
+    is_client = serializers.BooleanField(required=False, default=False)
     tags = serializers.ListField(child=serializers.CharField(max_length=40), required=False, default=list)
     recurrence = RecurrenceInputSerializer(required=False, allow_null=True)
 
@@ -195,12 +202,14 @@ class TaskUpdateSerializer(serializers.Serializer):
     visibility = serializers.ChoiceField(choices=Visibility.choices, required=False)
     project_id = serializers.IntegerField(required=False, allow_null=True)
     assignee_id = serializers.IntegerField(required=False, allow_null=True)
+    assignee_ids = serializers.ListField(child=serializers.IntegerField(min_value=1), required=False, max_length=50)
     start_at = serializers.DateTimeField(required=False, allow_null=True)
     due_at = serializers.DateTimeField(required=False, allow_null=True)
     due_has_time = serializers.BooleanField(required=False)
     reminder_at = serializers.DateTimeField(required=False, allow_null=True)
     estimated_minutes = serializers.IntegerField(required=False, allow_null=True, min_value=1, max_value=100000)
     is_ongoing = serializers.BooleanField(required=False)
+    is_client = serializers.BooleanField(required=False)
     tags = serializers.ListField(child=serializers.CharField(max_length=40), required=False)
     sort_order = serializers.IntegerField(required=False)
     recurrence = RecurrenceInputSerializer(required=False, allow_null=True)
@@ -208,6 +217,34 @@ class TaskUpdateSerializer(serializers.Serializer):
 
 
 class BulkIdsSerializer(serializers.Serializer):
+    task_ids = serializers.ListField(child=serializers.IntegerField(), allow_empty=False, max_length=200)
+
+
+class BulkAssignSerializer(serializers.Serializer):
+    """Hand many tasks to the same people; an empty `assignee_ids` takes them back."""
+
+    task_ids = serializers.ListField(child=serializers.IntegerField(), allow_empty=False, max_length=200)
+    assignee_ids = serializers.ListField(child=serializers.IntegerField(min_value=1), allow_empty=True, max_length=50)
+
+
+class MoveDestinationSerializer(serializers.Serializer):
+    """
+    Where a task should live next: exactly one of a list (`kind`) or a project (`project_id`).
+    A project destination files the task inside that project; a list destination detaches it.
+    """
+
+    kind = serializers.ChoiceField(choices=Task.Kind.choices, required=False, allow_null=True)
+    project_id = serializers.IntegerField(required=False, allow_null=True, min_value=1)
+
+    def validate(self, attrs):
+        kind = attrs.get("kind")
+        project_id = attrs.get("project_id")
+        if (kind is None) == (project_id is None):
+            raise serializers.ValidationError("Pick either a list (kind) or a project (project_id).")
+        return attrs
+
+
+class BulkMoveSerializer(MoveDestinationSerializer):
     task_ids = serializers.ListField(child=serializers.IntegerField(), allow_empty=False, max_length=200)
 
 

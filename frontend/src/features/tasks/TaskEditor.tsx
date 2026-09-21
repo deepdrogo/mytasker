@@ -1,9 +1,12 @@
 import {
   ChevronLeft,
   ChevronRight,
+  FolderInput,
   GripVertical,
+  Handshake,
   Infinity as InfinityIcon,
   Pencil,
+  UserCheck,
   Play,
   Repeat,
   Share2,
@@ -23,8 +26,10 @@ import { AITaskTools } from '~/features/ai/AITaskTools';
 import { PolishButton } from '~/features/ai/PolishButton';
 import { polishTasks } from '~/features/ai/polish';
 import { Comments } from '~/features/collab/Comments';
+import { PeoplePicker } from '~/features/people/PeoplePicker';
 import { ProjectSelector } from '~/features/projects/ProjectSelector';
 import { tasksApi, type TaskInput } from '~/features/tasks/api';
+import { MoveTaskDialog } from '~/features/tasks/MoveTaskDialog';
 import { TaskComposer } from '~/features/tasks/TaskComposer';
 import { createSortable, type Sortable } from '~/hooks/createSortable';
 import { intlLocale, t } from '~/i18n';
@@ -66,7 +71,10 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
   const [reminderAt, setReminderAt] = createSignal('');
   const [estimate, setEstimate] = createSignal('');
   const [ongoing, setOngoing] = createSignal(false);
+  const [isClient, setIsClient] = createSignal(false);
+  const [moveOpen, setMoveOpen] = createSignal(false);
   const [projectId, setProjectId] = createSignal<number | null>(null);
+  const [assigneeIds, setAssigneeIds] = createSignal<number[]>([]);
   const [visibility, setVisibility] = createSignal<'private' | 'group'>('group');
   const [recurrence, setRecurrence] = createSignal('');
   const [subtasks, setSubtasks] = createSignal<Task[]>([]);
@@ -88,7 +96,9 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
       setReminderAt(toLocalInputValue(task.reminder_at));
       setEstimate(task.estimated_minutes ? String(task.estimated_minutes) : '');
       setOngoing(task.is_ongoing);
+      setIsClient(task.is_client);
       setProjectId(task.project?.id ?? null);
+      setAssigneeIds(task.assignees?.length ? task.assignees.map((user) => user.id) : task.assignee ? [task.assignee.id] : []);
       setVisibility(task.visibility);
       setRecurrence(task.recurrence?.freq ?? '');
       setDirty(false);
@@ -127,6 +137,14 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
   };
 
   const isRunning = () => timerStore.running()?.task?.id === props.task?.id;
+  /** Owner (or their assistant) decides where a task lives and whose it is; a delegate edits content only. */
+  const isOwner = () => {
+    const me = authStore.user();
+    const task = props.task;
+    if (!me || !task) return false;
+    return task.owner.id === me.id || (me.is_assistant && me.principal?.id === task.owner.id);
+  };
+  const delegatedToMe = () => Boolean(props.task && !isOwner() && props.task.assignee?.id === authStore.user()?.id);
 
   const save = async () => {
     const task = props.task;
@@ -143,13 +161,19 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
       reminder_at: fromLocalInputValue(reminderAt()),
       estimated_minutes: estimate() ? Number(estimate()) : null,
       is_ongoing: ongoing(),
-      project_id: projectId(),
-      visibility: visibility(),
       recurrence: recurrence()
         ? { freq: recurrence() as 'daily', interval: 1, byweekday: [], bymonthday: null, until: null }
         : null,
       version: task.version,
     };
+    // Where the task lives and whose it is: the owner's call only.
+    if (isOwner()) {
+      payload.is_client = isClient();
+      payload.project_id = projectId();
+      payload.visibility = visibility();
+      const before = task.assignees?.length ? task.assignees.map((user) => user.id) : task.assignee ? [task.assignee.id] : [];
+      if (authStore.isAdmin() && [...before].sort().join(',') !== [...assigneeIds()].sort().join(',')) payload.assignee_ids = assigneeIds();
+    }
     try {
       await tasksApi.update(task.id, payload);
       setDirty(false);
@@ -252,6 +276,12 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
                   <Share2 size={14} />
                   {t('Share')}
                 </Button>
+                <Show when={task().can_edit && task().parent === null && isOwner()}>
+                  <Button variant="secondary" size="sm" onClick={() => setMoveOpen(true)} title={t('Move to another list or project')}>
+                    <FolderInput size={14} />
+                    {t('Move')}
+                  </Button>
+                </Show>
                 <PolishButton
                   taskIds={() => (task().can_edit && task().status !== 'done' ? [task().id] : [])}
                   variant="secondary"
@@ -338,6 +368,24 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
               </div>
 
               <div class={styles.flags}>
+                <Show when={delegatedToMe()}>
+                  <p class={styles.hint}>
+                    <UserCheck size={13} />
+                    <span>{t('Handed to you by {name}. Edit, comment and complete - only they can delete or move it.', { name: task().owner.display_name })}</span>
+                  </p>
+                </Show>
+                <Checkbox
+                  label={t('Client task - pinned to the top, listed on Clients')}
+                  checked={isClient()}
+                  onChange={(e) => mark(setIsClient)(e.currentTarget.checked)}
+                  disabled={!task().can_edit || task().parent !== null || !isOwner()}
+                />
+                <Show when={isClient()}>
+                  <p class={styles.hint}>
+                    <Handshake size={13} />
+                    <span>{t('Shows up first in every list and on the Dashboard, grouped by project on the Clients page.')}</span>
+                  </p>
+                </Show>
                 <Checkbox
                   label={t('Due at a specific time')}
                   checked={hasTime()}
@@ -365,15 +413,28 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
                 </Show>
               </div>
 
-              <Field label={t('Project')}>
-                <ProjectSelector
-                  value={projectId()}
-                  onChange={(value) => mark(setProjectId)(value)}
-                  disabled={!task().can_edit || task().parent !== null}
-                />
-              </Field>
+              <Show when={isOwner() && authStore.isAdmin() && task().parent === null}>
+                <Field label={t('Handed to')} hint={t('People you added on the People page. Pick one or several - they see it at once.')}>
+                  <PeoplePicker
+                    value={assigneeIds()}
+                    onChange={(value) => mark(setAssigneeIds)(value)}
+                    disabled={!task().can_edit}
+                    extra={task().assignees?.length ? task().assignees : task().assignee ? [task().assignee!] : []}
+                  />
+                </Field>
+              </Show>
 
-              <Show when={projectId() !== null}>
+              <Show when={isOwner()}>
+                <Field label={t('Project')}>
+                  <ProjectSelector
+                    value={projectId()}
+                    onChange={(value) => mark(setProjectId)(value)}
+                    disabled={!task().can_edit || task().parent !== null}
+                  />
+                </Field>
+              </Show>
+
+              <Show when={projectId() !== null && isOwner()}>
                 <Field label={t('Visibility')} hint={t('Private tasks in a Group Plus project stay invisible to members.')}>
                   <Select
                     value={visibility()}
@@ -461,7 +522,8 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
                 </section>
               </Show>
 
-              <Show when={task().project}>
+              {/* Comments: project tasks, and tasks handed to someone (People) - both sides need to talk. */}
+              <Show when={task().project || task().assignee}>
                 <section class={styles.section}>
                   <h3 class={styles.sectionTitle}>{t('Comments')}</h3>
                   <Comments task={task().id} canComment />
@@ -479,6 +541,15 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
           )}
         </Show>
       </Drawer>
+
+      <Show when={props.task && moveOpen()}>
+        <MoveTaskDialog
+          tasks={props.task ? [props.task] : []}
+          open={moveOpen()}
+          onClose={() => setMoveOpen(false)}
+          onMoved={() => props.onChanged?.()}
+        />
+      </Show>
 
       <ConfirmDialog
         open={confirmDelete()}

@@ -1,6 +1,7 @@
 import { ListTodo } from 'lucide-solid';
 import type { JSX } from 'solid-js';
-import { For, Show } from 'solid-js';
+import { createComputed, For, Show } from 'solid-js';
+import { createStore, reconcile, unwrap } from 'solid-js/store';
 import { EmptyState, ErrorNote, Skeleton } from '~/components/ui/Feedback';
 import { TaskRow } from '~/features/tasks/TaskRow';
 import { t } from '~/i18n';
@@ -26,9 +27,24 @@ interface TaskListProps {
   selectable?: boolean;
   selectedIds?: Set<number>;
   onToggleSelect?: (task: Task) => void;
+  /** Show the date each task was added (hand-over lists). */
+  showCreated?: boolean;
 }
 
+/**
+ * Rows are keyed by task id through a reconciled store: when a refetch lands, unchanged rows keep their
+ * DOM (and hover / menu state), changed rows update the fields that changed, and only genuinely new or
+ * removed tasks are mounted or unmounted. Without this every refetch rebuilt the whole list.
+ */
 export function TaskList(props: TaskListProps): JSX.Element {
+  const [store, setStore] = createStore<{ items: Task[] }>({ items: [] });
+  createComputed(() => {
+    const list = props.tasks;
+    if (list) setStore('items', reconcile(list, { key: 'id' }));
+  });
+  /** Hand callers a plain snapshot, not the live store proxy, so editors are not reset by background refetches. */
+  const snapshot = (task: Task): Task => ({ ...unwrap(task) });
+
   return (
     <Show
       when={!props.error}
@@ -52,17 +68,18 @@ export function TaskList(props: TaskListProps): JSX.Element {
             }
           >
             <div class={styles.list} role="list">
-              <For each={tasks()}>
+              <For each={store.items}>
                 {(task) => (
                   <TaskRow
                     task={task}
-                    onOpen={props.onOpen}
-                    onShare={props.onShare}
+                    onOpen={props.onOpen ? (item) => props.onOpen?.(snapshot(item)) : undefined}
+                    onShare={props.onShare ? (item) => props.onShare?.(snapshot(item)) : undefined}
                     onChanged={props.onChanged}
                     showProject={props.showProject}
                     showKind={props.showKind}
                     compact={props.compact}
                     dense={props.dense}
+                    showCreated={props.showCreated}
                     selectable={props.selectable}
                     selected={props.selectedIds?.has(task.id)}
                     onToggleSelect={props.onToggleSelect}

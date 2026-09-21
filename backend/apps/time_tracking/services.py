@@ -39,6 +39,7 @@ def _resolve_targets(user, *, task_id: int | None, project_id: int | None, routi
             project=task.project,
             visibility=task.visibility,
             created_by_id=task.created_by_id,
+            assignee_ids=task.assignee_ids(),
         ):
             raise NotFound("Task not found.")
         project = task.project

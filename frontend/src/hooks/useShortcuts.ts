@@ -1,3 +1,4 @@
+import { focusSearch } from '~/features/search/focus';
 import { authStore } from '~/stores/auth';
 import { uiStore } from '~/stores/ui';
 
@@ -25,7 +26,8 @@ export function registerGlobalShortcuts(): () => void {
       uiStore.openQuickAdd();
     } else if (event.key === '/' && !mod) {
       event.preventDefault();
-      uiStore.openPalette();
+      // Desktop has the inline search in the top bar; phones fall back to the palette.
+      if (!focusSearch()) uiStore.openPalette();
     } else if (event.key === 'a' && !mod && authStore.isAdmin()) {
       event.preventDefault();
       uiStore.openAI();

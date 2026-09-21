@@ -40,6 +40,12 @@ def publish_activity(event_id: int) -> None:
         "payload": event.payload,
     }
     publisher.publish_to_user(event.owner_user_id, payload)
+    # Work handed to someone: they live outside the owner's group, so they get their own copy.
+    body = event.payload or {}
+    targets = {body.get("assignee_id"), *(body.get("assignee_ids") or [])}
+    for assignee_id in targets:
+        if isinstance(assignee_id, int) and assignee_id != event.owner_user_id:
+            publisher.publish_to_user(assignee_id, payload)
     if (
         event.project_id
         and event.visibility == Visibility.GROUP

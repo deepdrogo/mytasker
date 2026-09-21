@@ -1,0 +1,86 @@
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-4);
+  width: 100%;
+  padding: var(--s-4) var(--s-5);
+  border-radius: var(--r-md);
+  border: 1px solid var(--c-border);
+  background: var(--g-glass);
+  text-align: left;
+  color: var(--c-text);
+  transition:
+    border-color var(--t-fast),
+    background var(--t-fast);
+}
+
+.option:hover {
+  background: var(--g-glass-hover);
+  border-color: var(--c-border-strong);
+}
+
+.optionActive,
+.optionActive:hover {
+  background: var(--g-glass-active);
+  border-color: var(--c-focus);
+}
+
+.optionIcon {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--c-border);
+  color: var(--c-text-dim);
+}
+
+.optionActive .optionIcon {
+  color: var(--c-text);
+  border-color: var(--c-border-strong);
+}
+
+.optionText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.optionLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
+}
+
+.optionHint {
+  font-size: var(--fs-xs);
+  color: var(--c-text-dim);
+}
+
+.current {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-text-dim);
+  border: 1px dashed var(--c-border-strong);
+  border-radius: var(--r-full);
+  padding: 0 6px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.projectPicker {
+  padding: 0 var(--s-2) var(--s-2) 40px;
+}

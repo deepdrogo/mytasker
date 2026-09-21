@@ -1,5 +1,5 @@
 import type { JSX } from 'solid-js';
-import { For, Show } from 'solid-js';
+import { createEffect, For, Show } from 'solid-js';
 import { Select } from '~/components/ui/Input';
 import { projectsApi } from '~/features/projects/api';
 import { createQuery } from '~/hooks/createQuery';
@@ -25,10 +25,21 @@ export function ProjectSelector(props: ProjectSelectorProps): JSX.Element {
   const projects = (): Project[] => query.data()?.results ?? [];
   // Keep the current project selectable even when it is not in the fetched list (e.g. archived).
   const missingCurrent = () => props.value !== null && !projects().some((p) => p.id === props.value);
+  const selectValue = () => (props.value === null ? '' : String(props.value));
+  let select: HTMLSelectElement | undefined;
+
+  // A <select> forgets its value when its <option>s are re-rendered (list loaded or refreshed after a task was
+  // added); re-apply the chosen project whenever the options change so the picker never silently resets.
+  createEffect(() => {
+    projects();
+    const value = selectValue();
+    if (select && select.value !== value) select.value = value;
+  });
 
   return (
     <Select
-      value={props.value === null ? '' : String(props.value)}
+      ref={(el) => (select = el)}
+      value={selectValue()}
       disabled={props.disabled}
       onChange={(e) => {
         const raw = e.currentTarget.value;

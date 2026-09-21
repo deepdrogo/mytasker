@@ -2,6 +2,7 @@
 import { ai } from './ka/ai';
 import { assistants } from './ka/assistants';
 import { auth } from './ka/auth';
+import { clients } from './ka/clients';
 import { collab } from './ka/collab';
 import { command } from './ka/command';
 import { core } from './ka/core';
@@ -31,4 +32,5 @@ export const ka: Record<string, string> = {
   ...sharing,
   ...settings,
   ...assistants,
+  ...clients,
 };

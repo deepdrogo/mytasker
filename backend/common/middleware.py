@@ -20,6 +20,9 @@ ASSISTANT_ALLOWED: tuple[tuple[str, frozenset[str] | None], ...] = (
     ("translations/", None),
     ("notifications/", None),
     ("search/", None),
+    # Work handed to the assistant by an administrator (People): the "From <name>" page and its comments.
+    ("people/delegators/", frozenset({"GET", "HEAD", "OPTIONS"})),
+    ("comments/", None),
 )
 
 

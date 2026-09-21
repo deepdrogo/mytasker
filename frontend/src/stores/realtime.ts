@@ -6,6 +6,7 @@
 
 import { createSignal } from 'solid-js';
 import { invalidate } from '~/hooks/createQuery';
+import { isLocalEcho } from '~/stores/localChanges';
 import { loadTimerState } from '~/stores/timer';
 import { pushNotification } from '~/stores/notifications';
 import { markStale, receiveTranslation, type TranslationEntry } from '~/stores/translations';
@@ -81,7 +82,10 @@ function handle(message: ServerMessage): void {
       receiveTranslation(message);
       break;
     case 'event':
-      invalidate('activity', ...scopesFor(message.name));
+      // Our own change coming back round: the API call that made it already refreshed everything on screen.
+      if (!isLocalEcho(message.target_type, message.target_id)) {
+        invalidate('activity', ...scopesFor(message.name));
+      }
       if (message.name.startsWith('timer.') || message.name.startsWith('sleep.')) void loadTimerState();
       if (message.name === 'project.member_joined' || message.name === 'project.member_removed') resyncRealtime();
       forgetTranslationsFor(message);

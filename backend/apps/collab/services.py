@@ -26,6 +26,7 @@ def _resolve_target(user, *, task_id: int | None, project_id: int | None) -> tup
             project=task.project,
             visibility=task.visibility,
             created_by_id=task.created_by_id,
+            assignee_ids=task.assignee_ids(),
         ):
             raise NotFound("Task not found.")
         return task, None
@@ -36,9 +37,12 @@ def _resolve_target(user, *, task_id: int | None, project_id: int | None) -> tup
 
 
 def _can_comment(user, task: Task | None, project: Project | None) -> bool:
+    # Whoever a task was handed to may always talk about it, project or not.
+    if task is not None and (task.owner_id == user.pk or user.pk in task.assignee_ids()):
+        return True
     target_project = task.project if task is not None else project
     if target_project is None:
-        return task is not None and task.owner_id == user.pk
+        return False
     return project_access(user, target_project).can(Capability.COMMENT)
 
 

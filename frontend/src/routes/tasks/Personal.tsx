@@ -8,7 +8,7 @@ export default function Personal(): JSX.Element {
       title={t('Personal')}
       subtitle={t('Life tasks, no project needed.')}
       queryName="personal"
-      params={() => ({ kind: 'personal', top_level: true, completed: false })}
+      params={() => ({ kind: 'personal', top_level: true, completed: false, delegated: false })}
       composerDefaults={{ kind: 'personal' }}
       composerPlaceholder={t('Add a personal task…')}
       showProject={false}

@@ -133,6 +133,8 @@ export interface Task {
   project: ProjectRef | null;
   parent: ID | null;
   assignee: UserRef | null;
+  /** Everyone the task was handed to (People); `assignee` mirrors the first of them. */
+  assignees: UserRef[];
   owner: UserRef;
   /** Who added the task; differs from `owner` for assistant-created and member-created tasks. */
   created_by: UserRef | null;
@@ -143,6 +145,8 @@ export interface Task {
   estimated_minutes: number | null;
   /** Long-term work: ticked once a day, completed only when the whole thing is finished. */
   is_ongoing: boolean;
+  /** Client work: promised to a customer. Pinned to the top of lists and collected on the Clients page. */
+  is_client: boolean;
   today_checked: boolean;
   /** Deliberately skipped today (recorded, breaks the streak). */
   today_skipped: boolean;
@@ -435,6 +439,10 @@ export interface TodayData {
   streak: number;
   timer: { running: TimeEntry | null; sleep: SleepSession | null };
   tasks: {
+    /** Open client work, ordered by project - the first block on the dashboard. */
+    clients: Task[];
+    /** Open work other people handed to me (People), ordered by who gave it. */
+    delegated: Task[];
     overdue: Task[];
     due_today: Task[];
     focus: Task[];
@@ -540,6 +548,25 @@ export interface AIAction {
   source: Source;
   created_at: ISODateTime;
   duration_ms: number;
+}
+
+/** Someone an administrator hands work to (People page). */
+export interface Person {
+  id: ID;
+  user: UserRef & { email: string };
+  note: string;
+  open_count: number;
+  done_count: number;
+  last_assigned_at: ISODateTime | null;
+  created_at: ISODateTime;
+}
+
+/** Someone who handed work to me - one "From <name>" page each. */
+export interface Delegator {
+  user: UserRef;
+  open_count: number;
+  done_count: number;
+  last_assigned_at: ISODateTime | null;
 }
 
 export interface SearchResults {

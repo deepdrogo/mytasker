@@ -6,6 +6,7 @@ call into this module; nothing else decides permissions.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -83,6 +84,26 @@ ASSISTANT_CAPABILITIES = frozenset(
 )
 
 
+# What someone a task was handed to (Task.assignee outside a project) may do with it: everything except
+# deleting it or handing it on. Deleting stays with the owner.
+DELEGATE_CAPABILITIES = frozenset(
+    {
+        Capability.VIEW,
+        Capability.EDIT_TASK,
+        Capability.COMPLETE_TASK,
+        Capability.COMMENT,
+        Capability.TRACK_TIME,
+        Capability.VIEW_ACTIVITY,
+    }
+)
+
+
+def _is_assignee(user_id: int, assignee_id: int | None, assignee_ids: Iterable[int] | None) -> bool:
+    if assignee_id is not None and assignee_id == user_id:
+        return True
+    return assignee_ids is not None and user_id in set(assignee_ids)
+
+
 def is_assistant_of(user, owner_id: int) -> bool:
     """True when `user` is an assistant account acting for the user with pk `owner_id`."""
     return user is not None and getattr(user, "assistant_for_id", None) == owner_id
@@ -150,17 +171,22 @@ def can_view_object(
     project: Project | None,
     visibility: str,
     created_by_id: int | None = None,
+    assignee_id: int | None = None,
+    assignee_ids: Iterable[int] | None = None,
 ) -> bool:
     """
     Generic rule for tasks / prompts / comments:
       - owner always sees their own object
       - an assistant sees the principal's object only when it created it (`created_by_id`)
+      - the person a task was handed to (`assignee_id`) sees it wherever it lives
       - objects without a project are personal -> owner only
       - project objects: viewer+ may see GROUP-visible objects; PRIVATE objects only the owner
     """
     if user is None or not getattr(user, "is_authenticated", False):
         return False
     if owner_id == user.pk:
+        return True
+    if _is_assignee(user.pk, assignee_id, assignee_ids):
         return True
     if getattr(user, "assistant_for_id", None) is not None:
         # Assistants never inherit membership visibility; they only see what they created.
@@ -182,10 +208,14 @@ def can_edit_object(
     visibility: str,
     capability: str = Capability.EDIT_TASK,
     created_by_id: int | None = None,
+    assignee_id: int | None = None,
+    assignee_ids: Iterable[int] | None = None,
 ) -> bool:
     if user is None or not getattr(user, "is_authenticated", False):
         return False
     if owner_id == user.pk:
+        return True
+    if _is_assignee(user.pk, assignee_id, assignee_ids) and capability in DELEGATE_CAPABILITIES:
         return True
     if getattr(user, "assistant_for_id", None) is not None:
         return (

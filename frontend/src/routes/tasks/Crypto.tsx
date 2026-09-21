@@ -8,7 +8,7 @@ export default function Crypto(): JSX.Element {
       title={t('Crypto world')}
       subtitle={t('A private list for crypto work. It never appears on the Dashboard or Today.')}
       queryName="crypto"
-      params={() => ({ kind: 'crypto', top_level: true, completed: false })}
+      params={() => ({ kind: 'crypto', top_level: true, completed: false, delegated: false })}
       composerDefaults={{ kind: 'crypto' }}
       composerPlaceholder={t('Add a crypto task…')}
       showProject={false}

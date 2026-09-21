@@ -10,6 +10,8 @@ import {
   Clock,
   Copy,
   Flame,
+  FolderInput,
+  Handshake,
   Infinity as InfinityIcon,
   MessageSquare,
   MoreHorizontal,
@@ -21,14 +23,17 @@ import {
   Square,
   Trash2,
   User,
+  UserCheck,
   UserPlus,
 } from 'lucide-solid';
 import type { JSX } from 'solid-js';
-import { createSignal, Show } from 'solid-js';
+import { createEffect, createSignal, on, onCleanup, Show } from 'solid-js';
 import { Dropdown, type MenuItem } from '~/components/ui/Dropdown';
 import { Dot, Meta, OverdueMark, PriorityMark, VisibilityMark } from '~/components/shared/Indicators';
 import { polishTasks } from '~/features/ai/polish';
 import { tasksApi } from '~/features/tasks/api';
+import { HandOverDialog } from '~/features/tasks/HandOverDialog';
+import { MoveTaskDialog } from '~/features/tasks/MoveTaskDialog';
 import { t } from '~/i18n';
 import { authStore } from '~/stores/auth';
 import { tx } from '~/stores/translations';
@@ -36,7 +41,7 @@ import { startTimer, stopTimer, timerStore } from '~/stores/timer';
 import { toast } from '~/stores/ui';
 import type { Task, TaskKind } from '~/types';
 import { cx } from '~/utils/cx';
-import { formatDueDate, formatDuration } from '~/utils/format';
+import { formatDate, formatDueDate, formatDuration } from '~/utils/format';
 import styles from './TaskRow.module.css';
 
 const KIND_LABEL: Record<TaskKind, string> = { personal: 'Personal', business: 'Business', crypto: 'Crypto world' };
@@ -55,15 +60,47 @@ interface TaskRowProps {
   onToggleSelect?: (task: Task) => void;
   /** Narrow columns (canvas): full title on up to two lines, no badges, only the menu button. */
   dense?: boolean;
+  /** Show when the task was added (People / "From" pages, where the hand-over date matters). */
+  showCreated?: boolean;
 }
 
 export function TaskRow(props: TaskRowProps): JSX.Element {
   const [busy, setBusy] = createSignal(false);
   const [polishing, setPolishing] = createSignal(false);
+  const [moveOpen, setMoveOpen] = createSignal(false);
+  const [handOverOpen, setHandOverOpen] = createSignal(false);
+  /**
+   * Optimistic state for the round box: flips the instant it is pressed and stays until the server copy
+   * catches up (the row's status / check-in changes, or the row leaves the list). A failed request clears it.
+   */
+  const [optimisticDone, setOptimisticDone] = createSignal<boolean | null>(null);
+  const [optimisticChecked, setOptimisticChecked] = createSignal<boolean | null>(null);
+  let optimisticTimer: number | undefined;
+  const armOptimisticReset = () => {
+    window.clearTimeout(optimisticTimer);
+    optimisticTimer = window.setTimeout(() => {
+      setOptimisticDone(null);
+      setOptimisticChecked(null);
+    }, 6000);
+  };
+  createEffect(on(() => props.task.status, () => setOptimisticDone(null), { defer: true }));
+  createEffect(on(() => props.task.today_checked, () => setOptimisticChecked(null), { defer: true }));
+  onCleanup(() => window.clearTimeout(optimisticTimer));
   const use12h = () => authStore.user()?.preferences.time_format === '12h';
   const isRunning = () => timerStore.running()?.task?.id === props.task.id;
   const title = () => tx('task', props.task.id, 'title', props.task.title);
   const canPolish = () => authStore.aiEnabled() && props.task.can_edit && props.task.status !== 'done';
+  /** Owner (or their assistant): may move, duplicate and flag the task. Delegates and members edit content only. */
+  const isOwner = () => {
+    const me = authStore.user();
+    if (!me) return false;
+    return props.task.owner.id === me.id || (me.is_assistant && me.principal?.id === props.task.owner.id);
+  };
+  /** Everyone the task is handed to, as one label ("Nino, Gio"). */
+  const assigneeNames = () => {
+    const list = props.task.assignees?.length ? props.task.assignees : props.task.assignee ? [props.task.assignee] : [];
+    return list.map((user) => user.display_name).join(', ');
+  };
 
   const polish = async (event?: MouseEvent) => {
     event?.stopPropagation();
@@ -77,17 +114,22 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
   };
 
   const ongoing = () => props.task.is_ongoing && props.task.status !== 'done';
+  const checkedToday = () => optimisticChecked() ?? props.task.today_checked;
 
   /** Long-term tasks: the round box is today's check-in, not completion. */
   const toggleCheckin = async (event: MouseEvent) => {
     event.stopPropagation();
     if (busy() || !props.task.can_edit) return;
     setBusy(true);
+    const next = !props.task.today_checked;
+    setOptimisticChecked(next);
+    armOptimisticReset();
     try {
-      await tasksApi.checkin(props.task.id, !props.task.today_checked);
-      if (!props.task.today_checked) toast(t('Checked in for today'));
+      await tasksApi.checkin(props.task.id, next);
+      if (next) toast(t('Checked in for today'));
       props.onChanged?.();
     } catch {
+      setOptimisticChecked(null);
       toast(t('Could not update the task.'));
     } finally {
       setBusy(false);
@@ -141,6 +183,8 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
     if (busy() || !props.task.can_edit) return;
     setBusy(true);
     const wasDone = props.task.status === 'done';
+    setOptimisticDone(!wasDone);
+    armOptimisticReset();
     try {
       if (wasDone) {
         await tasksApi.reopen(props.task.id);
@@ -155,6 +199,21 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
           },
         });
       }
+      props.onChanged?.();
+    } catch {
+      setOptimisticDone(null);
+      toast(t('Could not update the task.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const toggleClient = async () => {
+    if (busy() || !props.task.can_edit) return;
+    setBusy(true);
+    try {
+      await tasksApi.update(props.task.id, { is_client: !props.task.is_client });
+      toast(props.task.is_client ? t('No longer a client task') : t('Marked as client task'));
       props.onChanged?.();
     } catch {
       toast(t('Could not update the task.'));
@@ -205,6 +264,30 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
     },
     { label: t('Share'), icon: <Share2 size={14} />, onSelect: () => props.onShare?.(props.task) },
     {
+      label: t('Move to…'),
+      icon: <FolderInput size={14} />,
+      separatorBefore: true,
+      disabled: !props.task.can_edit || props.task.parent !== null || !isOwner(),
+      onSelect: () => setMoveOpen(true),
+    },
+    ...(authStore.isAdmin()
+      ? [
+          {
+            label: assigneeNames() ? t('Handed to {name}…', { name: assigneeNames() }) : t('Hand to…'),
+            icon: <UserCheck size={14} />,
+            disabled: !props.task.can_edit || props.task.parent !== null || !isOwner(),
+            onSelect: () => setHandOverOpen(true),
+          } satisfies MenuItem,
+        ]
+      : []),
+    {
+      label: props.task.is_client ? t('Not a client task') : t('Client task'),
+      icon: <Handshake size={14} />,
+      checked: props.task.is_client,
+      disabled: !props.task.can_edit || !isOwner(),
+      onSelect: () => void toggleClient(),
+    },
+    {
       label: t('Polish with AI'),
       icon: <Sparkles size={14} />,
       disabled: !canPolish(),
@@ -213,6 +296,7 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
     {
       label: t('Duplicate'),
       icon: <Copy size={14} />,
+      disabled: !isOwner(),
       onSelect: async () => {
         await tasksApi.duplicate(props.task.id);
         props.onChanged?.();
@@ -258,13 +342,15 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
     },
   ];
 
-  const done = () => props.task.status === 'done';
+  const done = () => optimisticDone() ?? props.task.status === 'done';
 
   return (
+    <>
     <div
       class={[
         styles.row,
         done() ? styles.done : '',
+        props.task.is_client ? styles.client : '',
         ongoing() && props.task.today_skipped ? styles.skippedToday : '',
         props.compact ? styles.compact : '',
         props.dense ? styles.dense : '',
@@ -292,22 +378,22 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
       </Show>
 
       <button
-        class={cx(styles.checkbox, ongoing() && styles.checkinBox, ongoing() && props.task.today_checked && styles.checkedToday)}
+        class={cx(styles.checkbox, ongoing() && styles.checkinBox, ongoing() && checkedToday() && styles.checkedToday)}
         onClick={toggleComplete}
         disabled={busy() || !props.task.can_edit}
         aria-label={
           ongoing()
-            ? props.task.today_checked
+            ? checkedToday()
               ? t('Undo today’s check-in')
               : t('Check in for today')
             : done()
               ? t('Reopen {title}', { title: title() })
               : t('Complete {title}', { title: title() })
         }
-        aria-pressed={ongoing() ? props.task.today_checked : done()}
-        title={ongoing() ? (props.task.today_checked ? t('Checked in today') : t('Check in for today')) : undefined}
+        aria-pressed={ongoing() ? checkedToday() : done()}
+        title={ongoing() ? (checkedToday() ? t('Checked in today') : t('Check in for today')) : undefined}
       >
-        <Show when={done() || (ongoing() && props.task.today_checked)}>
+        <Show when={done() || (ongoing() && checkedToday())}>
           <Check size={12} />
         </Show>
       </button>
@@ -315,6 +401,12 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
       <div class={styles.main}>
         <div class={styles.titleLine}>
           <PriorityMark priority={props.task.priority} />
+          <Show when={props.task.is_client}>
+            <span class={styles.clientMark} title={t('Client task - pinned to the top')}>
+              <Handshake size={10} />
+              <span class={styles.clientMarkText}>{t('Client')}</span>
+            </span>
+          </Show>
           <span class={styles.title}>{title()}</span>
           <Show when={props.task.recurrence}>
             <Repeat size={11} class={styles.inlineIcon} aria-label={t('Recurring')} />
@@ -332,8 +424,16 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
           </Show>
         </div>
 
-        <Show when={hasMeta(props.task, props.showProject, props.showKind)}>
+        <Show when={hasMeta(props.task, props.showProject, props.showKind, props.showCreated)}>
           <Meta>
+            <Show when={props.showCreated}>
+              <span class={styles.addedOn} title={t('Added on {date}', { date: formatDate(props.task.created_at) })}>
+                {t('added {date}', { date: formatDate(props.task.created_at) })}
+              </span>
+              <Show when={props.task.due_at || (props.showProject !== false && props.task.project) || props.showKind}>
+                <Dot />
+              </Show>
+            </Show>
             {/* Long-term tasks: the all-time tally (days done vs skipped on purpose) and today's skip, if any. */}
             <Show when={props.task.is_ongoing && props.task.checkin_done_count + props.task.checkin_skipped_count > 0}>
               <span class={styles.tally} title={tallyTitle()} aria-label={tallyTitle()}>
@@ -408,11 +508,13 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
               </span>
             </Show>
 
-            <Show when={props.task.assignee}>
-              {(assignee) => (
+            <Show when={assigneeNames()}>
+              {(names) => (
                 <>
                   <Dot />
-                  <span>{assignee().display_name}</span>
+                  <span class={styles.assignees} title={t('Handed to {name}', { name: names() })}>
+                    <UserCheck size={11} /> {names()}
+                  </span>
                 </>
               )}
             </Show>
@@ -437,7 +539,7 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
             ● rec
           </span>
         </Show>
-        <Show when={ongoing() && !props.task.today_checked && props.task.can_edit}>
+        <Show when={ongoing() && !checkedToday() && props.task.can_edit}>
           <button
             class={cx(styles.iconAction, styles.skipAction, props.task.today_skipped && styles.skipActionOn)}
             onClick={(e) => void toggleSkip(e)}
@@ -481,6 +583,18 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
         />
       </div>
     </div>
+    <Show when={handOverOpen()}>
+      <HandOverDialog tasks={[props.task]} open={handOverOpen()} onClose={() => setHandOverOpen(false)} onChanged={() => props.onChanged?.()} />
+    </Show>
+    <Show when={moveOpen()}>
+      <MoveTaskDialog
+        tasks={[props.task]}
+        open={moveOpen()}
+        onClose={() => setMoveOpen(false)}
+        onMoved={() => props.onChanged?.()}
+      />
+    </Show>
+    </>
   );
 }
 
@@ -491,9 +605,10 @@ function addedBy(task: Task): Task['created_by'] {
   return task.created_by;
 }
 
-function hasMeta(task: Task, showProject?: boolean, showKind?: boolean): boolean {
+function hasMeta(task: Task, showProject?: boolean, showKind?: boolean, showCreated?: boolean): boolean {
   return Boolean(
     showKind ||
+      showCreated ||
       (task.is_ongoing && (task.today_skipped || task.checkin_done_count + task.checkin_skipped_count > 0)) ||
       task.due_at ||
       (showProject !== false && task.project) ||
@@ -502,6 +617,7 @@ function hasMeta(task: Task, showProject?: boolean, showKind?: boolean): boolean
       task.estimated_minutes ||
       task.comment_count > 0 ||
       task.assignee ||
+      (task.assignees?.length ?? 0) > 0 ||
       addedBy(task),
   );
 }

@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     "apps.analytics",
     "apps.audit",
     "apps.donations",
+    "apps.people",
     "apps.realtime",
     "apps.translations",
 ]
@@ -243,7 +244,8 @@ REST_FRAMEWORK = {
         "share_guest": "120/min",
         "ai_command": "30/min",
         "ai_heavy": "20/min",
-        "search": "120/min",
+        # Type-ahead search fires on nearly every keystroke; keep the ceiling well above a fast typist.
+        "search": "600/min",
         "translations": "120/min",
     },
     "DATETIME_FORMAT": "iso-8601",

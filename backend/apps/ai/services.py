@@ -566,6 +566,7 @@ def polish_tasks(user, task_ids: list[int]) -> dict:
             project=task.project,
             visibility=task.visibility,
             created_by_id=task.created_by_id,
+            assignee_ids=task.assignee_ids(),
         ):
             skipped.append(task_id)
         else:

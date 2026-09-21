@@ -10,6 +10,7 @@ import {
   Columns3,
   Coins,
   FolderKanban,
+  Handshake,
   LayoutDashboard,
   LayoutGrid,
   Lightbulb,
@@ -25,12 +26,16 @@ import {
   Sunrise,
   TrendingUp,
   User,
+  UserCheck,
+  Users,
   X,
 } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
 import { LanguageSwitch } from '~/components/shared/LanguageSwitch';
 import { Logo } from '~/components/shared/Logo';
+import { peopleApi } from '~/features/people/api';
+import { createQuery } from '~/hooks/createQuery';
 import { t } from '~/i18n';
 import { authStore } from '~/stores/auth';
 import { uiStore } from '~/stores/ui';
@@ -41,6 +46,9 @@ interface NavLink {
   href: string;
   icon: () => JSX.Element;
   end?: boolean;
+  /** Dynamic entries (People) carry a display name, not a translation key. */
+  raw?: boolean;
+  count?: number;
 }
 
 interface NavSection {
@@ -59,6 +67,7 @@ const SECTIONS: NavSection[] = [
   {
     label: 'Tasks',
     links: [
+      { label: 'Clients', href: '/tasks/clients', icon: () => <Handshake size={15} /> },
       { label: 'All', href: '/tasks/all', icon: () => <LayoutGrid size={15} /> },
       { label: 'Personal', href: '/tasks/personal', icon: () => <User size={15} /> },
       { label: 'Business', href: '/tasks/business', icon: () => <Briefcase size={15} /> },
@@ -105,6 +114,7 @@ const ASSISTANT_SECTIONS: NavSection[] = [
   {
     label: 'Tasks',
     links: [
+      { label: 'Clients', href: '/tasks/clients', icon: () => <Handshake size={15} /> },
       { label: 'All', href: '/tasks/all', icon: () => <LayoutGrid size={15} /> },
       { label: 'Personal', href: '/tasks/personal', icon: () => <User size={15} /> },
       { label: 'Business', href: '/tasks/business', icon: () => <Briefcase size={15} /> },
@@ -126,6 +136,7 @@ const ASSISTANT_SECTIONS: NavSection[] = [
 ];
 
 const AI_LINK: NavLink = { label: 'AI', href: '/ai', icon: () => <Sparkles size={15} /> };
+const PEOPLE_LINK: NavLink = { label: 'People', href: '/people', icon: () => <Users size={15} /> };
 const SETTINGS_LINK: NavLink = { label: 'Settings', href: '/settings', icon: () => <Settings size={15} /> };
 const FOOTER_LINKS: NavLink[] = [{ label: 'Donate', href: '/donate', icon: () => <Coins size={15} /> }, SETTINGS_LINK];
 
@@ -139,7 +150,26 @@ export function Sidebar(props: {
 }): JSX.Element {
   const location = useLocation();
   const isActive = (href: string) => location.pathname === href || location.pathname.startsWith(`${href}/`);
-  const sections = () => (authStore.isAssistant() ? ASSISTANT_SECTIONS : SECTIONS);
+  // Who has handed me work: one "From <name>" link each, only while they have given me something.
+  const delegators = createQuery(() => 'people:delegators', () => peopleApi.delegators(), { staleMs: 10_000 });
+  const sections = (): NavSection[] => {
+    const out = authStore.isAssistant() ? [...ASSISTANT_SECTIONS] : [...SECTIONS];
+    const from = (delegators.data() ?? []).filter((row) => row.open_count + row.done_count > 0);
+    if (from.length > 0) {
+      out.splice(authStore.isAssistant() ? 1 : 2, 0, {
+        label: 'From',
+        links: from.map((row) => ({
+          label: row.user.display_name,
+          href: `/from/${row.user.id}`,
+          icon: () => <UserCheck size={15} />,
+          raw: true,
+          count: row.open_count,
+        })),
+      });
+    }
+    if (authStore.isAdmin() && !authStore.isAssistant()) out.splice(from.length > 0 ? 3 : 2, 0, { links: [PEOPLE_LINK] });
+    return out;
+  };
   const footerLinks = () => {
     if (authStore.isAssistant()) return [SETTINGS_LINK];
     return authStore.isAdmin() ? [AI_LINK, ...FOOTER_LINKS] : FOOTER_LINKS;
@@ -197,7 +227,10 @@ export function Sidebar(props: {
                     aria-current={isActive(link.href) ? 'page' : undefined}
                   >
                     <span class={styles.linkIcon}>{link.icon()}</span>
-                    <span class={styles.linkLabel}>{t(link.label)}</span>
+                    <span class={styles.linkLabel}>{link.raw ? link.label : t(link.label)}</span>
+                    <Show when={link.count}>
+                      <span class={styles.linkCount}>{link.count}</span>
+                    </Show>
                   </A>
                 )}
               </For>

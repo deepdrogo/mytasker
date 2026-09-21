@@ -1,5 +1,6 @@
 import { api, type Paginated, type QueryParams } from '~/api/client';
 import { invalidate } from '~/hooks/createQuery';
+import { noteLocalChange } from '~/stores/localChanges';
 import type { ID, Priority, RecurrenceRule, Task, TaskKind, TaskOrigin, Visibility } from '~/types';
 
 export interface TaskListParams extends QueryParams {
@@ -19,6 +20,16 @@ export interface TaskListParams extends QueryParams {
   has_project?: boolean;
   /** Long-term work ticked daily: `true` only those, `false` everything else. */
   is_ongoing?: boolean;
+  /** Client work: `true` only client tasks (the Clients page), `false` everything else. */
+  is_client?: boolean;
+  /** `'0'` turns off the default "client work first" pinning. */
+  pin_clients?: '0';
+  /** Only tasks I own (People page: what I handed to one person). */
+  mine?: boolean;
+  /** Work handed to me by others: `true` only that, `false` keeps it out of my own lists. */
+  delegated?: boolean;
+  /** Work handed to me by one specific person. */
+  delegated_by?: ID;
   q?: string;
   ordering?: string;
   page?: number;
@@ -38,12 +49,15 @@ export interface TaskInput {
   project_id?: ID | null;
   parent_id?: ID | null;
   assignee_id?: ID | null;
+  /** Hand the task to these People (replaces the current set; `[]` takes it back). */
+  assignee_ids?: ID[];
   start_at?: string | null;
   due_at?: string | null;
   due_has_time?: boolean;
   reminder_at?: string | null;
   estimated_minutes?: number | null;
   is_ongoing?: boolean;
+  is_client?: boolean;
   tags?: string[];
   sort_order?: number;
   recurrence?: Omit<RecurrenceRule, 'id'> | null;
@@ -58,13 +72,29 @@ export interface BulkRescheduleResult {
 export interface TaskCounts {
   personal: number;
   business: number;
+  crypto: number;
+  clients: number;
   today: number;
   overdue: number;
   upcoming: number;
 }
 
+/** Where a task should live next: one of the three lists, or a project. */
+export type MoveDestination = { kind: TaskKind; project_id?: never } | { project_id: ID; kind?: never };
+
+export interface BulkMoveResult {
+  moved: ID[];
+  skipped: ID[];
+}
+
 /** Namespaces to invalidate after any task mutation. */
-const TASK_SCOPES = ['tasks', 'today', 'projects', 'analytics', 'activity'];
+const TASK_SCOPES = ['tasks', 'today', 'projects', 'analytics', 'activity', 'search', 'people'];
+
+/** Refresh everything that shows tasks and remember the ids so the realtime echo is not refetched twice. */
+function changed(...ids: Array<ID | null | undefined>): void {
+  noteLocalChange('task', ...ids);
+  invalidate(...TASK_SCOPES);
+}
 
 export const tasksApi = {
   list: (params: TaskListParams) => api.get<Paginated<Task>>('/tasks/', { params }),
@@ -75,52 +105,75 @@ export const tasksApi = {
 
   create: async (input: TaskInput): Promise<Task> => {
     const task = await api.post<Task>('/tasks/', input);
-    invalidate(...TASK_SCOPES);
+    changed(task.id);
     return task;
   },
 
   update: async (id: ID, input: TaskInput): Promise<Task> => {
     const task = await api.patch<Task>(`/tasks/${id}/`, input);
-    invalidate(...TASK_SCOPES);
+    changed(id);
     return task;
   },
 
   complete: async (id: ID): Promise<Task> => {
     const task = await api.post<Task>(`/tasks/${id}/complete/`);
-    invalidate(...TASK_SCOPES);
+    changed(id, ...(task.subtasks ?? []).map((sub) => sub.id));
     return task;
   },
 
   reopen: async (id: ID): Promise<Task> => {
     const task = await api.post<Task>(`/tasks/${id}/reopen/`);
-    invalidate(...TASK_SCOPES);
+    changed(id);
     return task;
   },
 
   /** Daily tick for a long-term task. `checked: false` removes today's tick. */
   checkin: async (id: ID, checked = true): Promise<Task> => {
     const task = await api.post<Task>(`/tasks/${id}/checkin/`, { checked });
-    invalidate(...TASK_SCOPES);
+    changed(id);
     return task;
   },
 
   /** "Skip today" on a long-term task: a deliberate miss that is counted and breaks the streak. */
   skipCheckin: async (id: ID): Promise<Task> => {
     const task = await api.post<Task>(`/tasks/${id}/checkin/`, { skipped: true });
-    invalidate(...TASK_SCOPES);
+    changed(id);
     return task;
   },
 
   duplicate: async (id: ID): Promise<Task> => {
     const task = await api.post<Task>(`/tasks/${id}/duplicate/`);
-    invalidate(...TASK_SCOPES);
+    changed(task.id);
     return task;
   },
 
   snooze: async (id: ID, minutes: number): Promise<Task> => {
     const task = await api.post<Task>(`/tasks/${id}/snooze/`, { minutes });
-    invalidate(...TASK_SCOPES);
+    changed(id);
     return task;
+  },
+
+  /**
+   * Move a task to another list (`{ kind }`) or into a project (`{ project_id }`).
+   * Subtasks travel with it and the client flag is kept.
+   */
+  move: async (id: ID, destination: MoveDestination): Promise<Task> => {
+    const task = await api.post<Task>(`/tasks/${id}/move/`, destination);
+    changed(id, ...(task.subtasks ?? []).map((sub) => sub.id));
+    return task;
+  },
+
+  bulkMove: async (taskIds: ID[], destination: MoveDestination): Promise<BulkMoveResult> => {
+    const result = await api.post<BulkMoveResult>('/tasks/bulk-move/', { task_ids: taskIds, ...destination });
+    changed(...result.moved);
+    return result;
+  },
+
+  /** Hand many tasks to the same People at once (`[]` takes them all back). */
+  bulkAssign: async (taskIds: ID[], assigneeIds: ID[]): Promise<BulkRescheduleResult> => {
+    const result = await api.post<BulkRescheduleResult>('/tasks/bulk-assign/', { task_ids: taskIds, assignee_ids: assigneeIds });
+    changed(...result.updated);
+    return result;
   },
 
   /** Same deadline for many tasks; `dueAt: null` clears it. */
@@ -130,24 +183,24 @@ export const tasksApi = {
       due_at: dueAt,
       due_has_time: dueHasTime,
     });
-    invalidate(...TASK_SCOPES);
+    changed(...result.updated);
     return result;
   },
 
   remove: async (id: ID): Promise<void> => {
     await api.delete(`/tasks/${id}/`);
-    invalidate(...TASK_SCOPES);
+    changed(id);
   },
 
   bulkComplete: async (taskIds: ID[]): Promise<BulkRescheduleResult> => {
     const result = await api.post<BulkRescheduleResult>('/tasks/bulk-complete/', { task_ids: taskIds });
-    invalidate(...TASK_SCOPES);
+    changed(...result.updated);
     return result;
   },
 
   bulkDelete: async (taskIds: ID[]): Promise<{ deleted: ID[]; skipped: ID[] }> => {
     const result = await api.post<{ deleted: ID[]; skipped: ID[] }>('/tasks/bulk-delete/', { task_ids: taskIds });
-    invalidate(...TASK_SCOPES);
+    changed(...result.deleted);
     return result;
   },
 
@@ -163,13 +216,13 @@ export const tasksApi = {
   /** Persist a new subtask order (first id on top). Ordering is a preference — versions stay put. */
   reorderSubtasks: async (parentId: ID, ids: ID[]): Promise<{ ids: ID[] }> => {
     const result = await api.post<{ ids: ID[] }>(`/tasks/${parentId}/subtasks/reorder/`, { ids });
-    invalidate(...TASK_SCOPES);
+    changed(parentId);
     return result;
   },
 
   addSubtask: async (id: ID, input: TaskInput): Promise<Task> => {
     const task = await api.post<Task>(`/tasks/${id}/subtasks/`, input);
-    invalidate(...TASK_SCOPES);
+    changed(task.id, id);
     return task;
   },
 };

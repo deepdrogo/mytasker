@@ -17,7 +17,7 @@ class TaskFilter(filters.FilterSet):
     priority = filters.BaseInFilter(field_name="priority")
     project = filters.NumberFilter(field_name="project_id")
     has_project = filters.BooleanFilter(method="filter_has_project")
-    assignee = filters.NumberFilter(field_name="assignee_id")
+    assignee = filters.NumberFilter(method="filter_assignee")
     parent = filters.NumberFilter(field_name="parent_id")
     top_level = filters.BooleanFilter(method="filter_top_level")
     visibility = filters.CharFilter(field_name="visibility")
@@ -27,6 +27,14 @@ class TaskFilter(filters.FilterSet):
     has_due = filters.BooleanFilter(method="filter_has_due")
     # Long-term work ticked daily ("daily check-ins"); `is_ongoing=true` lists only those, `false` leaves them out.
     is_ongoing = filters.BooleanFilter(field_name="is_ongoing")
+    # Client work; `is_client=true` is the Clients page, `false` hides it from a list.
+    is_client = filters.BooleanFilter(field_name="is_client")
+    # Only tasks I own (`mine=true`), e.g. the People page listing what I handed to someone.
+    mine = filters.BooleanFilter(method="filter_mine")
+    # Work handed to me by someone else: `delegated=true` only that, `false` keeps it out of my own lists.
+    delegated = filters.BooleanFilter(method="filter_delegated")
+    # Work handed to me by one specific person (the "From <name>" page).
+    delegated_by = filters.NumberFilter(method="filter_delegated_by")
     completed = filters.BooleanFilter(method="filter_completed")
     overdue = filters.BooleanFilter(method="filter_overdue")
     view = filters.CharFilter(method="filter_view")
@@ -39,6 +47,24 @@ class TaskFilter(filters.FilterSet):
     def filter_exclude_kind(self, queryset, name, value):
         kinds = [item.strip() for item in (value or "").split(",") if item.strip()]
         return queryset.exclude(kind__in=kinds) if kinds else queryset
+
+    def filter_assignee(self, queryset, name, value):
+        return queryset.filter(Q(assignee_id=value) | Q(assignees=value)).distinct()
+
+    def filter_mine(self, queryset, name, value):
+        user = self.request.user
+        return queryset.filter(owner=user) if value else queryset.exclude(owner=user)
+
+    def filter_delegated(self, queryset, name, value):
+        user = self.request.user
+        handed_to_me = (Q(assignee=user) | Q(assignees=user)) & ~Q(owner=user) & Q(project__isnull=True)
+        if value:
+            return queryset.filter(handed_to_me).distinct()
+        return queryset.exclude(pk__in=Task.objects.filter(handed_to_me).values("pk"))
+
+    def filter_delegated_by(self, queryset, name, value):
+        user = self.request.user
+        return queryset.filter(owner_id=value).filter(Q(assignee=user) | Q(assignees=user)).distinct()
 
     def filter_has_project(self, queryset, name, value):
         return queryset.filter(project__isnull=not value)
@@ -95,12 +121,24 @@ class TaskFilter(filters.FilterSet):
         return queryset
 
     def filter_search(self, queryset, name, value):
+        """Every word must appear in the title, description, notes, tags or project name (any order)."""
+        from django.db.models import Func, TextField, Value
+
+        from common.search import _all_words, _words
+
         value = (value or "").strip()
-        if not value:
+        words = _words(value)
+        if not words:
             return queryset
         query = SearchQuery(value, config="english", search_type="websearch")
         return (
-            queryset.filter(Q(search_vector=query) | Q(title__icontains=value))
+            queryset.annotate(
+                tags_text=Func(F("tags"), Value(" "), function="array_to_string", output_field=TextField())
+            )
+            .filter(
+                _all_words(words, "title", "description", "notes", "tags_text", "project__name")
+                | Q(search_vector=query)
+            )
             .annotate(rank=SearchRank(F("search_vector"), query))
             .order_by("-rank", "-updated_at")
         )

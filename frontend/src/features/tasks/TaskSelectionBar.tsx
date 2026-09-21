@@ -1,4 +1,4 @@
-import { CheckCheck, Share2, Trash2, X } from 'lucide-solid';
+import { CheckCheck, FolderInput, Share2, Trash2, UserCheck, X } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { Show, createSignal } from 'solid-js';
 import { ApiError } from '~/api/client';
@@ -6,8 +6,11 @@ import { Button } from '~/components/ui/Button';
 import { ConfirmDialog } from '~/components/ui/Feedback';
 import { PolishButton } from '~/features/ai/PolishButton';
 import { BulkDueDate } from '~/features/tasks/BulkDueDate';
+import { HandOverDialog } from '~/features/tasks/HandOverDialog';
+import { MoveTaskDialog } from '~/features/tasks/MoveTaskDialog';
 import { tasksApi } from '~/features/tasks/api';
 import { t, tn } from '~/i18n';
+import { authStore } from '~/stores/auth';
 import { toast } from '~/stores/ui';
 import type { Task } from '~/types';
 import styles from './TaskSelectionBar.module.css';
@@ -26,6 +29,8 @@ interface TaskSelectionBarProps {
 /** Floating actions for a checkbox selection: AI polish, one deadline for all, complete, delete, share, clear. */
 export function TaskSelectionBar(props: TaskSelectionBarProps): JSX.Element {
   const [confirmDelete, setConfirmDelete] = createSignal(false);
+  const [moveOpen, setMoveOpen] = createSignal(false);
+  const [handOverOpen, setHandOverOpen] = createSignal(false);
   const [busy, setBusy] = createSignal<'complete' | 'delete' | null>(null);
 
   const editableIds = () =>
@@ -35,6 +40,14 @@ export function TaskSelectionBar(props: TaskSelectionBarProps): JSX.Element {
       .map((task) => task.id);
   const openIds = () => props.tasks().filter((task) => task.status !== 'done' && task.status !== 'cancelled').map((task) => task.id);
   const deletableIds = () => props.tasks().filter((task) => task.can_delete).map((task) => task.id);
+  // Only top-level tasks move on their own; subtasks travel with their parent.
+  const movable = () => props.tasks().filter((task) => task.can_edit && task.parent === null);
+  // Hand over: administrators, own top-level tasks only.
+  const handable = () => {
+    const me = authStore.user();
+    if (!me || !authStore.isAdmin()) return [];
+    return props.tasks().filter((task) => task.parent === null && task.owner.id === me.id);
+  };
 
   const changed = () => {
     props.onChanged();
@@ -94,6 +107,18 @@ export function TaskSelectionBar(props: TaskSelectionBarProps): JSX.Element {
         <div class={styles.actions}>
           <PolishButton taskIds={editableIds} label={t('Polish selected')} onChanged={changed} />
           <BulkDueDate tasks={props.tasks} onChanged={changed} />
+          <Show when={handable().length > 0}>
+            <Button variant="secondary" size="sm" onClick={() => setHandOverOpen(true)} title={t('Hand selected over to People')}>
+              <UserCheck size={13} />
+              <span class={styles.actionLabel}>{t('Hand over')}</span>
+            </Button>
+          </Show>
+          <Show when={movable().length > 0}>
+            <Button variant="secondary" size="sm" onClick={() => setMoveOpen(true)} title={t('Move selected')}>
+              <FolderInput size={13} />
+              <span class={styles.actionLabel}>{t('Move')}</span>
+            </Button>
+          </Show>
           <Show when={openIds().length > 0}>
             <Button variant="secondary" size="sm" onClick={() => void completeAll()} loading={busy() === 'complete'} title={t('Complete selected')}>
               <CheckCheck size={13} />
@@ -117,6 +142,13 @@ export function TaskSelectionBar(props: TaskSelectionBarProps): JSX.Element {
           </Button>
         </div>
       </div>
+
+      <Show when={moveOpen()}>
+        <MoveTaskDialog tasks={movable()} open={moveOpen()} onClose={() => setMoveOpen(false)} onMoved={changed} />
+      </Show>
+      <Show when={handOverOpen()}>
+        <HandOverDialog tasks={handable()} open={handOverOpen()} onClose={() => setHandOverOpen(false)} onChanged={changed} />
+      </Show>
 
       <ConfirmDialog
         open={confirmDelete()}

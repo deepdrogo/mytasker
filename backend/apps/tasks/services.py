@@ -36,6 +36,7 @@ EDITABLE_FIELDS = {
     "reminder_at",
     "estimated_minutes",
     "is_ongoing",
+    "is_client",
     "tags",
     "sort_order",
     "visibility",
@@ -59,6 +60,7 @@ def get_task_for_user(task_id: int, user, *, for_update: bool = False) -> Task:
         project=task.project,
         visibility=task.visibility,
         created_by_id=task.created_by_id,
+        assignee_ids=task.assignee_ids(),
     ):
         raise NotFound("Task not found.")
     return task
@@ -72,8 +74,52 @@ def assert_can_edit(task: Task, user, capability: str = Capability.EDIT_TASK) ->
         visibility=task.visibility,
         capability=capability,
         created_by_id=task.created_by_id,
+        assignee_ids=task.assignee_ids(),
     ):
         raise Forbidden("You cannot modify this task.")
+
+
+def is_owner_side(task: Task, user) -> bool:
+    """The owner, or an assistant acting for the owner - the people allowed to decide where a task lives."""
+    return task.owner_id == user.pk or getattr(user, "assistant_for_id", None) == task.owner_id
+
+
+def _resolve_assignees(task_owner, project: Project | None, ids, user) -> list[int]:
+    """Validate a whole hand-over set (order kept, duplicates and the owner dropped)."""
+    out: list[int] = []
+    for raw in ids or []:
+        resolved = _resolve_assignee(task_owner, project, int(raw), user)
+        if resolved is not None and resolved not in out:
+            out.append(resolved)
+    return out
+
+
+def _apply_assignees(task: Task, ids: list[int]) -> None:
+    """Write the set and mirror its first member into the legacy single `assignee` column."""
+    task.assignees.set(ids)
+    task.assignee_id = ids[0] if ids else None
+
+
+def _resolve_assignee(task_owner, project: Project | None, assignee_id: int | None, user) -> int | None:
+    """
+    Inside a project any member id passes through as before. Outside a project a task can only be handed to
+    someone on the owner's People list - which only administrators can build - and never to the owner.
+    """
+    if assignee_id is None:
+        return None
+    if project is not None:
+        return assignee_id
+    from apps.people.services import can_delegate_to
+
+    if task_owner.pk != user.pk and getattr(user, "assistant_for_id", None) != task_owner.pk:
+        raise Forbidden("Only the owner can hand a task to someone.")
+    if assignee_id == task_owner.pk:
+        return None
+    if not can_delegate_to(task_owner, assignee_id):
+        raise ValidationFailed(
+            "Add this person on the People page first.", fields={"assignee": ["Not on your People list."]}
+        )
+    return assignee_id
 
 
 def _resolve_project(project_id: int | None, user, *, capability: str = Capability.CREATE_TASK) -> Project | None:
@@ -143,6 +189,9 @@ def _payload(task: Task, **extra) -> dict[str, Any]:
         "priority": task.priority,
         "status": task.status,
         "project_name": task.project.name if task.project_id else "",
+        "is_client": task.is_client,
+        "assignee_id": task.assignee_id,
+        "assignee_ids": sorted(task.assignee_ids()),
         "is_subtask": task.is_subtask,
         "parent_id": task.parent_id,
         "parent_title": task.parent.title if task.parent_id and task.parent else "",
@@ -163,6 +212,7 @@ def create_task(
     project_id: int | None = None,
     parent_id: int | None = None,
     assignee_id: int | None = None,
+    assignee_ids: list[int] | None = None,
     visibility: str | None = None,
     recurrence: dict | None = None,
     owner=None,
@@ -178,6 +228,7 @@ def create_task(
         raise ValidationFailed("Title is required.", fields={"title": ["This field is required."]})
 
     parent: Task | None = None
+    resolved_assignees: list[int] = []
     if parent_id is not None:
         parent = get_task_for_user(parent_id, user)
         if parent.is_subtask:
@@ -188,6 +239,8 @@ def create_task(
         task_owner = parent.owner
         resolved_visibility = parent.visibility
         resolved_origin = parent.origin
+        # A subtask is part of the same promise as its parent.
+        fields["is_client"] = parent.is_client
     else:
         project = _resolve_project(project_id, user)
         if owner is not None:
@@ -199,8 +252,13 @@ def create_task(
             task_owner = user.assistant_for
         else:
             task_owner = user
-        if assignee_id is not None and user.assistant_for_id is not None:
-            assignee_id = None
+        wanted = list(assignee_ids or [])
+        if assignee_id is not None and assignee_id not in wanted:
+            wanted.insert(0, assignee_id)
+        if user.assistant_for_id is not None:
+            wanted = []
+        resolved_assignees = _resolve_assignees(task_owner, project, wanted, user)
+        assignee_id = resolved_assignees[0] if resolved_assignees else None
         if project is not None and kind == Task.Kind.PERSONAL:
             kind = Task.Kind.BUSINESS
         resolved_visibility = _normalise_visibility(project, visibility, task_owner == user)
@@ -230,6 +288,8 @@ def create_task(
         recurrence=rule,
         **payload,
     )
+    if resolved_assignees:
+        task.assignees.set(resolved_assignees)
     _update_search_vector(task)
     _sync_reminder(task)
 
@@ -274,7 +334,25 @@ def update_task(actor: Actor, task_id: int, *, expected_version: int | None = No
 
     previous_due = task.due_at
     previous_assignee = task.assignee_id
+    previous_assignees = task.assignee_ids()
     changed: list[str] = []
+
+    # Someone a task was handed to may change its content, not where it lives or whose it is.
+    # (Unchanged values are tolerated: the editor sends the whole form.)
+    if not is_owner_side(task, user) and task.project_id is None:
+        current = {
+            "assignee_id": task.assignee_id,
+            "assignee_ids": sorted(task.assignee_ids()),
+            "project_id": task.project_id,
+            "kind": task.kind,
+            "is_client": task.is_client,
+        }
+        for locked, value in current.items():
+            if locked in fields:
+                sent = sorted(fields[locked] or []) if locked == "assignee_ids" else fields[locked]
+                if sent != value:
+                    raise Forbidden("Only the owner can change that.")
+            fields.pop(locked, None)
 
     if "project_id" in fields:
         project = _resolve_project(fields.pop("project_id"), user)
@@ -290,11 +368,14 @@ def update_task(actor: Actor, task_id: int, *, expected_version: int | None = No
             task.origin = Task.Origin.LIST
             changed.append("origin")
 
-    if "assignee_id" in fields:
-        assignee_id = fields.pop("assignee_id")
-        if assignee_id is not None and task.project_id is None:
-            raise ValidationFailed("Only project tasks can be assigned.", fields={"assignee": ["No project."]})
-        task.assignee_id = assignee_id
+    if "assignee_ids" in fields or "assignee_id" in fields:
+        if "assignee_ids" in fields:
+            wanted = list(fields.pop("assignee_ids") or [])
+            fields.pop("assignee_id", None)
+        else:
+            single = fields.pop("assignee_id")
+            wanted = [single] if single is not None else []
+        _apply_assignees(task, _resolve_assignees(task.owner, task.project, wanted, user))
         changed.append("assignee")
 
     if "recurrence" in fields:
@@ -305,10 +386,13 @@ def update_task(actor: Actor, task_id: int, *, expected_version: int | None = No
     if "visibility" in fields:
         requested = fields.pop("visibility")
         if task.owner_id != user.pk:
-            raise Forbidden("Only the owner can change visibility.")
-        task.visibility = _normalise_visibility(task.project, requested, True)
-        if "visibility" not in changed:
-            changed.append("visibility")
+            # The editor re-sends the whole form; only an actual change is the owner's call.
+            if requested != task.visibility:
+                raise Forbidden("Only the owner can change visibility.")
+        else:
+            task.visibility = _normalise_visibility(task.project, requested, True)
+            if "visibility" not in changed:
+                changed.append("visibility")
 
     for key, value in fields.items():
         if key not in EDITABLE_FIELDS or key in {"status"}:
@@ -326,6 +410,7 @@ def update_task(actor: Actor, task_id: int, *, expected_version: int | None = No
     task.version = F("version") + 1
     task.save(update_fields=[*set(changed), "version", "updated_at"])
     task.refresh_from_db()
+    _sync_subtasks_with_parent(task, changed)
 
     if "title" in changed or "description" in changed:
         _update_search_vector(task)
@@ -333,7 +418,9 @@ def update_task(actor: Actor, task_id: int, *, expected_version: int | None = No
         _sync_reminder(task)
 
     deadline_changed = "due_at" in changed and previous_due != task.due_at
-    assignment_changed = "assignee" in changed and previous_assignee != task.assignee_id
+    assignment_changed = "assignee" in changed and (
+        previous_assignee != task.assignee_id or previous_assignees != task.assignee_ids()
+    )
 
     if deadline_changed:
         emit(
@@ -358,7 +445,9 @@ def update_task(actor: Actor, task_id: int, *, expected_version: int | None = No
                 target_type="task",
                 target_id=task.pk,
                 payload=_payload(
-                    task, assignee=task.assignee.display_name if task.assignee_id and task.assignee else ""
+                    task,
+                    assignee=", ".join(sorted(u.display_name for u in task.assignees.all()))
+                    or (task.assignee.display_name if task.assignee_id and task.assignee else ""),
                 ),
                 **_event_project_fields(task),
             )
@@ -375,6 +464,140 @@ def update_task(actor: Actor, task_id: int, *, expected_version: int | None = No
             )
         )
     return task
+
+
+# Subtasks carry a copy of these so list / project filters work without joins; they must follow the parent.
+INHERITED_FROM_PARENT = ("project", "kind", "origin", "visibility", "is_client")
+
+
+def _sync_subtasks_with_parent(task: Task, changed: list[str]) -> None:
+    """After a parent changed list / project / client flag, bring its subtasks along."""
+    if task.is_subtask:
+        return
+    fields = [name for name in INHERITED_FROM_PARENT if name in changed]
+    if not fields:
+        return
+    values = {name: getattr(task, name if name != "project" else "project_id") for name in fields}
+    if "project" in values:
+        values["project_id"] = values.pop("project")
+    Task.objects.filter(parent=task).update(**values)
+
+
+# --------------------------------------------------------------------------- move
+
+
+@transaction.atomic
+def move_task(actor: Actor, task_id: int, *, kind: str | None = None, project_id: int | None = None) -> Task:
+    """
+    Move a top-level task to another home: one of the Personal / Business / Crypto lists (``kind``)
+    or a project (``project_id``). Moving into a project files the task there (``origin=project``);
+    moving to a list detaches it from any project. Subtasks always travel with the parent and the
+    client flag is kept, so a client's job stays a client's job wherever it lives.
+    """
+    user = actor.user
+    task = get_task_for_user(task_id, user, for_update=True)
+    assert_can_edit(task, user)
+    if not is_owner_side(task, user):
+        raise Forbidden("Only the owner can move a task.")
+    if task.is_subtask:
+        raise ValidationFailed("Move the parent task instead.", fields={"task": ["Subtask follows parent."]})
+    if (kind is None) == (project_id is None):
+        raise ValidationFailed("Pick either a list or a project.")
+
+    previous = {"project_id": task.project_id, "kind": task.kind, "origin": task.origin}
+
+    if project_id is not None:
+        project = _resolve_project(project_id, user)
+        task.project = project
+        task.origin = Task.Origin.PROJECT
+        if task.kind == Task.Kind.PERSONAL:
+            task.kind = Task.Kind.BUSINESS
+        task.visibility = _normalise_visibility(project, task.visibility, task.owner_id == user.pk)
+    else:
+        if kind not in dict(Task.Kind.choices):
+            raise ValidationFailed("Unknown list.", fields={"kind": ["Unknown list."]})
+        task.project = None
+        task.origin = Task.Origin.LIST
+        task.kind = kind
+        # A project member assignment does not survive leaving the project; a People delegation does.
+        kept = [uid for uid in task.assignee_ids() if _is_delegate(task.owner, uid)]
+        _apply_assignees(task, kept)
+        task.visibility = Visibility.PRIVATE
+
+    current = {"project_id": task.project_id, "kind": task.kind, "origin": task.origin}
+    if current == previous:
+        return task
+
+    # Land at the end of the destination list so the move never shuffles what is already there.
+    siblings = Task.objects.filter(parent__isnull=True, deleted_at__isnull=True)
+    if task.project_id:
+        siblings = siblings.filter(project_id=task.project_id)
+    else:
+        siblings = siblings.filter(project__isnull=True, kind=task.kind, owner=task.owner)
+    last = siblings.exclude(pk=task.pk).aggregate(m=Max("sort_order")).get("m")
+    task.sort_order = (last or 0) + 1
+
+    task.version = F("version") + 1
+    task.save(
+        update_fields=["project", "origin", "kind", "assignee", "visibility", "sort_order", "version", "updated_at"]
+    )
+    task.refresh_from_db()
+    _sync_subtasks_with_parent(task, ["project", "kind", "origin", "visibility"])
+
+    emit(
+        DomainEvent(
+            name=EventName.TASK_UPDATED,
+            actor=actor,
+            target_type="task",
+            target_id=task.pk,
+            payload=_payload(
+                task,
+                fields=["project", "kind", "origin"],
+                moved_from_project_id=previous["project_id"],
+                moved_from_kind=previous["kind"],
+            ),
+            **_event_project_fields(task),
+        )
+    )
+    return task
+
+
+def bulk_assign(actor: Actor, task_ids: list[int], *, assignee_ids: list[int]) -> dict[str, list[int]]:
+    """Hand many tasks to the same people at once (an empty set takes them all back)."""
+    updated: list[int] = []
+    skipped: list[int] = []
+    for task_id in _dedupe_ids(task_ids, verb="Hand over"):
+        try:
+            with transaction.atomic():
+                update_task(actor, task_id, assignee_ids=list(assignee_ids))
+        except (NotFound, Forbidden, Conflict, ValidationFailed):
+            skipped.append(task_id)
+        else:
+            updated.append(task_id)
+    return {"updated": updated, "skipped": skipped}
+
+
+def _is_delegate(owner, assignee_id: int | None) -> bool:
+    from apps.people.services import can_delegate_to
+
+    return can_delegate_to(owner, assignee_id)
+
+
+def bulk_move(
+    actor: Actor, task_ids: list[int], *, kind: str | None = None, project_id: int | None = None
+) -> dict[str, list[int]]:
+    """Move many tasks to the same list / project; the ones that cannot move are reported, not fatal."""
+    moved: list[int] = []
+    skipped: list[int] = []
+    for task_id in _dedupe_ids(task_ids, verb="Move"):
+        try:
+            with transaction.atomic():
+                move_task(actor, task_id, kind=kind, project_id=project_id)
+        except (NotFound, Forbidden, Conflict, ValidationFailed):
+            skipped.append(task_id)
+        else:
+            moved.append(task_id)
+    return {"moved": moved, "skipped": skipped}
 
 
 # --------------------------------------------------------------------------- complete
@@ -532,6 +755,7 @@ def duplicate_task(actor: Actor, task_id: int) -> Task:
         estimated_minutes=original.estimated_minutes,
         tags=list(original.tags),
     )
+    copy.assignees.set(original.assignees.all())
     _update_search_vector(copy)
     emit(
         DomainEvent(
@@ -585,6 +809,7 @@ def _spawn_next_recurrence(task: Task, actor: Actor) -> None:
         recurrence_parent=task,
         reminder_at=(next_due - (task.due_at - task.reminder_at)) if (task.reminder_at and task.due_at) else None,
     )
+    clone.assignees.set(task.assignees.all())
     RecurrenceRule.objects.filter(pk=rule.pk).update(occurrences_created=F("occurrences_created") + 1)
     _update_search_vector(clone)
     _sync_reminder(clone)

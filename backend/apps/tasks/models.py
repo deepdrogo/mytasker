@@ -50,6 +50,7 @@ class TaskQuerySet(SoftDeleteQuerySet):
         Single source of truth for task visibility.
 
         - own tasks: always
+        - tasks handed to me (assignee), wherever they live
         - project tasks: accepted member of a group / group_plus project AND visibility=group
         - private (Group Plus) tasks of other users: never
         - assistant accounts: only the principal's tasks the assistant created itself
@@ -59,10 +60,15 @@ class TaskQuerySet(SoftDeleteQuerySet):
         from apps.projects.models import Project
 
         if getattr(user, "assistant_for_id", None) is not None:
-            return self.filter(owner_id=user.assistant_for_id, created_by=user)
+            # What the assistant added for the principal, plus anything handed to the assistant itself.
+            return self.filter(
+                Q(owner_id=user.assistant_for_id, created_by=user) | Q(assignee=user) | Q(assignees=user)
+            ).distinct()
 
         return self.filter(
             Q(owner=user)
+            | Q(assignee=user)
+            | Q(assignees=user)
             | Q(
                 visibility=Visibility.GROUP,
                 project__isnull=False,
@@ -124,6 +130,11 @@ class Task(TimeStampedModel, SoftDeleteModel):
     assignee = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="assigned_tasks"
     )
+    # Everyone the task was handed to (People). `assignee` mirrors the first of them for older code paths
+    # (project assignment, notifications, AI tools); this set is the source of truth for delegation.
+    assignees = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="handed_tasks", db_table="tasks_task_assignees"
+    )
     project = models.ForeignKey(
         "projects.Project", on_delete=models.CASCADE, null=True, blank=True, related_name="tasks"
     )
@@ -147,6 +158,9 @@ class Task(TimeStampedModel, SoftDeleteModel):
     estimated_minutes = models.PositiveIntegerField(null=True, blank=True)
     # Long-term work: no deadline, ticked off once a day (TaskCheckin), completed only when truly finished.
     is_ongoing = models.BooleanField(default=False, db_index=True)
+    # Client work: something promised to a customer. Pinned to the top of every list and the dashboard,
+    # and collected on the Clients page grouped by project (a client task may also have no project).
+    is_client = models.BooleanField(default=False, db_index=True)
 
     recurrence = models.ForeignKey(
         RecurrenceRule, on_delete=models.SET_NULL, null=True, blank=True, related_name="tasks"
@@ -210,6 +224,16 @@ class Task(TimeStampedModel, SoftDeleteModel):
     @property
     def is_subtask(self) -> bool:
         return self.parent_id is not None
+
+    def assignee_ids(self) -> set[int]:
+        """Everyone this task is handed to: the primary assignee plus the People set (prefetched when listing)."""
+        ids = {self.assignee_id} if self.assignee_id else set()
+        cache = getattr(self, "_prefetched_objects_cache", {})
+        if "assignees" in cache:
+            ids.update(user.pk for user in cache["assignees"])
+        elif self.pk:
+            ids.update(self.assignees.values_list("pk", flat=True))
+        return ids
 
     @property
     def is_done(self) -> bool:

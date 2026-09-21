@@ -42,19 +42,40 @@ def today_snapshot(user, request=None) -> dict:
         .exclude(kind=Task.Kind.CRYPTO)
         .annotate(priority_rank=selectors.priority_rank_expression())
     )
-    overdue = base.filter(OPEN, due_at__lt=now).exclude(due_at__gte=start).order_by("due_at")[:50]
-    due_today = base.filter(OPEN, due_at__gte=start, due_at__lt=end).order_by("priority_rank", "due_at")[:100]
+    # Client work first: every open promise to a customer, grouped by project on the client side.
+    clients = base.filter(OPEN, is_client=True).order_by(
+        models_f_nulls_last("project__name"), "priority_rank", models_f_nulls_last("due_at"), "-updated_at"
+    )[:60]
+    overdue = base.filter(OPEN, due_at__lt=now).exclude(due_at__gte=start).order_by("-is_client", "due_at")[:50]
+    due_today = base.filter(OPEN, due_at__gte=start, due_at__lt=end).order_by(
+        "-is_client", "priority_rank", "due_at"
+    )[:100]
     # "Focus": high priority open tasks without a date, so they don't fall through the cracks.
+    # Client work already sits in its own block above, so it is left out here.
     focus = (
-        base.filter(OPEN, due_at__isnull=True, owner=user, is_ongoing=False)
+        base.filter(OPEN, due_at__isnull=True, owner=user, is_ongoing=False, is_client=False)
         .filter(priority__in=["critical", "high"])
         .order_by("priority_rank", "-updated_at")[:10]
     )
     # Long-term work: ticked daily, lives until the user completes it for good.
-    ongoing = list(base.filter(OPEN, is_ongoing=True).order_by("today_checked", "priority_rank", "-updated_at")[:30])
+    ongoing = list(
+        base.filter(OPEN, is_ongoing=True).order_by("today_checked", "-is_client", "priority_rank", "-updated_at")[
+            :30
+        ]
+    )
     ongoing_ctx = {**ctx, "checkin_streaks": task_services.checkin_streaks([t.pk for t in ongoing], day)}
+    # Work other people handed to me (People): its own block, named after whoever gave it.
+    delegated = (
+        base.filter(OPEN)
+        .filter(Q(assignee=user) | Q(assignees=user))
+        .exclude(owner=user)
+        .distinct()
+        .order_by("owner__full_name", "owner__email", "priority_rank", models_f_nulls_last("due_at"), "-updated_at")[
+            :60
+        ]
+    )
     # Personal / business lists without a project, so the dashboard shows the whole plate, not only dated work.
-    plate = base.filter(OPEN, project__isnull=True, is_ongoing=False).order_by(
+    plate = base.filter(OPEN, owner=user, project__isnull=True, is_ongoing=False, is_client=False).order_by(
         "priority_rank", models_f_nulls_last("due_at"), "-updated_at"
     )
     personal = plate.filter(kind=Task.Kind.PERSONAL)[:8]
@@ -144,6 +165,8 @@ def today_snapshot(user, request=None) -> dict:
             "sleep": SleepSessionSerializer(sleep).data if sleep else None,
         },
         "tasks": {
+            "clients": TaskSerializer(clients, many=True, context=ctx).data,
+            "delegated": TaskSerializer(delegated, many=True, context=ctx).data,
             "overdue": TaskSerializer(overdue, many=True, context=ctx).data,
             "due_today": TaskSerializer(due_today, many=True, context=ctx).data,
             "focus": TaskSerializer(focus, many=True, context=ctx).data,
