@@ -2,7 +2,7 @@
 // Built by drogoz · https://github.com/deepdrogo/mytasker
 
 import { A } from '@solidjs/router';
-import { CalendarOff, CalendarRange, Check, Circle, Flame, GripVertical, Handshake, Moon, Play, Rocket, ScrollText, Square, Undo2, UserCheck, X } from 'lucide-solid';
+import { CalendarOff, CalendarRange, Check, Circle, Flame, GripVertical, Handshake, Moon, Play, Rocket, ScrollText, Square, Undo2, X } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For, Show, createMemo, createSignal, onCleanup } from 'solid-js';
 import { Page } from '~/components/shared/Page';
@@ -25,7 +25,7 @@ import { tx } from '~/stores/translations';
 import { startSleep, stopSleep, timerStore, toggleTimer } from '~/stores/timer';
 import { toast } from '~/stores/ui';
 import type { RoutineItem, Rule, Task, TodayData, TodayProject } from '~/types';
-import { formatClock, formatDateFull, formatDueDate, formatMinutes, percent } from '~/utils/format';
+import { endOfDay, formatClock, formatDateFull, formatDueDate, formatMinutes, percent } from '~/utils/format';
 import styles from './Dashboard.module.css';
 import { cx } from '~/utils/cx';
 
@@ -125,17 +125,6 @@ export default function Dashboard(): JSX.Element {
 
   const share = (task: Task) => setShareTasks([task]);
 
-  /** Work other people handed to me, one block per giver (server orders by giver). */
-  const delegatedGroups = createMemo(() => {
-    const groups = new Map<number, { label: string; href: string; tasks: Task[] }>();
-    for (const task of data()?.tasks.delegated ?? []) {
-      const group = groups.get(task.owner.id) ?? { label: task.owner.display_name, href: `/from/${task.owner.id}`, tasks: [] };
-      group.tasks.push(task);
-      groups.set(task.owner.id, group);
-    }
-    return [...groups.values()];
-  });
-
   /** Client work grouped by project (server already orders by project name); loose tasks last. */
   const clientGroups = createMemo(() => {
     const groups = new Map<string, { label: string; href?: string; tasks: Task[] }>();
@@ -161,32 +150,13 @@ export default function Dashboard(): JSX.Element {
               {/* Column 1: the plate - dated work, daily check-ins, personal / business, the week ahead */}
               <section class={styles.col}>
                 <TaskComposer
-                  defaults={{ due_at: endOfToday() }}
+                  defaults={{ due_at: endOfDay(0), due_has_time: false }}
                   placeholder={t('Add a task for today…')}
                   onCreated={() => {
                     refresh();
                     invalidate('tasks');
                   }}
                 />
-
-                <Show when={(d().tasks.delegated?.length ?? 0) > 0}>
-                  <Section title={t('Handed to you')} count={d().tasks.delegated.length} tone="strong" hint={t('by other people')}>
-                    <div class={styles.clientGroups}>
-                      <For each={delegatedGroups()}>
-                        {(group) => (
-                          <div class={styles.clientGroup}>
-                            <A href={group.href} class={styles.clientGroupLabel}>
-                              <UserCheck size={11} />
-                              <span>{t('From {name}', { name: group.label })}</span>
-                              <span class={styles.count}>{group.tasks.length}</span>
-                            </A>
-                            <TaskList tasks={group.tasks} compact showProject showKind onOpen={setActiveTask} onChanged={refresh} onShare={share} />
-                          </div>
-                        )}
-                      </For>
-                    </div>
-                  </Section>
-                </Show>
 
                 <Show when={d().tasks.clients.length > 0}>
                   <Section
@@ -478,12 +448,6 @@ export default function Dashboard(): JSX.Element {
       <ShareDialog tasks={shareTasks()} open={shareTasks() !== null} onClose={() => setShareTasks(null)} />
     </Page>
   );
-}
-
-function endOfToday(): string {
-  const d = new Date();
-  d.setHours(23, 59, 0, 0);
-  return d.toISOString();
 }
 
 function Section(props: {

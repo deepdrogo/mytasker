@@ -297,9 +297,13 @@ def update_preferences(user: User, **fields) -> UserPreference:
     prefs, _ = UserPreference.objects.get_or_create(user=user)
     changed = []
     for key, value in fields.items():
-        if value is not None and hasattr(prefs, key):
-            setattr(prefs, key, value)
-            changed.append(key)
+        if not hasattr(prefs, key):
+            continue
+        # `null` clears a nullable setting (bedtime, Crypto world dates); required ones ignore it.
+        if value is None and not UserPreference._meta.get_field(key).null:
+            continue
+        setattr(prefs, key, value)
+        changed.append(key)
     if changed:
         prefs.save(update_fields=changed)
     return prefs

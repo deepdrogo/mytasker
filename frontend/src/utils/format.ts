@@ -61,6 +61,17 @@ export function formatDateFull(value: ISODateTime | ISODate | null | undefined):
   return date.toLocaleDateString(intlLocale(), { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+/**
+ * 23:59 local time, `offset` days from today, as ISO. Pair it with `due_has_time: false`: a date-only
+ * deadline is stored at the end of its day so it is not overdue until the day is over.
+ */
+export function endOfDay(offset = 0): string {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  d.setHours(23, 59, 0, 0);
+  return d.toISOString();
+}
+
 function startOfDay(date: Date): Date {
   const copy = new Date(date);
   copy.setHours(0, 0, 0, 0);

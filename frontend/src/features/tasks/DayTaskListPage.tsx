@@ -11,17 +11,10 @@ import { createQuery } from '~/hooks/createQuery';
 import { intlLocale, t } from '~/i18n';
 import type { Task } from '~/types';
 import { cx } from '~/utils/cx';
+import { endOfDay } from '~/utils/format';
 import styles from './DayTaskListPage.module.css';
 
 export type DayView = 'today' | 'tomorrow';
-
-/** 23:59 local time, `offset` days from now - the default deadline for a task added on that day's page. */
-export function endOfDay(offset: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  d.setHours(23, 59, 0, 0);
-  return d.toISOString();
-}
 
 function dayLabel(offset: number): string {
   const d = new Date();
@@ -75,7 +68,7 @@ export function DayTaskListPage(props: { day: DayView }): JSX.Element {
       queryName={props.day}
       // Ongoing work has its own block above the list, so the dated list stays about deadlines.
       params={() => ({ view: props.day, top_level: true, exclude_kind: 'crypto', is_ongoing: false })}
-      composerDefaults={{ due_at: endOfDay(copy().offset) }}
+      composerDefaults={{ due_at: endOfDay(copy().offset), due_has_time: false }}
       composerPlaceholder={t(copy().placeholder)}
       showProject
       showKind

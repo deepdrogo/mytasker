@@ -206,7 +206,7 @@ export default function SharePage(): JSX.Element {
                       </Show>
                       <div class={styles.sub}>
                         <Show when={task.due_at}>
-                          <span>{formatDueDate(task.due_at, true)}</span>
+                          <span>{formatDueDate(task.due_at, task.due_has_time)}</span>
                         </Show>
                         <Show when={task.status === 'done'}>
                           <span>

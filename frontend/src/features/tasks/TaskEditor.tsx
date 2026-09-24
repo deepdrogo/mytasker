@@ -51,6 +51,7 @@ interface TaskEditorProps {
   onOpenTask?: (task: Task) => void;
 }
 
+const END_OF_DAY = '23:59';
 const PRIORITIES: Priority[] = ['critical', 'high', 'normal', 'low'];
 const PRIORITY_LABEL: Record<Priority, string> = { critical: 'Critical', high: 'High', normal: 'Normal', low: 'Low' };
 const RECURRENCE_OPTIONS = [
@@ -136,6 +137,29 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
     setDirty(true);
   };
 
+  /**
+   * Turning the clock on starts from an empty time (the user picks it); turning it off keeps the date.
+   * A date-only deadline lives at 23:59 of its day, so it is not overdue before the day is over.
+   */
+  const toggleHasTime = (on: boolean) => {
+    const date = dueAt().slice(0, 10);
+    const time = dueAt().slice(11, 16);
+    batch(() => {
+      setHasTime(on);
+      if (date) setDueAt(on ? (time && time !== END_OF_DAY ? `${date}T${time}` : date) : `${date}T${END_OF_DAY}`);
+      setDirty(true);
+    });
+  };
+
+  /** What gets saved: a clock time only when one is switched on and actually picked. */
+  const deadline = (): Pick<TaskInput, 'due_at' | 'due_has_time'> => {
+    const date = dueAt().slice(0, 10);
+    const time = dueAt().slice(11, 16);
+    if (!date) return { due_at: null, due_has_time: false };
+    if (hasTime() && time) return { due_at: fromLocalInputValue(`${date}T${time}`), due_has_time: true };
+    return { due_at: fromLocalInputValue(`${date}T${END_OF_DAY}`), due_has_time: false };
+  };
+
   const isRunning = () => timerStore.running()?.task?.id === props.task?.id;
   /** Owner (or their assistant) decides where a task lives and whose it is; a delegate edits content only. */
   const isOwner = () => {
@@ -156,8 +180,7 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
       description: description(),
       notes: notes(),
       priority: priority(),
-      due_at: fromLocalInputValue(dueAt()),
-      due_has_time: hasTime(),
+      ...deadline(),
       reminder_at: fromLocalInputValue(reminderAt()),
       estimated_minutes: estimate() ? Number(estimate()) : null,
       is_ongoing: ongoing(),
@@ -356,7 +379,7 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
                   <DateTimeInput
                     value={dueAt()}
                     dateOnly={!hasTime()}
-                    defaultTime={hasTime() ? '09:00' : '23:59'}
+                    defaultTime={hasTime() ? '' : END_OF_DAY}
                     onChange={(value) => mark(setDueAt)(value)}
                     disabled={!task().can_edit}
                   />
@@ -389,7 +412,7 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
                 <Checkbox
                   label={t('Due at a specific time')}
                   checked={hasTime()}
-                  onChange={(e) => mark(setHasTime)(e.currentTarget.checked)}
+                  onChange={(e) => toggleHasTime(e.currentTarget.checked)}
                   disabled={!task().can_edit}
                 />
                 <Checkbox

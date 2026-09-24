@@ -113,6 +113,11 @@ class UserPreference(TimeStampedModel):
     # they are principles and count every day.
     routine_on_weekends = models.BooleanField(default=False)
 
+    # Crypto world is a private task list, not a project, so its place on the project timeline is kept here.
+    # No start = not on the calendar; no end = runs on with no finish date.
+    crypto_world_start = models.DateField(null=True, blank=True)
+    crypto_world_end = models.DateField(null=True, blank=True)
+
     class Meta:
         db_table = "accounts_user_preference"
 

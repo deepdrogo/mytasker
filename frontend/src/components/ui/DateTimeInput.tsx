@@ -20,7 +20,10 @@ interface DateTimeInputProps {
   /** Minutes between time options. */
   step?: 5 | 10 | 15 | 30 | 60;
   sizeVariant?: 'sm' | 'md';
-  /** Time used when a date is picked and no time exists yet. */
+  /**
+   * Time used when a date is picked and no time exists yet (default 09:00). Pass '' to leave the time
+   * empty (`value` becomes plain `YYYY-MM-DD`) until the user picks one.
+   */
   defaultTime?: string;
   class?: string;
 }
@@ -56,7 +59,8 @@ export function DateTimeInput(props: DateTimeInputProps): JSX.Element {
       local.onChange('');
       return;
     }
-    local.onChange(`${date}T${timePart() || local.defaultTime || '09:00'}`);
+    const time = timePart() || (local.defaultTime ?? '09:00');
+    local.onChange(time ? `${date}T${time}` : date);
   };
 
   const setTime = (time: string) => {

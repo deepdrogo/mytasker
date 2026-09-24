@@ -1028,14 +1028,22 @@ def move_to_date(actor: Actor, task_id: int, target: date, *, keep_time: bool = 
 
     if task.due_at and keep_time and task.due_has_time:
         local = task.due_at.astimezone(user_zone(actor.user))
-        due = combine_local(target, local.time(), actor.user)
-    else:
-        due = combine_local(target, None, actor.user)
-    return update_task(actor, task_id, due_at=due)
+        return update_task(actor, task_id, due_at=combine_local(target, local.time(), actor.user), due_has_time=True)
+    return update_task(actor, task_id, due_at=combine_local(target, None, actor.user), due_has_time=False)
 
 
 def snooze(actor: Actor, task_id: int, *, minutes: int) -> Task:
+    """
+    Push a deadline back. Whole days on a task without a clock time ("Tomorrow") move the date only and
+    never invent an hour; anything else shifts the exact time.
+    """
     task = get_task_for_user(task_id, actor.user)
+    if minutes % (24 * 60) == 0 and not (task.due_at and task.due_has_time):
+        from common.tz import today_for, user_zone
+
+        today = today_for(actor.user)
+        current = task.due_at.astimezone(user_zone(actor.user)).date() if task.due_at else today
+        return move_to_date(actor, task_id, max(current, today) + timedelta(days=minutes // (24 * 60)))
     base = task.due_at or timezone.now()
     return update_task(actor, task_id, due_at=base + timedelta(minutes=minutes), due_has_time=True)
 

@@ -256,7 +256,7 @@ def handle_callback(user, data: str) -> tuple[str, dict | None, str]:
             return f"↩ Reopened <b>{escape(task.title)}</b>", keyboards.task_actions_keyboard(task.pk), "Reopened"
         if verb == "snooze" and len(parts) == 3:
             task = task_services.snooze(actor, int(parts[1]), minutes=int(parts[2]))
-            when = format_local(task.due_at, user, "%a %d %b %H:%M")
+            when = format_local(task.due_at, user, "%a %d %b %H:%M" if task.due_has_time else "%a %d %b")
             return f"⏰ <b>{escape(task.title)}</b> → {when}", keyboards.task_actions_keyboard(task.pk), "Snoozed"
         if verb == "timer" and len(parts) == 2:
             entry = time_services.start_timer(actor, task_id=int(parts[1]))

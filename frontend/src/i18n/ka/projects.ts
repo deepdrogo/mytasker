@@ -85,6 +85,7 @@ export const projects: Record<string, string> = {
   ongoing: 'მიმდინარე',
   'No end date': 'დასრულების თარიღის გარეშე',
   'Could not save the project schedule.': 'პროექტის გრაფიკის შენახვა ვერ მოხერხდა.',
+  'Could not save the Crypto world dates.': 'კრიპტოსამყაროს თარიღების შენახვა ვერ მოხერხდა.',
   'Overlapping projects stay visible on separate rows.': 'ერთდროული პროექტები ცალკე ხაზებზე ჩანს.',
   'No dated crypto work in this range': 'ამ პერიოდში დათარიღებული კრიპტო სამუშაო არ არის',
 

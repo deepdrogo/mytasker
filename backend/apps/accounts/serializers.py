@@ -45,12 +45,23 @@ class UserPreferenceSerializer(serializers.ModelSerializer):
             "weekly_review_enabled",
             "monthly_review_enabled",
             "routine_on_weekends",
+            "crypto_world_start",
+            "crypto_world_end",
         ]
 
     def validate_first_day_of_week(self, value: int) -> int:
         if value not in (0, 1):
             raise serializers.ValidationError("Use 0 for Sunday or 1 for Monday.")
         return value
+
+    def validate(self, attrs):
+        # Taking Crypto world off the calendar clears both ends, so a leftover end date leaves no ghost bar.
+        if "crypto_world_start" in attrs and attrs["crypto_world_start"] is None:
+            attrs["crypto_world_end"] = None
+        start, end = attrs.get("crypto_world_start"), attrs.get("crypto_world_end")
+        if start and end and end < start:
+            raise serializers.ValidationError({"crypto_world_end": ["The end date cannot be before the start."]})
+        return attrs
 
 
 class NotificationPreferenceSerializer(serializers.ModelSerializer):

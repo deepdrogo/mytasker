@@ -341,3 +341,36 @@ def test_checkin_skip_today_and_tally(auth_client):
     auth_client.post(url, {"checked": True}, format="json")
     listed = auth_client.get("/api/v1/tasks/?is_ongoing=true").data["results"][0]
     assert listed["today_checked"] is True and listed["checkin_streak"] == 1 and listed["checkin_done_count"] == 1
+
+
+def test_snoozing_a_date_only_task_by_whole_days_keeps_it_date_only(client_for, user):
+    """Telegram's "Tomorrow" button: a task without a clock time moves to tomorrow's date, no hour is invented."""
+    from common.tz import combine_local, today_for
+
+    client = client_for(user)
+    today = today_for(user)
+    overdue = client.post(
+        "/api/v1/tasks/",
+        {"title": "Old", "due_at": combine_local(today - timedelta(days=3), None, user).isoformat()},
+        format="json",
+    ).data
+    undated = client.post("/api/v1/tasks/", {"title": "Undated"}, format="json").data
+
+    for task in (overdue, undated):
+        snoozed = client.post(f"/api/v1/tasks/{task['id']}/snooze/", {"minutes": 1440}, format="json")
+        assert snoozed.status_code == 200, snoozed.data
+        assert snoozed.data["due_has_time"] is False
+        assert snoozed.data["due_at"] == combine_local(today + timedelta(days=1), None, user).isoformat().replace(
+            "+00:00", "Z"
+        )
+
+
+def test_snoozing_a_timed_task_shifts_the_exact_time(client_for, user):
+    client = client_for(user)
+    due = (timezone.now() + timedelta(days=2)).replace(microsecond=0)
+    task = client.post(
+        "/api/v1/tasks/", {"title": "Call", "due_at": due.isoformat(), "due_has_time": True}, format="json"
+    ).data
+    snoozed = client.post(f"/api/v1/tasks/{task['id']}/snooze/", {"minutes": 60}, format="json").data
+    assert snoozed["due_has_time"] is True
+    assert Task.objects.get(pk=task["id"]).due_at == due + timedelta(hours=1)

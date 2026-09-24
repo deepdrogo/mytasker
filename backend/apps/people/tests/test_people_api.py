@@ -93,7 +93,50 @@ def test_delegated_task_visible_and_workable_for_assignee_but_not_deletable(clie
     assert Task.objects.get(pk=task["id"]).owner_id == admin.pk
 
 
-def test_delegated_work_lands_on_dashboard_and_from_page_not_in_own_lists(client_for, admin, nino):
+def dashboard_titles(snapshot: dict) -> set[str]:
+    titles = {row["title"] for rows in snapshot["tasks"].values() for row in rows}
+    titles |= {task["title"] for project in snapshot["active_projects"] for task in project["next_tasks"]}
+    return titles
+
+
+def test_delegated_work_stays_off_both_dashboards(client_for, admin, nino, make_project):
+    owner = client_for(admin)
+    add_person(owner, nino.email)
+    today = "2030-01-01T10:00:00Z"
+    owner.post(
+        "/api/v1/tasks/",
+        {"title": "Client build for Nino", "kind": "business", "assignee_id": nino.pk, "is_client": True},
+        format="json",
+    )
+    owner.post(
+        "/api/v1/tasks/", {"title": "Overdue for Nino", "assignee_id": nino.pk, "due_at": today}, format="json"
+    )
+    owner.post("/api/v1/tasks/", {"title": "My client job", "kind": "business", "is_client": True}, format="json")
+    owner.post("/api/v1/tasks/", {"title": "My chore", "kind": "personal"}, format="json")
+    project = make_project(admin, name="Shop")
+    owner.post("/api/v1/tasks/", {"title": "Project work for Nino", "project_id": project.id}, format="json")
+    handed = Task.objects.get(title="Project work for Nino")
+    handed.assignees.set([nino.pk])
+    owner.post("/api/v1/tasks/", {"title": "My project work", "project_id": project.id}, format="json")
+
+    # Giver: only what is not handed to anyone - client work included, People work nowhere.
+    mine = owner.get("/api/v1/today/").data
+    assert dashboard_titles(mine) == {"My client job", "My chore", "My project work"}
+    assert [row["title"] for row in mine["tasks"]["clients"]] == ["My client job"]
+    assert "delegated" not in mine["tasks"]
+
+    # Receiver: someone else's tasks stay on the "From" page, not on the dashboard.
+    me = client_for(nino)
+    me.post("/api/v1/tasks/", {"title": "Nino own", "kind": "personal"}, format="json")
+    assert dashboard_titles(me.get("/api/v1/today/").data) == {"Nino own"}
+
+    # Taking a task back puts it on the giver's dashboard again.
+    back = Task.objects.get(title="Client build for Nino")
+    owner.patch(f"/api/v1/tasks/{back.pk}/", {"assignee_ids": []}, format="json")
+    assert "Client build for Nino" in dashboard_titles(owner.get("/api/v1/today/").data)
+
+
+def test_delegated_work_lands_on_from_page_not_in_own_lists(client_for, admin, nino):
     owner = client_for(admin)
     add_person(owner, nino.email)
     owner.post("/api/v1/tasks/", {"title": "Order parts", "kind": "business", "assignee_id": nino.pk}, format="json")
@@ -101,9 +144,7 @@ def test_delegated_work_lands_on_dashboard_and_from_page_not_in_own_lists(client
     me = client_for(nino)
     me.post("/api/v1/tasks/", {"title": "My own", "kind": "personal"}, format="json")
 
-    # Dashboard block, named after the giver.
     snapshot = me.get("/api/v1/today/").data
-    assert sorted(row["title"] for row in snapshot["tasks"]["delegated"]) == ["Call vendor", "Order parts"]
     assert [row["title"] for row in snapshot["tasks"]["personal"]] == ["My own"]
 
     # "From Drogoz" page.

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.utils import timezone
 
 from apps.analytics import services as analytics
@@ -29,6 +29,22 @@ def models_f_nulls_last(field: str):
     return F(field).asc(nulls_last=True)
 
 
+def only_my_own(queryset, user):
+    """
+    The dashboard is the user's own plate. Work handed to someone (People, or a teammate inside a project)
+    is theirs now and lives on the People page; work other people handed to the user lives on their
+    "From" page. Only tasks with nobody else attached stay - client work included.
+    """
+    handed = Task.assignees.through.objects.filter(task_id=OuterRef("pk"))
+    handed_to_others = Exists(handed.exclude(user_id=user.pk))
+    handed_to_me = Exists(handed.filter(user_id=user.pk))
+    return (
+        queryset.exclude(Q(assignee__isnull=False) & ~Q(assignee_id=user.pk))
+        .exclude(handed_to_others)
+        .exclude(~Q(owner_id=user.pk) & (Q(assignee_id=user.pk) | handed_to_me))
+    )
+
+
 def today_snapshot(user, request=None) -> dict:
     day = today_for(user)
     start, end = day_bounds(user, day)
@@ -36,11 +52,12 @@ def today_snapshot(user, request=None) -> dict:
     ctx = {"request": request}
 
     # Crypto world is a private list — never mixed into the Today dashboard.
-    base = (
+    base = only_my_own(
         selectors.base_queryset(user)
         .top_level()
         .exclude(kind=Task.Kind.CRYPTO)
-        .annotate(priority_rank=selectors.priority_rank_expression())
+        .annotate(priority_rank=selectors.priority_rank_expression()),
+        user,
     )
     # Client work first: every open promise to a customer, grouped by project on the client side.
     clients = base.filter(OPEN, is_client=True).order_by(
@@ -64,16 +81,6 @@ def today_snapshot(user, request=None) -> dict:
         ]
     )
     ongoing_ctx = {**ctx, "checkin_streaks": task_services.checkin_streaks([t.pk for t in ongoing], day)}
-    # Work other people handed to me (People): its own block, named after whoever gave it.
-    delegated = (
-        base.filter(OPEN)
-        .filter(Q(assignee=user) | Q(assignees=user))
-        .exclude(owner=user)
-        .distinct()
-        .order_by("owner__full_name", "owner__email", "priority_rank", models_f_nulls_last("due_at"), "-updated_at")[
-            :60
-        ]
-    )
     # Personal / business lists without a project, so the dashboard shows the whole plate, not only dated work.
     plate = base.filter(OPEN, owner=user, project__isnull=True, is_ongoing=False, is_client=False).order_by(
         "priority_rank", models_f_nulls_last("due_at"), "-updated_at"
@@ -166,7 +173,6 @@ def today_snapshot(user, request=None) -> dict:
         },
         "tasks": {
             "clients": TaskSerializer(clients, many=True, context=ctx).data,
-            "delegated": TaskSerializer(delegated, many=True, context=ctx).data,
             "overdue": TaskSerializer(overdue, many=True, context=ctx).data,
             "due_today": TaskSerializer(due_today, many=True, context=ctx).data,
             "focus": TaskSerializer(focus, many=True, context=ctx).data,

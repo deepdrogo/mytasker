@@ -515,9 +515,10 @@
     rgba(244, 185, 65, 0.025);
 }
 
+/* Task markers ride above the Crypto world bar (a dragged bar still covers them). */
 .cryptoMark {
   position: absolute;
-  z-index: 2;
+  z-index: 3;
   top: 50%;
   left: calc(var(--start) * var(--day) + 5px);
   transform: translateY(-50%);

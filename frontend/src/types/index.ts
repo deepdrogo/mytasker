@@ -42,6 +42,9 @@ export interface UserPreferences {
   monthly_review_enabled: boolean;
   /** Run the everyday routine on Saturday and Sunday too. Off: routine pauses, rules still count. */
   routine_on_weekends: boolean;
+  /** Crypto world's span on the project timeline; no start = off the calendar, no end = open-ended. */
+  crypto_world_start: ISODate | null;
+  crypto_world_end: ISODate | null;
 }
 
 export interface NotificationPreferences {
@@ -375,6 +378,7 @@ export interface GuestTask {
   status: TaskStatus;
   priority: Priority;
   due_at: ISODateTime | null;
+  due_has_time: boolean;
   completed_at: ISODateTime | null;
   completed_by_name: string | null;
   subtasks: GuestTask[];
@@ -438,11 +442,10 @@ export interface TodayData {
   metrics: DayMetrics;
   streak: number;
   timer: { running: TimeEntry | null; sleep: SleepSession | null };
+  /** Only the user's own work: nothing handed to People and nothing handed to the user by others. */
   tasks: {
     /** Open client work, ordered by project - the first block on the dashboard. */
     clients: Task[];
-    /** Open work other people handed to me (People), ordered by who gave it. */
-    delegated: Task[];
     overdue: Task[];
     due_today: Task[];
     focus: Task[];

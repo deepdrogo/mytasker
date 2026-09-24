@@ -41,7 +41,7 @@ import { startTimer, stopTimer, timerStore } from '~/stores/timer';
 import { toast } from '~/stores/ui';
 import type { Task, TaskKind } from '~/types';
 import { cx } from '~/utils/cx';
-import { formatDate, formatDueDate, formatDuration } from '~/utils/format';
+import { endOfDay, formatDate, formatDueDate, formatDuration } from '~/utils/format';
 import styles from './TaskRow.module.css';
 
 const KIND_LABEL: Record<TaskKind, string> = { personal: 'Personal', business: 'Business', crypto: 'Crypto world' };
@@ -239,6 +239,18 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
     }
   };
 
+  /** Quick reschedule from the menu: date only. A clock time is only ever set by hand in the editor. */
+  const dueOn = async (offset: number, message: string) => {
+    if (!props.task.can_edit) return;
+    try {
+      await tasksApi.update(props.task.id, { due_at: endOfDay(offset), due_has_time: false });
+      props.onChanged?.();
+      toast(message);
+    } catch {
+      toast(t('Could not update the task.'));
+    }
+  };
+
   const menuItems = (): MenuItem[] => [
     { label: t('Open'), icon: <ChevronRight size={14} />, onSelect: () => props.onOpen?.(props.task) },
     ...(ongoing()
@@ -307,26 +319,14 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
       label: t('Today'),
       icon: <Clock size={14} />,
       separatorBefore: true,
-      onSelect: async () => {
-        // Due by the end of today, no specific hour - shows up in "Due today" without a clock.
-        const target = new Date();
-        target.setHours(23, 59, 0, 0);
-        await tasksApi.update(props.task.id, { due_at: target.toISOString(), due_has_time: false });
-        props.onChanged?.();
-        toast(t('Due today'));
-      },
+      disabled: !props.task.can_edit,
+      onSelect: () => void dueOn(0, t('Due today')),
     },
     {
       label: t('Tomorrow'),
       icon: <Clock size={14} />,
-      onSelect: async () => {
-        const target = new Date();
-        target.setDate(target.getDate() + 1);
-        target.setHours(9, 0, 0, 0);
-        await tasksApi.update(props.task.id, { due_at: target.toISOString(), due_has_time: true });
-        props.onChanged?.();
-        toast(t('Due tomorrow'));
-      },
+      disabled: !props.task.can_edit,
+      onSelect: () => void dueOn(1, t('Due tomorrow')),
     },
     {
       label: t('Delete'),

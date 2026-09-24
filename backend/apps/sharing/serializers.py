@@ -86,6 +86,7 @@ class GuestTaskSerializer(serializers.ModelSerializer):
             "status",
             "priority",
             "due_at",
+            "due_has_time",
             "completed_at",
             "completed_by_name",
             "subtasks",

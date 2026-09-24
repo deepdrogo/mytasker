@@ -5,11 +5,13 @@ import { For, Show, createMemo, createSignal, onCleanup, onMount } from 'solid-j
 import { Button } from '~/components/ui/Button';
 import { Input, Select } from '~/components/ui/Input';
 import { projectsApi } from '~/features/projects/api';
+import { settingsApi } from '~/features/settings/api';
 import { tasksApi } from '~/features/tasks/api';
 import { createQuery } from '~/hooks/createQuery';
 import { locale, t } from '~/i18n';
+import { authStore } from '~/stores/auth';
 import { toast } from '~/stores/ui';
-import type { ID, Project, Task } from '~/types';
+import type { Priority, Project, Task } from '~/types';
 import styles from './ProjectTimeline.module.css';
 import {
   addDays,
@@ -31,9 +33,27 @@ const WINDOW_MONTHS = 3;
 /** A plain click (no horizontal drag) schedules this many days, long enough to grab and stretch. */
 const DEFAULT_SPAN_DAYS = 3;
 const DRAG_THRESHOLD_PX = 4;
+const CRYPTO_KEY = 'crypto';
+/** Crypto world's gold, matching its icon. */
+const CRYPTO_HUE = 40;
+
+/**
+ * One schedulable line on the board: a project, or the Crypto world list (not a project, so its dates
+ * live in the user's preferences). Both are drawn, dragged, stretched and removed the same way.
+ */
+interface TimelineRow {
+  key: string;
+  name: string;
+  href: string;
+  editable: boolean;
+  dates: DateRange;
+  hue: number;
+  priority?: Priority;
+  project?: Project;
+}
 
 interface DragState {
-  id: ID;
+  key: string;
   mode: DragMode;
   base: DateRange;
   /** Day under the pointer when the drag started, and where it is now. */
@@ -59,9 +79,9 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
   /** Server copies returned by our own saves; they win until the list query catches up. */
   const [patched, setPatched] = createSignal<Record<number, Project>>({});
   /** Dates shown immediately after a drag, before the server confirms them. */
-  const [pending, setPending] = createSignal<Record<number, DateRange>>({});
+  const [pending, setPending] = createSignal<Record<string, DateRange>>({});
   const [drag, setDrag] = createSignal<DragState | null>(null);
-  const [saving, setSaving] = createSignal<ID | null>(null);
+  const [saving, setSaving] = createSignal<string | null>(null);
   const [selected, setSelected] = createSignal('');
   const [manualStart, setManualStart] = createSignal(today);
   const [manualEnd, setManualEnd] = createSignal('');
@@ -99,38 +119,65 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
     const patch = patched()[project.id];
     return patch && patch.version >= project.version ? patch : project;
   };
-  const baseDates = (project: Project): DateRange => {
-    const held = pending()[project.id];
-    if (held) return held;
-    const fresh = resolve(project);
-    return { start: fresh.start_date, end: fresh.deadline };
-  };
+
+  const baseDates = (row: TimelineRow): DateRange => pending()[row.key] ?? row.dates;
 
   /** Dates as they should look right now, including the range being dragged. */
-  const datesOf = (project: Project): DateRange => {
+  const datesOf = (row: TimelineRow): DateRange => {
     const active = drag();
-    const base = baseDates(project);
-    if (!active || active.id !== project.id) return base;
+    const base = baseDates(row);
+    if (!active || active.key !== row.key) return base;
     return previewRange(active.base, active.mode, active.from, active.to);
   };
 
   const visible = (dates: DateRange): boolean => overlapsWindow(dates, rangeStart(), rangeEnd());
 
   /** Scheduled projects first, in date order; unscheduled rows stay below, ready to be drawn on. */
-  const rows = createMemo(() =>
-    [...props.projects()].sort((a, b) => {
-      const first = baseDates(a).start;
-      const second = baseDates(b).start;
-      if (first && second) return first === second ? a.name.localeCompare(b.name) : first < second ? -1 : 1;
-      if (first) return -1;
-      if (second) return 1;
-      return a.name.localeCompare(b.name);
-    }),
+  const projectRows = createMemo<TimelineRow[]>(() =>
+    props
+      .projects()
+      .map((project) => {
+        const fresh = resolve(project);
+        return {
+          key: `p${project.id}`,
+          name: project.name,
+          href: `/projects/${project.id}/tasks`,
+          editable: Boolean(project.capabilities.manage_project),
+          dates: { start: fresh.start_date, end: fresh.deadline },
+          hue: (project.id * 47 + 185) % 360,
+          priority: project.priority,
+          project,
+        };
+      })
+      .sort((a, b) => {
+        const first = baseDates(a).start;
+        const second = baseDates(b).start;
+        if (first && second) return first === second ? a.name.localeCompare(b.name) : first < second ? -1 : 1;
+        if (first) return -1;
+        if (second) return 1;
+        return a.name.localeCompare(b.name);
+      }),
   );
 
+  /** Crypto world always sits on the last line: it is a private list, not one of the projects. */
+  const cryptoRow = createMemo<TimelineRow>(() => {
+    const prefs = authStore.user()?.preferences;
+    return {
+      key: CRYPTO_KEY,
+      name: t('Crypto world'),
+      href: '/tasks/crypto',
+      editable: Boolean(authStore.user()),
+      dates: { start: prefs?.crypto_world_start ?? null, end: prefs?.crypto_world_end ?? null },
+      hue: CRYPTO_HUE,
+    };
+  });
+
+  const allRows = createMemo(() => [...projectRows(), cryptoRow()]);
+  const rowByKey = (key: string) => allRows().find((row) => row.key === key);
+
   const activeToday = createMemo(() =>
-    props.projects().filter((project) => {
-      const dates = baseDates(project);
+    allRows().filter((row) => {
+      const dates = baseDates(row);
       return Boolean(dates.start && dates.start <= today && (!dates.end || dates.end >= today));
     }),
   );
@@ -145,41 +192,49 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
     return [...map.entries()].sort(([a], [b]) => (a < b ? -1 : 1));
   });
 
-  const chosen = () => props.projects().find((item) => String(item.id) === selected());
+  const chosen = () => rowByKey(selected());
 
-  const save = async (project: Project, dates: DateRange, options?: { removed?: boolean }) => {
-    // No start means "not on the calendar" — clear both ends together so a leftover deadline
-    // cannot keep a ghost bar after the user takes the project off.
-    const next = rangeForSave(dates);
-    const base = baseDates(project);
-    if (sameRange(base, next)) return;
-    setPending((all) => ({ ...all, [project.id]: next }));
-    setSaving(project.id);
-    try {
-      const fresh = await projectsApi.update(project.id, {
+  const persist = async (row: TimelineRow, next: DateRange) => {
+    if (row.project) {
+      const fresh = await projectsApi.update(row.project.id, {
         start_date: next.start,
         deadline: next.end,
-        version: resolve(project).version,
+        version: resolve(row.project).version,
       });
-      setPatched((all) => ({ ...all, [project.id]: fresh }));
+      setPatched((all) => ({ ...all, [row.project!.id]: fresh }));
       props.onChanged();
+      return;
+    }
+    // Refreshes the signed-in user, so the Crypto world row redraws from the saved preferences.
+    await settingsApi.updatePreferences({ crypto_world_start: next.start, crypto_world_end: next.end });
+  };
+
+  const save = async (row: TimelineRow, dates: DateRange, options?: { removed?: boolean }) => {
+    // No start means "not on the calendar" — clear both ends together so a leftover end date
+    // cannot keep a ghost bar after the user takes the row off.
+    const next = rangeForSave(dates);
+    if (sameRange(baseDates(row), next)) return;
+    setPending((all) => ({ ...all, [row.key]: next }));
+    setSaving(row.key);
+    try {
+      await persist(row, next);
       if (options?.removed) toast(t('Removed from calendar'));
     } catch {
-      toast(t('Could not save the project schedule.'));
+      toast(row.project ? t('Could not save the project schedule.') : t('Could not save the Crypto world dates.'));
     } finally {
       setPending((all) => {
         const remaining = { ...all };
-        delete remaining[project.id];
+        delete remaining[row.key];
         return remaining;
       });
       setSaving(null);
     }
   };
 
-  const unschedule = (project: Project) => {
-    if (!project.capabilities.manage_project || saving() === project.id) return;
-    if (drag()?.id === project.id) setDrag(null);
-    void save(project, { start: null, end: null }, { removed: true });
+  const unschedule = (row: TimelineRow) => {
+    if (!row.editable || saving() === row.key) return;
+    if (drag()?.key === row.key) setDrag(null);
+    void save(row, { start: null, end: null }, { removed: true });
   };
 
   const stopBarGesture = (event: PointerEvent) => {
@@ -203,14 +258,14 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
     else if (clientX > rect.right - 64) scroller.scrollLeft += 16;
   };
 
-  const begin = (event: PointerEvent, project: Project, mode: DragState['mode']) => {
-    if (!project.capabilities.manage_project || event.button !== 0) return;
+  const begin = (event: PointerEvent, row: TimelineRow, mode: DragMode) => {
+    if (!row.editable || event.button !== 0) return;
     // Touch keeps its natural panning over empty rows; there the date pickers below do the scheduling.
     if (mode === 'create' && event.pointerType !== 'mouse') return;
     event.preventDefault();
     event.stopPropagation();
     const at = dateAtX(event.clientX);
-    setDrag({ id: project.id, mode, base: baseDates(project), from: at, to: at, originX: event.clientX, moved: false });
+    setDrag({ key: row.key, mode, base: baseDates(row), from: at, to: at, originX: event.clientX, moved: false });
   };
 
   const onPointerMove = (event: PointerEvent) => {
@@ -229,8 +284,8 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
     const active = drag();
     setDrag(null);
     if (!active) return;
-    const project = props.projects().find((item) => item.id === active.id);
-    if (!project) return;
+    const row = rowByKey(active.key);
+    if (!row) return;
     // Read the range off the finished gesture: the drag state is already cleared by now.
     const dates = previewRange(active.base, active.mode, active.from, active.to);
     // A click without movement still deserves a bar you can grab, so give it a default span.
@@ -238,7 +293,7 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
       active.mode === 'create' && !active.moved && dates.start
         ? { start: dates.start, end: addDays(dates.start, DEFAULT_SPAN_DAYS - 1) }
         : dates;
-    void save(project, commit);
+    void save(row, commit);
   };
 
   onMount(() => {
@@ -271,17 +326,169 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
     return { '--start': String(offset), '--span': String(span) } as JSX.CSSProperties;
   };
 
-  const rangeTitle = (dates: DateRange): string =>
-    `${dates.start} → ${dates.end ?? t('ongoing')}`;
+  const rangeTitle = (dates: DateRange): string => `${dates.start} → ${dates.end ?? t('ongoing')}`;
 
-  const projectColor = (project: Project): JSX.CSSProperties =>
-    ({ '--project-hue': String((project.id * 47 + 185) % 360) }) as JSX.CSSProperties;
+  const hueStyle = (row: TimelineRow): JSX.CSSProperties => ({ '--project-hue': String(row.hue) }) as JSX.CSSProperties;
 
   const placeManually = () => {
-    const project = props.projects().find((item) => String(item.id) === selected());
-    if (!project || !manualStart()) return;
+    const row = chosen();
+    if (!row || !manualStart()) return;
     const end = manualEnd() || null;
-    void save(project, { start: manualStart(), end: end && end < manualStart() ? manualStart() : end });
+    void save(row, { start: manualStart(), end: end && end < manualStart() ? manualStart() : end });
+  };
+
+  const dayCells = () => (
+    <For each={days()}>
+      {(date) => (
+        <div
+          class={[
+            styles.cell,
+            iso(date) === today ? styles.todayCell : '',
+            date.getDay() === 0 || date.getDay() === 6 ? styles.weekend : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        />
+      )}
+    </For>
+  );
+
+  const renderRow = (row: TimelineRow) => {
+    const isCrypto = row.key === CRYPTO_KEY;
+    const dates = () => datesOf(row);
+    const dragging = () => drag()?.key === row.key;
+    return (
+      <>
+        <A
+          class={[styles.rowLabel, isCrypto ? styles.cryptoLabel : ''].filter(Boolean).join(' ')}
+          href={row.href}
+          title={row.name}
+          style={hueStyle(row)}
+        >
+          <Show when={isCrypto} fallback={<span class={styles.projectDot} data-priority={row.priority} />}>
+            <Bitcoin size={14} />
+          </Show>
+          <span class={styles.rowName}>{row.name}</span>
+        </A>
+        <div
+          class={[
+            styles.track,
+            isCrypto ? styles.cryptoTrack : styles.projectTrack,
+            row.editable ? styles.editable : '',
+            saving() === row.key ? styles.busy : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          style={hueStyle(row)}
+          onPointerDown={(event) => {
+            // Only unscheduled rows can be drawn on; dated work is moved by its own bar,
+            // so a stray click on a row whose dates sit off-screen never reschedules it.
+            if (!dates().start) begin(event, row, 'create');
+          }}
+        >
+          {dayCells()}
+
+          <Show when={!dates().start && !dragging()}>
+            <span class={styles.rowHint}>
+              {row.editable ? t('Drag across this row to schedule it') : t('Not scheduled')}
+            </span>
+          </Show>
+
+          <Show when={dates().start && !visible(dates()) && !dragging()}>
+            <div class={styles.offscreen}>
+              <button
+                type="button"
+                class={styles.jump}
+                onPointerDown={stopBarGesture}
+                onClick={() => jumpTo(dates().start!)}
+                title={rangeTitle(dates())}
+              >
+                <Show when={dates().start! < rangeStart()} fallback={<ChevronRight size={13} />}>
+                  <ChevronLeft size={13} />
+                </Show>
+                {t('Jump to dates')}
+              </button>
+              <Show when={row.editable}>
+                <button
+                  type="button"
+                  class={styles.jump}
+                  onPointerDown={stopBarGesture}
+                  onClick={() => unschedule(row)}
+                  aria-label={t('Remove from calendar')}
+                  title={t('Remove from calendar')}
+                >
+                  <CalendarX size={13} />
+                  {t('Remove from calendar')}
+                </button>
+              </Show>
+            </div>
+          </Show>
+
+          <Show when={dates().start && visible(dates())}>
+            <div
+              class={[styles.block, !dates().end ? styles.openEnded : '', dragging() ? styles.dragging : '']
+                .filter(Boolean)
+                .join(' ')}
+              style={columnStyle(dates())}
+              onPointerDown={(event) => begin(event, row, 'move')}
+              title={rangeTitle(dates())}
+            >
+              <Show when={row.editable}>
+                <span class={styles.handle} onPointerDown={(event) => begin(event, row, 'start')} aria-hidden="true" />
+              </Show>
+              <span class={styles.blockLabel}>
+                <span class={styles.blockText}>{row.name}</span>
+                <Show when={!dates().end}>
+                  <InfinityIcon size={13} class={styles.openIcon} />
+                </Show>
+                <Show when={row.editable && !dragging()}>
+                  <button
+                    type="button"
+                    class={styles.remove}
+                    onPointerDown={stopBarGesture}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      unschedule(row);
+                    }}
+                    aria-label={t('Remove from calendar')}
+                    title={t('Remove from calendar')}
+                  >
+                    <CalendarX size={12} />
+                  </button>
+                </Show>
+              </span>
+              <Show when={row.editable}>
+                <span
+                  class={`${styles.handle} ${styles.handleEnd}`}
+                  onPointerDown={(event) => begin(event, row, 'end')}
+                  aria-hidden="true"
+                />
+              </Show>
+            </div>
+          </Show>
+
+          {/* Crypto world: its open tasks marked on their due dates, on top of the scheduled span. */}
+          <Show when={isCrypto}>
+            <For each={cryptoByDate()}>
+              {([date, tasks]) => (
+                <A
+                  href="/tasks/crypto"
+                  class={styles.cryptoMark}
+                  style={{ '--start': String(diffDays(rangeStart(), date)) } as JSX.CSSProperties}
+                  title={`${date} · ${tasks.map((task) => task.title).join(', ')}`}
+                  onPointerDown={stopBarGesture}
+                >
+                  <Bitcoin size={12} />
+                  <Show when={tasks.length > 1}>
+                    <b>{tasks.length}</b>
+                  </Show>
+                </A>
+              )}
+            </For>
+          </Show>
+        </div>
+      </>
+    );
   };
 
   return (
@@ -321,9 +528,9 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
         <Show when={activeToday().length} fallback={<span class={styles.todayEmpty}>{t('Nothing scheduled for today')}</span>}>
           <span class={styles.todayLabel}>{t('In progress today')}</span>
           <For each={activeToday()}>
-            {(project) => (
-              <A href={`/projects/${project.id}/tasks`} class={styles.todayChip}>
-                {project.name}
+            {(row) => (
+              <A href={row.href} class={styles.todayChip}>
+                {row.name}
               </A>
             )}
           </For>
@@ -333,7 +540,7 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
       <div class={styles.planner}>
         <Select value={selected()} onChange={(event) => setSelected(event.currentTarget.value)} aria-label={t('Choose project')}>
           <option value="">{t('Choose project')}</option>
-          <For each={props.projects()}>{(project) => <option value={project.id}>{project.name}</option>}</For>
+          <For each={allRows().filter((row) => row.editable)}>{(row) => <option value={row.key}>{row.name}</option>}</For>
         </Select>
         <Input
           type="date"
@@ -349,16 +556,11 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
           aria-label={t('End date (optional)')}
         />
         <div class={styles.plannerActions}>
-          <Button size="sm" disabled={!selected() || !manualStart()} onClick={placeManually}>
+          <Button size="sm" disabled={!chosen() || !manualStart() || saving() === selected()} onClick={placeManually}>
             {t('Place on calendar')}
           </Button>
-          <Show when={chosen() && baseDates(chosen()!).start && chosen()!.capabilities.manage_project}>
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={saving() === chosen()?.id}
-              onClick={() => unschedule(chosen()!)}
-            >
+          <Show when={chosen() && baseDates(chosen()!).start && chosen()!.editable}>
+            <Button size="sm" variant="ghost" disabled={saving() === selected()} onClick={() => unschedule(chosen()!)}>
               <CalendarX size={14} />
               {t('Remove from calendar')}
             </Button>
@@ -399,164 +601,8 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
             </For>
           </div>
 
-          <For each={rows()}>
-            {(project) => {
-              const dates = () => datesOf(project);
-              const editable = () => project.capabilities.manage_project;
-              const dragging = () => drag()?.id === project.id;
-              return (
-                <>
-                  <A class={styles.rowLabel} href={`/projects/${project.id}/tasks`} title={project.name} style={projectColor(project)}>
-                    <span class={styles.projectDot} data-priority={project.priority} />
-                    <span class={styles.rowName}>{project.name}</span>
-                  </A>
-                  <div
-                    class={[styles.track, styles.projectTrack, editable() ? styles.editable : '', saving() === project.id ? styles.busy : '']
-                      .filter(Boolean)
-                      .join(' ')}
-                    style={projectColor(project)}
-                    onPointerDown={(event) => {
-                      // Only unscheduled rows can be drawn on; dated work is moved by its own bar,
-                      // so a stray click on a row whose dates sit off-screen never reschedules it.
-                      if (!dates().start) begin(event, project, 'create');
-                    }}
-                  >
-                    <For each={days()}>
-                      {(date) => (
-                        <div
-                          class={[
-                            styles.cell,
-                            iso(date) === today ? styles.todayCell : '',
-                            date.getDay() === 0 || date.getDay() === 6 ? styles.weekend : '',
-                          ]
-                            .filter(Boolean)
-                            .join(' ')}
-                        />
-                      )}
-                    </For>
-
-                    <Show when={!dates().start && !dragging()}>
-                      <span class={styles.rowHint}>
-                        {editable() ? t('Drag across this row to schedule it') : t('Not scheduled')}
-                      </span>
-                    </Show>
-
-                    <Show when={dates().start && !visible(dates()) && !dragging()}>
-                      <div class={styles.offscreen}>
-                        <button
-                          type="button"
-                          class={styles.jump}
-                          onPointerDown={stopBarGesture}
-                          onClick={() => jumpTo(dates().start!)}
-                          title={rangeTitle(dates())}
-                        >
-                          <Show when={dates().start! < rangeStart()} fallback={<ChevronRight size={13} />}>
-                            <ChevronLeft size={13} />
-                          </Show>
-                          {t('Jump to dates')}
-                        </button>
-                        <Show when={editable()}>
-                          <button
-                            type="button"
-                            class={styles.jump}
-                            onPointerDown={stopBarGesture}
-                            onClick={() => unschedule(project)}
-                            aria-label={t('Remove from calendar')}
-                            title={t('Remove from calendar')}
-                          >
-                            <CalendarX size={13} />
-                            {t('Remove from calendar')}
-                          </button>
-                        </Show>
-                      </div>
-                    </Show>
-
-                    <Show when={dates().start && visible(dates())}>
-                      <div
-                        class={[styles.block, !dates().end ? styles.openEnded : '', dragging() ? styles.dragging : '']
-                          .filter(Boolean)
-                          .join(' ')}
-                        style={columnStyle(dates())}
-                        onPointerDown={(event) => begin(event, project, 'move')}
-                        title={rangeTitle(dates())}
-                      >
-                        <Show when={editable()}>
-                          <span
-                            class={styles.handle}
-                            onPointerDown={(event) => begin(event, project, 'start')}
-                            aria-hidden="true"
-                          />
-                        </Show>
-                        <span class={styles.blockLabel}>
-                          <span class={styles.blockText}>{project.name}</span>
-                          <Show when={!dates().end}>
-                            <InfinityIcon size={13} class={styles.openIcon} />
-                          </Show>
-                          <Show when={editable() && !dragging()}>
-                            <button
-                              type="button"
-                              class={styles.remove}
-                              onPointerDown={stopBarGesture}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                unschedule(project);
-                              }}
-                              aria-label={t('Remove from calendar')}
-                              title={t('Remove from calendar')}
-                            >
-                              <CalendarX size={12} />
-                            </button>
-                          </Show>
-                        </span>
-                        <Show when={editable()}>
-                          <span
-                            class={`${styles.handle} ${styles.handleEnd}`}
-                            onPointerDown={(event) => begin(event, project, 'end')}
-                            aria-hidden="true"
-                          />
-                        </Show>
-                      </div>
-                    </Show>
-                  </div>
-                </>
-              );
-            }}
-          </For>
-
-          <A class={`${styles.rowLabel} ${styles.cryptoLabel}`} href="/tasks/crypto">
-            <Bitcoin size={14} />
-            <span class={styles.rowName}>{t('Crypto world')}</span>
-          </A>
-          <div class={`${styles.track} ${styles.cryptoTrack}`}>
-            <For each={days()}>
-              {(date) => (
-                <div
-                  class={[
-                    styles.cell,
-                    iso(date) === today ? styles.todayCell : '',
-                    date.getDay() === 0 || date.getDay() === 6 ? styles.weekend : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                />
-              )}
-            </For>
-            <For each={cryptoByDate()}>
-              {([date, tasks]) => (
-                <A
-                  href="/tasks/crypto"
-                  class={styles.cryptoMark}
-                  style={{ '--start': String(diffDays(rangeStart(), date)) } as JSX.CSSProperties}
-                  title={`${date} · ${tasks.map((task) => task.title).join(', ')}`}
-                >
-                  <Bitcoin size={12} />
-                  <Show when={tasks.length > 1}>
-                    <b>{tasks.length}</b>
-                  </Show>
-                </A>
-              )}
-            </For>
-          </div>
+          <For each={projectRows()}>{(row) => renderRow(row)}</For>
+          {renderRow(cryptoRow())}
         </div>
       </div>
 

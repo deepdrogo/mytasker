@@ -10,9 +10,12 @@ import { toast } from '~/stores/ui';
 import type { UserPreferences } from '~/types';
 import styles from './Settings.module.css';
 
+/** The timeline owns the Crypto world dates; this form never sends them, so it cannot overwrite them. */
+type PreferencesForm = Omit<UserPreferences, 'crypto_world_start' | 'crypto_world_end'>;
+
 export default function PreferencesSection(): JSX.Element {
   const initial = authStore.user()?.preferences;
-  const [form, setForm] = createSignal<UserPreferences>({
+  const [form, setForm] = createSignal<PreferencesForm>({
     first_day_of_week: initial?.first_day_of_week ?? 0,
     time_format: initial?.time_format ?? '24h',
     default_task_type: initial?.default_task_type ?? 'personal',
@@ -30,7 +33,7 @@ export default function PreferencesSection(): JSX.Element {
     routine_on_weekends: initial?.routine_on_weekends ?? false,
   });
   const [busy, setBusy] = createSignal(false);
-  const set = <K extends keyof UserPreferences>(key: K, value: UserPreferences[K]) => setForm((f) => ({ ...f, [key]: value }));
+  const set = <K extends keyof PreferencesForm>(key: K, value: PreferencesForm[K]) => setForm((f) => ({ ...f, [key]: value }));
   const hours = (minutes: number) => String(Math.round((minutes / 60) * 10) / 10);
   const hhmm = (v: string) => v.slice(0, 5);
 
