@@ -250,7 +250,7 @@ class TaskViewSet(viewsets.ModelViewSet):
             crypto=Count("id", filter=Q(kind=Task.Kind.CRYPTO) & ~Q(status__in=["done", "cancelled"])),
             clients=Count("id", filter=Q(is_client=True) & ~Q(status__in=["done", "cancelled"])),
             today=Count("id", filter=Q(due_at__lt=end_of_today) & open_not_crypto),
-            overdue=Count("id", filter=Q(due_at__lt=now) & open_not_crypto),
+            overdue=Count("id", filter=selectors.overdue_q(request.user, now) & open_not_crypto),
             upcoming=Count("id", filter=Q(due_at__gte=end_of_today) & open_not_crypto),
         )
         return Response(data)

@@ -167,7 +167,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
         stats = tasks.aggregate(
             total=Count("id"),
             done=Count("id", filter=Q(status=Task.Status.DONE)),
-            overdue=Count("id", filter=Q(due_at__lt=now) & ~Q(status__in=["done", "cancelled"])),
+            overdue=Count(
+                "id", filter=task_selectors.overdue_q(request.user, now) & ~Q(status__in=["done", "cancelled"])
+            ),
             in_progress=Count("id", filter=Q(status=Task.Status.IN_PROGRESS)),
         )
         tracked = TimeEntry.objects.filter(project=project).aggregate(total=Sum("duration_seconds"))["total"] or 0

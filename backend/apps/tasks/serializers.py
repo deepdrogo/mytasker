@@ -49,7 +49,7 @@ class TaskSerializer(serializers.ModelSerializer):
     subtask_done = serializers.IntegerField(read_only=True, default=0)
     tracked_seconds = serializers.IntegerField(read_only=True, default=0)
     comment_count = serializers.IntegerField(read_only=True, default=0)
-    is_overdue = serializers.BooleanField(read_only=True)
+    is_overdue = serializers.SerializerMethodField()
     today_checked = serializers.BooleanField(read_only=True, default=False)
     today_skipped = serializers.BooleanField(read_only=True, default=False)
     checkin_done_count = serializers.IntegerField(read_only=True, default=0)
@@ -125,6 +125,11 @@ class TaskSerializer(serializers.ModelSerializer):
     def _user(self):
         request = self.context.get("request")
         return getattr(request, "user", None)
+
+    def get_is_overdue(self, obj: Task) -> bool:
+        # "Today" is the viewer's day; without a signed-in viewer, the owner's.
+        viewer = self._user()
+        return obj.is_overdue_for(viewer if getattr(viewer, "is_authenticated", False) else obj.owner)
 
     def get_can_edit(self, obj: Task) -> bool:
         return can_edit_object(

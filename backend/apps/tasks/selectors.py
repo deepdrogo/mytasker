@@ -95,8 +95,20 @@ def due_between(qs, start: datetime, end: datetime):
     return qs.filter(due_at__gte=start, due_at__lt=end)
 
 
-def overdue(qs, now: datetime | None = None):
-    return qs.filter(due_at__lt=now or timezone.now()).exclude(status__in=[Task.Status.DONE, Task.Status.CANCELLED])
+def overdue_q(user, now: datetime | None = None) -> Q:
+    """
+    Past the deadline, for open or done work alike (callers add the status filter). A timed deadline is
+    late once its minute passes; a date-only one only once its whole day is over in the user's timezone,
+    whatever hour happens to be stored.
+    """
+    from common.tz import day_bounds
+
+    start_of_today, _ = day_bounds(user)
+    return Q(due_has_time=True, due_at__lt=now or timezone.now()) | Q(due_has_time=False, due_at__lt=start_of_today)
+
+
+def overdue(qs, user, now: datetime | None = None):
+    return qs.filter(overdue_q(user, now)).exclude(status__in=[Task.Status.DONE, Task.Status.CANCELLED])
 
 
 def open_tasks(qs):

@@ -374,3 +374,34 @@ def test_snoozing_a_timed_task_shifts_the_exact_time(client_for, user):
     snoozed = client.post(f"/api/v1/tasks/{task['id']}/snooze/", {"minutes": 60}, format="json").data
     assert snoozed["due_has_time"] is True
     assert Task.objects.get(pk=task["id"]).due_at == due + timedelta(hours=1)
+
+
+def test_date_only_task_due_today_is_not_overdue_whatever_hour_is_stored(client_for, user):
+    """A deadline without a clock time is late only once its day is over, even if stored at 00:00 or 09:00."""
+    from common.tz import day_bounds
+
+    client = client_for(user)
+    start_of_today, _ = day_bounds(user)
+
+    def add(title: str, due, has_time: bool) -> dict:
+        body = {"title": title, "due_at": due.isoformat(), "due_has_time": has_time}
+        return client.post("/api/v1/tasks/", body, format="json").data
+
+    today_early = add("Today, date only", start_of_today, False)
+    yesterday = add("Yesterday, date only", start_of_today - timedelta(hours=1), False)
+    timed = add("Timed, passed", timezone.now() - timedelta(seconds=1), True)
+
+    assert client.get(f"/api/v1/tasks/{today_early['id']}/").data["is_overdue"] is False
+    assert client.get(f"/api/v1/tasks/{yesterday['id']}/").data["is_overdue"] is True
+    assert client.get(f"/api/v1/tasks/{timed['id']}/").data["is_overdue"] is True
+
+    overdue_view = {row["title"] for row in client.get("/api/v1/tasks/", {"view": "overdue"}).data["results"]}
+    assert overdue_view == {"Yesterday, date only", "Timed, passed"}
+    overdue_flag = {row["title"] for row in client.get("/api/v1/tasks/", {"overdue": "true"}).data["results"]}
+    assert overdue_flag == overdue_view
+    assert client.get("/api/v1/tasks/counts/").data["overdue"] == 2
+
+    snapshot = client.get("/api/v1/today/").data
+    assert "Today, date only" in {row["title"] for row in snapshot["tasks"]["due_today"]}
+    assert "Today, date only" not in {row["title"] for row in snapshot["tasks"]["overdue"]}
+    assert "Yesterday, date only" in {row["title"] for row in snapshot["tasks"]["overdue"]}

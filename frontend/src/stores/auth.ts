@@ -4,6 +4,8 @@
 import { createSignal } from 'solid-js';
 import { api, ApiError, ensureCsrf, onUnauthorized } from '~/api/client';
 import { clearCache } from '~/hooks/createQuery';
+import { t } from '~/i18n';
+import { toast } from '~/stores/ui';
 import type { Me, PublicConfig } from '~/types';
 
 const [user, setUser] = createSignal<Me | null>(null);
@@ -45,6 +47,7 @@ export async function bootstrapAuth(): Promise<void> {
   else setUser(null);
   if (cfg.status === 'fulfilled') setConfig(cfg.value);
   setReady(true);
+  if (me.status === 'fulfilled') void syncTimezone(me.value);
 }
 
 export async function login(email: string, password: string): Promise<Me> {
@@ -52,7 +55,45 @@ export async function login(email: string, password: string): Promise<Me> {
   const me = await api.post<Me>('/auth/login/', { email, password });
   clearCache();
   setUser(me);
+  void syncTimezone(me);
   return me;
+}
+
+const TZ_PROMPT_KEY = 'mt_tz_prompted';
+
+async function saveTimezone(zone: string): Promise<void> {
+  setUser(await api.patch<Me>('/auth/me/', { timezone: zone }));
+  // "Today", overdue and every dated list are cut by the profile timezone: refetch them all.
+  clearCache();
+}
+
+/**
+ * The server decides "today" and "overdue" in the profile timezone while this browser labels dates in its
+ * own, so the two must agree. A profile still on the UTC default follows the browser silently; any other
+ * mismatch (travel, a second device) is offered once per pair and never forced.
+ */
+async function syncTimezone(me: Me): Promise<void> {
+  const browser = guessTimezone();
+  if (!browser || browser === me.timezone) return;
+  try {
+    if (me.timezone === 'UTC') {
+      await saveTimezone(browser);
+      toast(t('Timezone set to {zone}', { zone: browser }));
+      return;
+    }
+    const pair = `${me.timezone}>${browser}`;
+    if (localStorage.getItem(TZ_PROMPT_KEY) === pair) return;
+    localStorage.setItem(TZ_PROMPT_KEY, pair);
+    toast(t('This device is on {zone}, your profile on {profile}.', { zone: browser, profile: me.timezone }), {
+      ms: 15000,
+      action: {
+        label: t('Use {zone}', { zone: browser }),
+        run: () => void saveTimezone(browser).then(() => toast(t('Timezone set to {zone}', { zone: browser }))),
+      },
+    });
+  } catch {
+    /* offline or storage blocked: keep the profile as it is */
+  }
 }
 
 export async function register(input: {

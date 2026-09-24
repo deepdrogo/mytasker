@@ -63,7 +63,13 @@ def today_snapshot(user, request=None) -> dict:
     clients = base.filter(OPEN, is_client=True).order_by(
         models_f_nulls_last("project__name"), "priority_rank", models_f_nulls_last("due_at"), "-updated_at"
     )[:60]
-    overdue = base.filter(OPEN, due_at__lt=now).exclude(due_at__gte=start).order_by("-is_client", "due_at")[:50]
+    # Date-only work due today is not late yet, whatever hour it is stored at; it belongs in "due today".
+    overdue = (
+        base.filter(OPEN)
+        .filter(selectors.overdue_q(user, now))
+        .exclude(due_at__gte=start)
+        .order_by("-is_client", "due_at")[:50]
+    )
     due_today = base.filter(OPEN, due_at__gte=start, due_at__lt=end).order_by(
         "-is_client", "priority_rank", "due_at"
     )[:100]

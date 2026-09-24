@@ -164,6 +164,9 @@ export const core: Record<string, string> = {
   Security: 'უსაფრთხოება',
   'Your timezone drives "today", reminders and summaries - keep it accurate when you travel.':
     'დროის სარტყელი განსაზღვრავს „დღეს“, შეხსენებებსა და შეჯამებებს — მოგზაურობისას განაახლე.',
+  'Timezone set to {zone}': 'დროის სარტყელი: {zone}',
+  'This device is on {zone}, your profile on {profile}.': 'ეს მოწყობილობა {zone}-ზეა, პროფილი კი {profile}-ზე.',
+  'Use {zone}': '{zone}-ის გამოყენება',
   Email: 'ელფოსტა',
   Sent: 'გაიგზავნა',
   'Verify email': 'ელფოსტის დადასტურება',

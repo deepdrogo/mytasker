@@ -241,9 +241,19 @@ class Task(TimeStampedModel, SoftDeleteModel):
 
     @property
     def is_overdue(self) -> bool:
+        return self.is_overdue_for(self.owner)
+
+    def is_overdue_for(self, user) -> bool:
+        """Same rule as `selectors.overdue_q`: date-only deadlines turn late only after their day ends."""
         from django.utils import timezone
 
-        return bool(self.due_at and not self.is_done and self.due_at < timezone.now())
+        from common.tz import today_for, user_zone
+
+        if not self.due_at or self.status in (self.Status.DONE, self.Status.CANCELLED):
+            return False
+        if self.due_has_time:
+            return self.due_at < timezone.now()
+        return self.due_at.astimezone(user_zone(user)).date() < today_for(user)
 
 
 class Reminder(TimeStampedModel):

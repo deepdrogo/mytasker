@@ -5,6 +5,7 @@ from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.db.models import F, Q
 from django.utils import timezone
 
+from apps.tasks import selectors
 from apps.tasks.models import Task
 from common.tz import day_bounds, week_bounds
 
@@ -86,9 +87,7 @@ class TaskFilter(filters.FilterSet):
     def filter_overdue(self, queryset, name, value):
         if not value:
             return queryset
-        return queryset.filter(due_at__lt=timezone.now()).exclude(
-            status__in=[Task.Status.DONE, Task.Status.CANCELLED]
-        )
+        return selectors.overdue(queryset, self.request.user)
 
     def filter_view(self, queryset, name, value):
         """Named date views resolved in the user's timezone."""
@@ -113,7 +112,7 @@ class TaskFilter(filters.FilterSet):
             _, end = day_bounds(user)
             return queryset.filter(due_at__gte=end).exclude(status__in=[Task.Status.DONE, Task.Status.CANCELLED])
         if value == "overdue":
-            return queryset.filter(due_at__lt=now).exclude(status__in=[Task.Status.DONE, Task.Status.CANCELLED])
+            return selectors.overdue(queryset, user, now)
         if value == "no_date":
             return queryset.filter(due_at__isnull=True).exclude(status__in=[Task.Status.DONE, Task.Status.CANCELLED])
         if value == "completed":
