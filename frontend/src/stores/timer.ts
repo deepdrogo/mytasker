@@ -14,9 +14,35 @@ export interface TimerState {
   today: { business: number; personal: number; total: number };
 }
 
+/**
+ * Server totals already contain the timer that was running when they were read, up to that moment.
+ * Remember which entry that was and when, so the live figure adds only the time since - never twice.
+ */
+interface TotalsSnapshot {
+  today: TimerState['today'];
+  runningId: ID | null;
+  runningCategory: TimeCategory | null;
+  readAt: number;
+}
+
 const [running, setRunning] = createSignal<TimeEntry | null>(null);
 const [sleep, setSleep] = createSignal<SleepSession | null>(null);
-const [todayTotals, setTodayTotals] = createSignal<TimerState['today']>({ business: 0, personal: 0, total: 0 });
+const [totals, setTotals] = createSignal<TotalsSnapshot>({
+  today: { business: 0, personal: 0, total: 0 },
+  runningId: null,
+  runningCategory: null,
+  readAt: Date.now(),
+});
+const todayTotals = () => totals().today;
+
+function applyTotals(state: TimerState): void {
+  setTotals({
+    today: state.today,
+    runningId: state.running?.id ?? null,
+    runningCategory: state.running?.category ?? null,
+    readAt: Date.now(),
+  });
+}
 const [nowMs, setNowMs] = createSignal(Date.now());
 const [busy, setBusy] = createSignal(false);
 
@@ -46,9 +72,15 @@ export const timerStore = {
   sleepElapsedSeconds: (): number => elapsedFrom(sleep()?.started_at),
   /** Live business seconds today including the running business timer. */
   businessSecondsToday: (): number => {
-    const base = todayTotals().business;
+    const snapshot = totals();
     const entry = running();
-    return entry && entry.category === 'business' ? base + elapsedFrom(entry.started_at) - entry.duration_seconds : base;
+    const base = snapshot.today.business;
+    if (entry && entry.id === snapshot.runningId) {
+      // Already counted up to `readAt`; add only what has run since.
+      return snapshot.runningCategory === 'business' ? base + Math.max(0, Math.floor((nowMs() - snapshot.readAt) / 1000)) : base;
+    }
+    // A timer started after the totals were read is not in them yet (the refresh after start catches up).
+    return entry && entry.category === 'business' ? base + elapsedFrom(entry.started_at) : base;
   },
   isTrackingTask: (taskId: ID): boolean => running()?.task?.id === taskId,
 };
@@ -69,7 +101,7 @@ export async function loadTimerState(): Promise<void> {
     const state = await api.get<TimerState>('/timer/');
     setRunning(state.running);
     setSleep(state.sleep);
-    setTodayTotals(state.today);
+    applyTotals(state);
     setNowMs(Date.now());
     ensureTicker();
   } catch {
@@ -121,6 +153,7 @@ export async function resumeTimer(entryId: ID): Promise<TimeEntry> {
     const entry = await api.post<TimeEntry>(`/timer/entries/${entryId}/resume/`);
     applyRunningTimer(entry);
     invalidate(...TIMER_SCOPES);
+    void refreshTotals();
     return entry;
   } finally {
     setBusy(false);
@@ -163,7 +196,7 @@ export async function stopSleep(): Promise<void> {
 async function refreshTotals(): Promise<void> {
   try {
     const state = await api.get<TimerState>('/timer/');
-    setTodayTotals(state.today);
+    applyTotals(state);
   } catch {
     /* non-critical */
   }
