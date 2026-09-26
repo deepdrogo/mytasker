@@ -13,6 +13,17 @@ export const tasks: Record<string, string> = {
   Priority: 'პრიორიტეტი',
   'Estimate (min)': 'შეფასება (წთ)',
   Due: 'ვადა',
+  Starts: 'იწყება',
+  day: 'დღე',
+  'Optional. Today still uses the due date. A start date draws this task across every day until then on the task calendar.':
+    'არასავალდებულო. დღეს კვლავ ვადას იყენებს. დაწყების თარიღი ამ დავალებას კალენდარზე ვადამდე ყველა დღეზე გაწვდის.',
+  'The start date is after the due date.': 'დაწყების თარიღი ვადის შემდეგაა.',
+  '{n} days on the calendar': 'კალენდარზე {n} დღე',
+  'Task calendar': 'დავალებების კალენდარი',
+  'A start date through the due date marks every day in between. Today still follows the due date only.':
+    'დაწყებიდან ვადამდე ყველა დღე აღინიშნება. დღეს კვლავ მხოლოდ ვადას მიჰყვება.',
+  'Nothing scheduled this month.': 'ამ თვეში დაგეგმილი არაფერია.',
+  '+{n} more': 'კიდევ {n}',
   Reminder: 'შეხსენება',
   'Due at a specific time': 'ვადა კონკრეტულ დროზე',
   Project: 'პროექტი',

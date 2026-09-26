@@ -9,6 +9,7 @@ export const core: Record<string, string> = {
   Business: 'ბიზნესი',
   'Crypto world': 'კრიპტოსამყარო',
   Upcoming: 'მომავალი',
+  Calendar: 'კალენდარი',
   Completed: 'დასრულებული',
   Projects: 'პროექტები',
   Active: 'აქტიური',

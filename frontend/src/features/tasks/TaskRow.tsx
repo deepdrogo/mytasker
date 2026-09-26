@@ -34,13 +34,14 @@ import { polishTasks } from '~/features/ai/polish';
 import { tasksApi } from '~/features/tasks/api';
 import { HandOverDialog } from '~/features/tasks/HandOverDialog';
 import { MoveTaskDialog } from '~/features/tasks/MoveTaskDialog';
-import { t } from '~/i18n';
+import { t, tn } from '~/i18n';
 import { authStore } from '~/stores/auth';
 import { tx } from '~/stores/translations';
 import { startTimer, stopTimer, timerStore } from '~/stores/timer';
 import { toast } from '~/stores/ui';
 import type { Task, TaskKind } from '~/types';
 import { cx } from '~/utils/cx';
+import { inclusiveDays, taskSpan } from '~/features/tasks/span';
 import { endOfDay, formatDate, formatDueDate, formatDuration } from '~/utils/format';
 import styles from './TaskRow.module.css';
 
@@ -100,6 +101,10 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
   const assigneeNames = () => {
     const list = props.task.assignees?.length ? props.task.assignees : props.task.assignee ? [props.task.assignee] : [];
     return list.map((user) => user.display_name).join(', ');
+  };
+  const spanDays = () => {
+    const span = taskSpan(props.task);
+    return span ? inclusiveDays(span.start, span.end) : 0;
   };
 
   const polish = async (event?: MouseEvent) => {
@@ -467,6 +472,11 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
                     {formatDueDate(props.task.due_at, props.task.due_has_time, use12h())}
                   </span>
                 </Show>
+              </span>
+            </Show>
+            <Show when={spanDays() > 1}>
+              <span class={styles.spanDays} title={t('{n} days on the calendar', { n: spanDays() })}>
+                {tn(spanDays(), 'day')}
               </span>
             </Show>
 

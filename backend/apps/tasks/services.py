@@ -200,6 +200,15 @@ def _payload(task: Task, **extra) -> dict[str, Any]:
     return data
 
 
+def _assert_span(start_at, due_at) -> None:
+    """A start date may sit on or before the due date. It never replaces the due date."""
+    if start_at and due_at and start_at > due_at:
+        raise ValidationFailed(
+            "The start date cannot be after the due date.",
+            fields={"start_at": ["Start is after the due date."]},
+        )
+
+
 # --------------------------------------------------------------------------- create
 
 
@@ -273,6 +282,8 @@ def create_task(
     if parent is not None and "sort_order" not in payload:
         last = Task.objects.filter(parent=parent, deleted_at__isnull=True).aggregate(m=Max("sort_order")).get("m")
         payload["sort_order"] = (last or 0) + 1
+
+    _assert_span(payload.get("start_at"), payload.get("due_at"))
 
     task = Task.objects.create(
         owner=task_owner,
@@ -403,6 +414,8 @@ def update_task(actor: Actor, task_id: int, *, expected_version: int | None = No
                 raise ValidationFailed("Title is required.", fields={"title": ["This field is required."]})
         setattr(task, key, value)
         changed.append(key)
+
+    _assert_span(task.start_at, task.due_at)
 
     if not changed:
         return task

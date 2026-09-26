@@ -16,6 +16,7 @@ const TasksUpcoming = lazy(() => import('~/routes/tasks/Upcoming'));
 const TasksCompleted = lazy(() => import('~/routes/tasks/Completed'));
 const TasksAll = lazy(() => import('~/routes/tasks/All'));
 const TasksNoDate = lazy(() => import('~/routes/tasks/NoDate'));
+const TasksCalendar = lazy(() => import('~/routes/tasks/Calendar'));
 const TasksClients = lazy(() => import('~/routes/tasks/Clients'));
 const People = lazy(() => import('~/routes/People'));
 const From = lazy(() => import('~/routes/From'));
@@ -72,6 +73,7 @@ export const routes: RouteDefinition[] = [
       { path: '/tasks/completed', component: TasksCompleted },
       { path: '/tasks/all', component: TasksAll },
       { path: '/tasks/no-date', component: TasksNoDate },
+      { path: '/tasks/calendar', component: TasksCalendar },
       { path: '/projects', component: () => <Navigate href="/projects/active" /> },
       { path: '/projects/active', component: ProjectsActive },
       { path: '/projects/startups', component: ProjectsStartups },

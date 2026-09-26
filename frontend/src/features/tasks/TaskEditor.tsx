@@ -38,6 +38,7 @@ import { startTimer, stopTimer, timerStore } from '~/stores/timer';
 import { authStore } from '~/stores/auth';
 import { toast } from '~/stores/ui';
 import type { Priority, Task } from '~/types';
+import { inclusiveDays } from '~/features/tasks/span';
 import { formatDuration, fromLocalInputValue, toLocalInputValue } from '~/utils/format';
 import styles from './TaskEditor.module.css';
 
@@ -68,6 +69,7 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
   const [notes, setNotes] = createSignal('');
   const [priority, setPriority] = createSignal<Priority>('normal');
   const [dueAt, setDueAt] = createSignal('');
+  const [starts, setStarts] = createSignal('');
   const [hasTime, setHasTime] = createSignal(false);
   const [reminderAt, setReminderAt] = createSignal('');
   const [estimate, setEstimate] = createSignal('');
@@ -93,6 +95,7 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
       setNotes(task.notes);
       setPriority(task.priority);
       setDueAt(toLocalInputValue(task.due_at));
+      setStarts(toLocalInputValue(task.start_at));
       setHasTime(task.due_has_time);
       setReminderAt(toLocalInputValue(task.reminder_at));
       setEstimate(task.estimated_minutes ? String(task.estimated_minutes) : '');
@@ -151,6 +154,16 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
     });
   };
 
+  const startDate = () => starts().slice(0, 10);
+  const dueDate = () => dueAt().slice(0, 10);
+  /** Days the task occupies once a start sits on or before the due date. 0 when the range is unfinished or backwards. */
+  const spanCount = () => {
+    const start = startDate();
+    const due = dueDate();
+    if (!start || !due || start > due) return 0;
+    return inclusiveDays(start, due);
+  };
+
   /** What gets saved: a clock time only when one is switched on and actually picked. */
   const deadline = (): Pick<TaskInput, 'due_at' | 'due_has_time'> => {
     const date = dueAt().slice(0, 10);
@@ -175,11 +188,17 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
     if (!task || saving()) return;
     setSaving(true);
     setError('');
+    if (startDate() && dueDate() && startDate() > dueDate()) {
+      setError(t('The start date is after the due date.'));
+      setSaving(false);
+      return;
+    }
     const payload: TaskInput = {
       title: title().trim(),
       description: description(),
       notes: notes(),
       priority: priority(),
+      start_at: startDate() ? fromLocalInputValue(`${startDate()}T00:00`) : null,
       ...deadline(),
       reminder_at: fromLocalInputValue(reminderAt()),
       estimated_minutes: estimate() ? Number(estimate()) : null,
@@ -375,6 +394,16 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
                   />
                 </Field>
 
+                <Field label={t('Starts')}>
+                  <DateTimeInput
+                    value={starts()}
+                    dateOnly
+                    defaultTime="00:00"
+                    onChange={(value) => mark(setStarts)(value)}
+                    disabled={!task().can_edit}
+                  />
+                </Field>
+
                 <Field label={t('Due')}>
                   <DateTimeInput
                     value={dueAt()}
@@ -389,6 +418,17 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
                   <DateTimeInput value={reminderAt()} onChange={(value) => mark(setReminderAt)(value)} disabled={!task().can_edit} />
                 </Field>
               </div>
+
+              <p class={styles.hint}>
+                <Show
+                  when={spanCount() > 1}
+                  fallback={t(
+                    'Optional. Today still uses the due date. A start date draws this task across every day until then on the task calendar.',
+                  )}
+                >
+                  {t('{n} days on the calendar', { n: spanCount() })}
+                </Show>
+              </p>
 
               <div class={styles.flags}>
                 <Show when={delegatedToMe()}>

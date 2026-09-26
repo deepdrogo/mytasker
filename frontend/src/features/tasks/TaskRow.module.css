@@ -216,6 +216,19 @@
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
 }
 
+.spanDays {
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  padding: 0 6px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--c-border);
+  font-size: 10px;
+  color: var(--c-text-faint);
+  white-space: nowrap;
+  flex: none;
+}
+
 .ongoingMark {
   display: inline-flex;
   align-items: center;

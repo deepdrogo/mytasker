@@ -90,6 +90,7 @@ export function CommandPalette(): JSX.Element {
     { id: 'business', label: 'Business tasks', icon: <CheckSquare size={15} />, run: go('/tasks/business') },
     { id: 'crypto', label: 'Crypto world tasks', icon: <CheckSquare size={15} />, keywords: 'crypto cryptoworld კრიპტო კრიპტოსამყარო', run: go('/tasks/crypto') },
     { id: 'upcoming', label: 'Upcoming', icon: <Calendar size={15} />, run: go('/tasks/upcoming') },
+    { id: 'calendar', label: 'Task calendar', icon: <Calendar size={15} />, keywords: 'span start due კალენდარი დაწყება ვადა', run: go('/tasks/calendar') },
     { id: 'completed', label: 'Completed tasks', icon: <CheckSquare size={15} />, run: go('/tasks/completed') },
     { id: 'projects', label: 'Active projects', icon: <FolderKanban size={15} />, run: go('/projects/active') },
     { id: 'startups', label: 'Startups', icon: <Rocket size={15} />, run: go('/projects/startups') },

@@ -8,6 +8,9 @@ export interface TaskListParams extends QueryParams {
   exclude_kind?: TaskKind;
   origin?: TaskOrigin;
   view?: 'today' | 'tomorrow' | 'week' | 'upcoming' | 'overdue' | 'no_date' | 'completed';
+  /** Inclusive dates for the task calendar. A start date through the due date matches every day inside. */
+  span_from?: string;
+  span_to?: string;
   project?: ID;
   parent?: ID;
   top_level?: boolean;

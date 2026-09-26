@@ -152,6 +152,47 @@ def test_today_and_tomorrow_views(client_for, user):
     assert tomorrow == [tmr["id"]]
 
 
+def test_start_through_due_spans_the_calendar_and_leaves_today_alone(auth_client):
+    """Wednesday through Friday is three calendar days. Today still lists only the due day."""
+    auth_client.post(
+        "/api/v1/tasks/",
+        {
+            "title": "Span",
+            "start_at": "2026-10-07T00:00:00Z",
+            "due_at": "2026-10-09T23:59:00Z",
+            "due_has_time": False,
+        },
+        format="json",
+    )
+    auth_client.post(
+        "/api/v1/tasks/",
+        {"title": "Thursday only", "due_at": "2026-10-08T23:59:00Z", "due_has_time": False},
+        format="json",
+    )
+
+    def titles(day: str) -> list[str]:
+        data = auth_client.get(
+            "/api/v1/tasks/",
+            {"span_from": day, "span_to": day, "top_level": "true"},
+        ).data
+        return sorted(row["title"] for row in data["results"])
+
+    assert titles("2026-10-07") == ["Span"]
+    assert titles("2026-10-08") == ["Span", "Thursday only"]
+    assert titles("2026-10-09") == ["Span"]
+    assert titles("2026-10-10") == []
+
+    today = auth_client.get("/api/v1/tasks/", {"view": "today", "top_level": "true"}).data
+    assert "Span" not in {row["title"] for row in today["results"]}
+
+    rejected = auth_client.post(
+        "/api/v1/tasks/",
+        {"title": "Backwards", "start_at": "2026-10-09T00:00:00Z", "due_at": "2026-10-07T23:59:00Z"},
+        format="json",
+    )
+    assert rejected.status_code == 400
+
+
 def test_counts_endpoint(client_for, user):
     client = client_for(user)
     client.post("/api/v1/tasks/", {"title": "A", "kind": "personal"}, format="json")

@@ -3,6 +3,7 @@ from __future__ import annotations
 import django_filters as filters
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.db.models import F, Q
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from apps.tasks import selectors
@@ -39,6 +40,9 @@ class TaskFilter(filters.FilterSet):
     completed = filters.BooleanFilter(method="filter_completed")
     overdue = filters.BooleanFilter(method="filter_overdue")
     view = filters.CharFilter(method="filter_view")
+    # Inclusive window for the task calendar only. Does not change Today / Tomorrow.
+    span_from = filters.DateFilter(method="filter_span_from")
+    span_to = filters.DateFilter(method="filter_span_to")
     q = filters.CharFilter(method="filter_search")
 
     class Meta:
@@ -88,6 +92,32 @@ class TaskFilter(filters.FilterSet):
         if not value:
             return queryset
         return selectors.overdue(queryset, self.request.user)
+
+    def filter_span_from(self, queryset, name, value):
+        self._span_from = value
+        return self._apply_span(queryset)
+
+    def filter_span_to(self, queryset, name, value):
+        self._span_to = value
+        return self._apply_span(queryset)
+
+    def _apply_span(self, queryset):
+        """Tasks whose start→due span overlaps the window. A missing start means the due day only."""
+        if getattr(self, "_span_applied", False):
+            return queryset
+        start_day = getattr(self, "_span_from", None)
+        end_day = getattr(self, "_span_to", None)
+        if start_day is None or end_day is None:
+            return queryset
+        self._span_applied = True
+        if end_day < start_day:
+            start_day, end_day = end_day, start_day
+        window_start, _ = day_bounds(self.request.user, start_day)
+        _, window_end = day_bounds(self.request.user, end_day)
+        return queryset.annotate(
+            span_start=Coalesce("start_at", "due_at"),
+            span_end=Coalesce("due_at", "start_at"),
+        ).filter(span_start__lt=window_end, span_end__gte=window_start)
 
     def filter_view(self, queryset, name, value):
         """Named date views resolved in the user's timezone."""
