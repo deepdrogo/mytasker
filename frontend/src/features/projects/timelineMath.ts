@@ -62,6 +62,47 @@ export function overlapsWindow(range: DateRange, windowStart: string, windowEnd:
   return range.start <= windowEnd && (!range.end || range.end >= windowStart);
 }
 
+export function isWeekend(value: string): boolean {
+  const day = parseDate(value).getDay();
+  return day === 0 || day === 6;
+}
+
+/**
+ * Weekday pieces of a range inside the window. Saturday and Sunday are gaps, so a bar that
+ * crosses a weekend draws as separate stretches instead of one line with a tint through it.
+ * The stored start and end stay unchanged.
+ */
+export function weekdaySegments(
+  range: DateRange,
+  windowStart: string,
+  windowEnd: string,
+): { offset: number; span: number }[] {
+  if (!range.start) return [];
+  const start = range.start < windowStart ? windowStart : range.start;
+  const end = !range.end || range.end > windowEnd ? windowEnd : range.end;
+  if (start > end) return [];
+
+  const segments: { offset: number; span: number }[] = [];
+  let segStart: string | null = null;
+  const close = (segEnd: string) => {
+    if (!segStart || segEnd < segStart) return;
+    segments.push({ offset: diffDays(windowStart, segStart), span: diffDays(segStart, segEnd) + 1 });
+    segStart = null;
+  };
+
+  let cursor = start;
+  while (cursor <= end) {
+    if (isWeekend(cursor)) {
+      if (segStart) close(addDays(cursor, -1));
+    } else if (!segStart) {
+      segStart = cursor;
+    }
+    if (cursor === end && segStart && !isWeekend(cursor)) close(cursor);
+    cursor = addDays(cursor, 1);
+  }
+  return segments;
+}
+
 /** Range clipped to the visible window, expressed as a day offset and a length in days. */
 export function windowColumns(
   range: DateRange,

@@ -22,14 +22,15 @@ import {
   previewRange,
   rangeForSave,
   sameRange,
+  weekdaySegments,
   windowColumns,
   type DateRange,
   type DragMode,
 } from './timelineMath';
 
 const DAY_MS = 86_400_000;
-/** How many months the board shows at once: the anchor month plus the two that follow. */
-const WINDOW_MONTHS = 3;
+/** How many months the board shows at once, starting at the anchor month. Arrows slide that window. */
+const WINDOW_MONTHS = 12;
 /** A plain click (no horizontal drag) schedules this many days, long enough to grab and stretch. */
 const DEFAULT_SPAN_DAYS = 3;
 const DRAG_THRESHOLD_PX = 4;
@@ -308,23 +309,24 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
     window.removeEventListener('pointercancel', onPointerUp);
   });
 
-  const scrollToToday = () => {
-    if (!scroller || today < rangeStart() || today > rangeEnd()) return;
-    const width = scroller.scrollWidth / days().length;
-    scroller.scrollTo({ left: Math.max(0, (diffDays(rangeStart(), today) - 3) * width), behavior: 'smooth' });
+  const dayWidth = () => dayHeader?.querySelector(`.${styles.day}`)?.getBoundingClientRect().width || 40;
+
+  /** Put a calendar day at the left edge, beside the sticky project names. */
+  const scrollToDay = (day: string, behavior: ScrollBehavior = 'auto') => {
+    if (!scroller || day < rangeStart() || day > rangeEnd()) return;
+    scroller.scrollTo({ left: Math.max(0, diffDays(rangeStart(), day) * dayWidth()), behavior });
   };
 
+  const scrollToToday = () => scrollToDay(addDays(today, -2), 'smooth');
+
   const shiftMonths = (amount: number) => {
-    const current = anchor();
-    setAnchor(new Date(current.getFullYear(), current.getMonth() + amount, 1));
+    const next = new Date(anchor().getFullYear(), anchor().getMonth() + amount, 1);
+    setAnchor(next);
+    // Wait until the new month strip is in the DOM, then line its first day up at the left.
+    requestAnimationFrame(() => scrollToDay(iso(next)));
   };
 
   const jumpTo = (date: string) => setAnchor(new Date(parseDate(date).getFullYear(), parseDate(date).getMonth(), 1));
-
-  const columnStyle = (dates: DateRange): JSX.CSSProperties => {
-    const { offset, span } = windowColumns(dates, rangeStart(), rangeEnd());
-    return { '--start': String(offset), '--span': String(span) } as JSX.CSSProperties;
-  };
 
   const rangeTitle = (dates: DateRange): string => `${dates.start} → ${dates.end ?? t('ongoing')}`;
 
@@ -357,6 +359,11 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
     const isCrypto = row.key === CRYPTO_KEY;
     const dates = () => datesOf(row);
     const dragging = () => drag()?.key === row.key;
+    // While dragging, one bar follows the pointer, weekends included. At rest, Saturday and Sunday are gaps.
+    const pieces = () =>
+      dragging()
+        ? [windowColumns(dates(), rangeStart(), rangeEnd())]
+        : weekdaySegments(dates(), rangeStart(), rangeEnd());
     return (
       <>
         <A
@@ -425,46 +432,54 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
           </Show>
 
           <Show when={dates().start && visible(dates())}>
-            <div
-              class={[styles.block, !dates().end ? styles.openEnded : '', dragging() ? styles.dragging : '']
-                .filter(Boolean)
-                .join(' ')}
-              style={columnStyle(dates())}
-              onPointerDown={(event) => begin(event, row, 'move')}
-              title={rangeTitle(dates())}
-            >
-              <Show when={row.editable}>
-                <span class={styles.handle} onPointerDown={(event) => begin(event, row, 'start')} aria-hidden="true" />
-              </Show>
-              <span class={styles.blockLabel}>
-                <span class={styles.blockText}>{row.name}</span>
-                <Show when={!dates().end}>
-                  <InfinityIcon size={13} class={styles.openIcon} />
-                </Show>
-                <Show when={row.editable && !dragging()}>
-                  <button
-                    type="button"
-                    class={styles.remove}
-                    onPointerDown={stopBarGesture}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      unschedule(row);
-                    }}
-                    aria-label={t('Remove from calendar')}
-                    title={t('Remove from calendar')}
-                  >
-                    <CalendarX size={12} />
-                  </button>
-                </Show>
-              </span>
-              <Show when={row.editable}>
-                <span
-                  class={`${styles.handle} ${styles.handleEnd}`}
-                  onPointerDown={(event) => begin(event, row, 'end')}
-                  aria-hidden="true"
-                />
-              </Show>
-            </div>
+            <For each={pieces()}>
+              {(piece, index) => (
+                <div
+                  class={[
+                    styles.block,
+                    !dates().end && index() === pieces().length - 1 ? styles.openEnded : '',
+                    dragging() ? styles.dragging : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  style={{ '--start': String(piece.offset), '--span': String(piece.span) } as JSX.CSSProperties}
+                  onPointerDown={(event) => begin(event, row, 'move')}
+                  title={rangeTitle(dates())}
+                >
+                  <Show when={row.editable && index() === 0}>
+                    <span class={styles.handle} onPointerDown={(event) => begin(event, row, 'start')} aria-hidden="true" />
+                  </Show>
+                  <span class={styles.blockLabel}>
+                    <span class={styles.blockText}>{row.name}</span>
+                    <Show when={!dates().end && index() === pieces().length - 1}>
+                      <InfinityIcon size={13} class={styles.openIcon} />
+                    </Show>
+                    <Show when={row.editable && !dragging() && index() === pieces().length - 1}>
+                      <button
+                        type="button"
+                        class={styles.remove}
+                        onPointerDown={stopBarGesture}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          unschedule(row);
+                        }}
+                        aria-label={t('Remove from calendar')}
+                        title={t('Remove from calendar')}
+                      >
+                        <CalendarX size={12} />
+                      </button>
+                    </Show>
+                  </span>
+                  <Show when={row.editable && index() === pieces().length - 1}>
+                    <span
+                      class={`${styles.handle} ${styles.handleEnd}`}
+                      onPointerDown={(event) => begin(event, row, 'end')}
+                      aria-hidden="true"
+                    />
+                  </Show>
+                </div>
+              )}
+            </For>
           </Show>
 
           {/* Crypto world: its open tasks marked on their due dates, on top of the scheduled span. */}
@@ -512,7 +527,7 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
             size="sm"
             onClick={() => {
               setAnchor(thisMonth());
-              queueMicrotask(scrollToToday);
+              requestAnimationFrame(() => scrollToToday());
             }}
           >
             {t('Today')}

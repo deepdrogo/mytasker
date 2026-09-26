@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, diffDays, overlapsWindow, previewRange, rangeForSave, sameRange, windowColumns } from './timelineMath';
+import { addDays, diffDays, overlapsWindow, previewRange, rangeForSave, sameRange, weekdaySegments, windowColumns } from './timelineMath';
 
 const WINDOW_START = '2026-09-01';
 const WINDOW_END = '2026-11-30';
@@ -56,6 +56,18 @@ describe('timeline date maths', () => {
     expect(rangeForSave({ start: '2026-09-07', end: null })).toEqual({ start: '2026-09-07', end: null });
     expect(rangeForSave({ start: null, end: '2026-09-10' })).toEqual({ start: null, end: null });
     expect(sameRange({ start: null, end: null }, rangeForSave({ start: null, end: '2026-09-10' }))).toBe(true);
+  });
+
+  it('breaks a bar on Saturday and Sunday and keeps the weekdays whole', () => {
+    // 7 Sep 2026 is a Monday, 12–13 Sep are the weekend.
+    expect(weekdaySegments({ start: '2026-09-07', end: '2026-09-18' }, WINDOW_START, WINDOW_END)).toEqual([
+      { offset: 6, span: 5 },
+      { offset: 13, span: 5 },
+    ]);
+    expect(weekdaySegments({ start: '2026-09-12', end: '2026-09-13' }, WINDOW_START, WINDOW_END)).toEqual([]);
+    expect(weekdaySegments({ start: '2026-09-11', end: '2026-09-11' }, WINDOW_START, WINDOW_END)).toEqual([
+      { offset: 10, span: 1 },
+    ]);
   });
 
   it('clips ranges to the window when positioning a bar', () => {
