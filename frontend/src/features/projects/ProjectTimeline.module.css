@@ -245,13 +245,24 @@
   font-weight: var(--fw-medium);
 }
 
-.today {
+.day.weekend {
+  background: #1a1a1a;
+  color: #555;
+}
+
+.day.weekend b {
+  color: #666;
+}
+
+.today,
+.day.today {
   background: rgba(255, 255, 255, 0.08);
   color: var(--c-text);
   box-shadow: inset 2px 0 rgba(255, 255, 255, 0.55);
 }
 
-.today b {
+.today b,
+.day.today b {
   color: var(--c-text);
 }
 
@@ -304,11 +315,12 @@
   border-right: 1px solid rgba(255, 255, 255, 0.035);
 }
 
-.weekend {
-  background: rgba(255, 255, 255, 0.018);
+.cell.weekend {
+  background: #161616;
 }
 
-.todayCell {
+.todayCell,
+.cell.todayCell {
   background: rgba(255, 255, 255, 0.04);
   box-shadow: inset 2px 0 rgba(255, 255, 255, 0.45);
 }
