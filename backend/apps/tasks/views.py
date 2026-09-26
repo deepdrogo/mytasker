@@ -25,6 +25,14 @@ from common.actors import Actor
 from common.tz import today_for
 
 
+def _asks_for_handed(request) -> bool:
+    """People (`assignee`) and From (`delegated` / `delegated_by`) are the only lists that show handed work."""
+    params = request.query_params
+    if params.get("assignee") or params.get("delegated_by"):
+        return True
+    return (params.get("delegated") or "").lower() in {"1", "true", "yes"}
+
+
 class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer
     filterset_class = TaskFilter
@@ -56,6 +64,9 @@ class TaskViewSet(viewsets.ModelViewSet):
     def filter_queryset(self, queryset):
         """Client work floats to the top of every list, whatever the chosen sort. `pin_clients=0` opts out."""
         qs = super().filter_queryset(queryset)
+        # People and From ask for handed work on purpose. Every other list is the user's own plate.
+        if self.action == "list" and not _asks_for_handed(self.request):
+            qs = selectors.own_plate(qs, self.request.user)
         if self.action != "list" or self.request.query_params.get("pin_clients") == "0":
             return qs
         current = [
@@ -239,7 +250,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 
         _, end_of_today = day_bounds(request.user)
         now = timezone.now()
-        base = selectors.base_queryset(request.user).top_level()
+        base = selectors.own_plate(selectors.base_queryset(request.user).top_level(), request.user)
         open_not_crypto = ~Q(status__in=["done", "cancelled"]) & ~Q(kind=Task.Kind.CRYPTO)
         data = base.aggregate(
             personal=Count("id", filter=Q(kind=Task.Kind.PERSONAL) & ~Q(status__in=["done", "cancelled"])),

@@ -241,10 +241,15 @@ def _resolve_when(user, when: str | None) -> dict[str, Any]:
 
 
 def list_tasks(actor: Actor, args: ListTasksIn) -> dict:
+    from apps.tasks.selectors import own_plate
     from common.tz import day_bounds
 
     user = actor.user
-    qs = Task.objects.visible_to(user).filter(parent__isnull=True).select_related("project")
+
+    qs = own_plate(
+        Task.objects.visible_to(user).filter(parent__isnull=True).select_related("project"),
+        user,
+    )
     start, end = day_bounds(user)
     if args.scope == "today":
         qs = qs.filter(OPEN, due_at__lt=end)

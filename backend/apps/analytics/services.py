@@ -78,14 +78,15 @@ def compute_day(user, day: date) -> DayMetrics:
     now = timezone.now()
     m = DayMetrics(date=day)
 
-    own = Task.objects.filter(owner=user, parent__isnull=True).exclude(kind=Task.Kind.CRYPTO)
+    from apps.tasks.selectors import own_plate
+
+    # People work is counted on the People page, not in planned / done / missed graphs.
+    plate = own_plate(Task.objects.filter(parent__isnull=True).exclude(kind=Task.Kind.CRYPTO), user)
     # Planned = tasks that were due on that day (or overdue carried into it and still open at end of day).
-    planned = own.filter(due_at__gte=start, due_at__lt=end)
+    planned = plate.filter(owner=user, due_at__gte=start, due_at__lt=end)
     m.tasks_planned = planned.count()
-    completed = (
-        Task.objects.filter(completed_at__gte=start, completed_at__lt=end, parent__isnull=True)
-        .exclude(kind=Task.Kind.CRYPTO)
-        .filter(Q(owner=user) | Q(completed_by=user))
+    completed = plate.filter(completed_at__gte=start, completed_at__lt=end).filter(
+        Q(owner=user) | Q(completed_by=user)
     )
     agg = completed.aggregate(
         total=Count("id", distinct=True),

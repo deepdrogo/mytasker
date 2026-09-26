@@ -83,6 +83,24 @@ def base_queryset(user):
     )
 
 
+def own_plate(queryset, user):
+    """
+    Tasks that belong on the user's own lists, counts and graphs.
+
+    Work handed to someone else lives on People. Work someone else handed to this user
+    lives on their From page. Neither shows up on Today, the other task lists, sidebar
+    counts or the Insights charts.
+    """
+    handed = Task.assignees.through.objects.filter(task_id=OuterRef("pk"))
+    handed_to_others = Exists(handed.exclude(user_id=user.pk))
+    handed_to_me = Exists(handed.filter(user_id=user.pk))
+    return (
+        queryset.exclude(Q(assignee__isnull=False) & ~Q(assignee_id=user.pk))
+        .exclude(handed_to_others)
+        .exclude(~Q(owner_id=user.pk) & (Q(assignee_id=user.pk) | handed_to_me))
+    )
+
+
 def priority_rank_expression():
     """Semantic priority rank (critical=0 .. low=3) so ordering is meaningful, not alphabetical."""
     from django.db.models import Case, When

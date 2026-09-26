@@ -66,7 +66,7 @@ def global_search(request):
     query = SearchQuery(term, config="english", search_type="websearch")
 
     tasks = (
-        selectors.base_queryset(user)
+        selectors.own_plate(selectors.base_queryset(user), user)
         .annotate(tags_text=Func(F("tags"), Value(" "), function="array_to_string", output_field=TextField()))
         .filter(
             _all_words(words, "title", "description", "notes", "tags_text", "project__name") | Q(search_vector=query)

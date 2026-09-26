@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from django.db.models import Exists, OuterRef, Q
+from django.db.models import Q
 from django.utils import timezone
 
 from apps.analytics import services as analytics
@@ -30,19 +30,8 @@ def models_f_nulls_last(field: str):
 
 
 def only_my_own(queryset, user):
-    """
-    The dashboard is the user's own plate. Work handed to someone (People, or a teammate inside a project)
-    is theirs now and lives on the People page; work other people handed to the user lives on their
-    "From" page. Only tasks with nobody else attached stay - client work included.
-    """
-    handed = Task.assignees.through.objects.filter(task_id=OuterRef("pk"))
-    handed_to_others = Exists(handed.exclude(user_id=user.pk))
-    handed_to_me = Exists(handed.filter(user_id=user.pk))
-    return (
-        queryset.exclude(Q(assignee__isnull=False) & ~Q(assignee_id=user.pk))
-        .exclude(handed_to_others)
-        .exclude(~Q(owner_id=user.pk) & (Q(assignee_id=user.pk) | handed_to_me))
-    )
+    """Dashboard plate: same rule as every other own list — People work stays on People."""
+    return selectors.own_plate(queryset, user)
 
 
 def today_snapshot(user, request=None) -> dict:

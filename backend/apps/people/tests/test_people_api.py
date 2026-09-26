@@ -154,7 +154,8 @@ def test_delegated_work_lands_on_from_page_not_in_own_lists(client_for, admin, n
     from_page = me.get("/api/v1/tasks/", {"delegated_by": admin.pk, "top_level": "true"}).data
     assert sorted(row["title"] for row in from_page["results"]) == ["Call vendor", "Order parts"]
 
-    # Own Personal list stays mine; Today mixes everything in.
+    # Own Personal list stays mine. Today, the other lists and the sidebar counts do too —
+    # handed work is only on People (giver) and From (receiver).
     personal = me.get("/api/v1/tasks/", {"kind": "personal", "delegated": "false", "top_level": "true"}).data
     assert [row["title"] for row in personal["results"]] == ["My own"]
     only_delegated = me.get("/api/v1/tasks/", {"delegated": "true"}).data
@@ -168,6 +169,54 @@ def test_delegated_work_lands_on_from_page_not_in_own_lists(client_for, admin, n
 
     # Nobody without delegated work gets a "From" page.
     assert owner.get("/api/v1/people/delegators/").data == []
+
+
+def test_handed_work_stays_off_today_lists_counts_and_graphs(client_for, admin, nino):
+    from django.utils import timezone
+
+    from apps.analytics.services import compute_day
+    from common.tz import today_for
+
+    owner = client_for(admin)
+    add_person(owner, nino.email)
+    due = timezone.now().isoformat()
+    owner.post(
+        "/api/v1/tasks/",
+        {"title": "For Nino today", "kind": "personal", "assignee_id": nino.pk, "due_at": due},
+        format="json",
+    )
+    owner.post("/api/v1/tasks/", {"title": "My today", "kind": "personal", "due_at": due}, format="json")
+    owner.post(
+        "/api/v1/tasks/",
+        {"title": "For Nino someday", "kind": "business", "assignee_id": nino.pk},
+        format="json",
+    )
+
+    today = owner.get("/api/v1/tasks/", {"view": "today", "top_level": "true"}).data
+    assert [row["title"] for row in today["results"]] == ["My today"]
+    someday = owner.get("/api/v1/tasks/", {"view": "no_date", "top_level": "true"}).data
+    assert [row["title"] for row in someday["results"]] == []
+    personal = owner.get("/api/v1/tasks/", {"kind": "personal", "top_level": "true", "completed": "false"}).data
+    assert [row["title"] for row in personal["results"]] == ["My today"]
+    everything = owner.get("/api/v1/tasks/", {"top_level": "true", "completed": "false"}).data
+    assert {row["title"] for row in everything["results"]} == {"My today"}
+
+    # Still listed under the person, and still on the receiver's From page — nowhere else.
+    people = owner.get("/api/v1/tasks/", {"assignee": nino.pk, "mine": "true"}).data
+    assert sorted(row["title"] for row in people["results"]) == ["For Nino someday", "For Nino today"]
+    me = client_for(nino)
+    receiver_today = me.get("/api/v1/tasks/", {"view": "today", "top_level": "true"}).data
+    assert [row["title"] for row in receiver_today["results"]] == []
+    from_page = me.get("/api/v1/tasks/", {"delegated_by": admin.pk, "top_level": "true"}).data
+    assert sorted(row["title"] for row in from_page["results"]) == ["For Nino someday", "For Nino today"]
+
+    counts = owner.get("/api/v1/tasks/counts/").data
+    assert counts["today"] == 1
+    assert counts["personal"] == 1
+    assert counts["business"] == 0
+
+    metrics = compute_day(admin, today_for(admin))
+    assert metrics.tasks_planned == 1
 
 
 def test_removing_person_takes_back_open_work(client_for, admin, nino):
