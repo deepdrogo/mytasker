@@ -5,6 +5,7 @@ import { A } from '@solidjs/router';
 import {
   Bitcoin,
   Briefcase,
+  CalendarRange,
   Check,
   ChevronRight,
   Clock,
@@ -464,6 +465,14 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
                 <Dot />
               </Show>
             </Show>
+            <Show when={props.task.dates_from_project}>
+              <span class={styles.fromProject} title={t('Dates from the project calendar')} aria-label={t('Dates from the project calendar')}>
+                <CalendarRange size={11} />
+                <Show when={!props.task.due_at && props.task.start_at}>
+                  {t('from {date}', { date: formatDate(props.task.start_at) })}
+                </Show>
+              </span>
+            </Show>
             <Show when={props.task.due_at}>
               <span class={props.task.is_overdue ? styles.overdueText : undefined}>
                 <Show when={props.task.is_overdue} fallback={formatDueDate(props.task.due_at, props.task.due_has_time, use12h())}>
@@ -621,6 +630,7 @@ function hasMeta(task: Task, showProject?: boolean, showKind?: boolean, showCrea
       showCreated ||
       (task.is_ongoing && (task.today_skipped || task.checkin_done_count + task.checkin_skipped_count > 0)) ||
       task.due_at ||
+      task.dates_from_project ||
       (showProject !== false && task.project) ||
       task.subtask_total > 0 ||
       task.tracked_seconds > 0 ||

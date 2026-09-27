@@ -153,6 +153,8 @@ class Task(TimeStampedModel, SoftDeleteModel):
     start_at = models.DateTimeField(null=True, blank=True)
     due_at = models.DateTimeField(null=True, blank=True)
     due_has_time = models.BooleanField(default=False)
+    # start_at / due_at were copied from the project's calendar span and follow it (see project_dates.py).
+    dates_from_project = models.BooleanField(default=False)
     reminder_at = models.DateTimeField(null=True, blank=True)
     reminder_sent_at = models.DateTimeField(null=True, blank=True)
     estimated_minutes = models.PositiveIntegerField(null=True, blank=True)

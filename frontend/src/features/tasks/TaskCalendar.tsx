@@ -1,23 +1,27 @@
 // MyTasker — task calendar. A start date through a due date is a thin bar across those days.
-// Today, Tomorrow and the project timeline are untouched: this page is the only place the span is drawn.
+// Projects drawn on the project timeline sit above their tasks, so a dated project shows even with no tasks.
 
-import { ChevronLeft, ChevronRight } from 'lucide-solid';
+import { A } from '@solidjs/router';
+import { Briefcase, ChevronLeft, ChevronRight } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For, Show, createMemo, createSignal } from 'solid-js';
 import { Button } from '~/components/ui/Button';
 import { ErrorNote, Skeleton } from '~/components/ui/Feedback';
+import { projectsApi } from '~/features/projects/api';
 import { tasksApi } from '~/features/tasks/api';
-import { addDays, inclusiveDays, isoDay, taskSpan } from '~/features/tasks/span';
+import { addDays, inclusiveDays, isoDay, projectSpan, taskSpan, type DaySpan } from '~/features/tasks/span';
 import { createQuery } from '~/hooks/createQuery';
 import { intlLocale, t, tn } from '~/i18n';
-import type { Task } from '~/types';
+import type { Project, Task } from '~/types';
 import { cx } from '~/utils/cx';
 import styles from './TaskCalendar.module.css';
 
 const MAX_LANES = 3;
+const MAX_PROJECT_LANES = 2;
 
-interface Segment {
-  task: Task;
+interface Segment<T> {
+  item: T;
+  span: DaySpan;
   colStart: number;
   colEnd: number;
   lane: number;
@@ -45,16 +49,17 @@ function weeksOf(anchor: Date): Date[][] {
   return weeks;
 }
 
-function segmentsForWeek(tasks: Task[], weekStart: string): Segment[] {
+function segmentsForWeek<T>(items: T[], spanOf: (item: T) => DaySpan | null, weekStart: string): Segment<T>[] {
   const weekEnd = addDays(weekStart, 6);
-  const rows: Omit<Segment, 'lane'>[] = [];
-  for (const task of tasks) {
-    const span = taskSpan(task);
+  const rows: Omit<Segment<T>, 'lane'>[] = [];
+  for (const item of items) {
+    const span = spanOf(item);
     if (!span || span.end < weekStart || span.start > weekEnd) continue;
     const start = span.start < weekStart ? weekStart : span.start;
     const end = span.end > weekEnd ? weekEnd : span.end;
     rows.push({
-      task,
+      item,
+      span,
       colStart: inclusiveDays(weekStart, start) - 1,
       colEnd: inclusiveDays(weekStart, end) - 1,
       continuesBefore: span.start < weekStart,
@@ -100,7 +105,23 @@ export function TaskCalendar(props: { onOpen: (task: Task) => void }): JSX.Eleme
       }),
   );
 
+  const projectQuery = createQuery(
+    () => 'projects:calendar',
+    () => projectsApi.list({ view: 'open', page_size: 200 }),
+  );
+
   const tasks = () => query.data()?.results ?? [];
+  /** Open-ended projects run to the last day on screen. */
+  const spanOfProject = (project: Project) => projectSpan(project, range().to);
+  const projects = createMemo(() =>
+    (projectQuery.data()?.results ?? [])
+      .filter((project) => {
+        const span = spanOfProject(project);
+        return span && span.end >= range().from && span.start <= range().to;
+      })
+      .sort((a, b) => (a.start_date! < b.start_date! ? -1 : a.start_date! > b.start_date! ? 1 : a.name.localeCompare(b.name))),
+  );
+  const projectHue = (project: Project) => ({ '--project-hue': String((project.id * 47 + 185) % 360) }) as JSX.CSSProperties;
   const weekdayLabels = createMemo(() => {
     const monday = new Date(2026, 8, 7);
     return Array.from({ length: 7 }, (_, index) => {
@@ -139,8 +160,11 @@ export function TaskCalendar(props: { onOpen: (task: Task) => void }): JSX.Eleme
           <For each={weeks()}>
             {(week) => {
               const weekStart = () => isoDay(week[0] ?? anchor());
-              const segments = () => segmentsForWeek(tasks(), weekStart());
-              const hidden = () => segments().filter((segment) => segment.lane >= MAX_LANES).length;
+              const segments = () => segmentsForWeek(tasks(), taskSpan, weekStart());
+              const projectSegments = () => segmentsForWeek(projects(), spanOfProject, weekStart());
+              const hidden = () =>
+                segments().filter((segment) => segment.lane >= MAX_LANES).length +
+                projectSegments().filter((segment) => segment.lane >= MAX_PROJECT_LANES).length;
               return (
                 <section class={styles.week}>
                   <div class={styles.days}>
@@ -156,11 +180,36 @@ export function TaskCalendar(props: { onOpen: (task: Task) => void }): JSX.Eleme
                       }}
                     </For>
                   </div>
+                  <Show when={projectSegments().length > 0}>
+                    <div class={styles.lanes}>
+                      <For each={projectSegments().filter((segment) => segment.lane < MAX_PROJECT_LANES)}>
+                        {(segment) => (
+                          <A
+                            href={`/projects/${segment.item.id}/tasks`}
+                            class={cx(
+                              styles.bar,
+                              styles.projectBar,
+                              segment.continuesBefore && styles.continuesBefore,
+                              segment.continuesAfter && styles.continuesAfter,
+                            )}
+                            style={{
+                              ...projectHue(segment.item),
+                              'grid-column': `${segment.colStart + 1} / ${segment.colEnd + 2}`,
+                              'grid-row': String(segment.lane + 1),
+                            }}
+                            title={`${segment.item.name} · ${segment.item.start_date} → ${segment.item.deadline ?? t('ongoing')}`}
+                          >
+                            <Briefcase size={10} class={styles.projectIcon} />
+                            <span class={styles.barLabel}>{segment.item.name}</span>
+                          </A>
+                        )}
+                      </For>
+                    </div>
+                  </Show>
                   <div class={styles.lanes}>
                     <For each={segments().filter((segment) => segment.lane < MAX_LANES)}>
                       {(segment) => {
-                        const span = taskSpan(segment.task);
-                        const days = span ? inclusiveDays(span.start, span.end) : 1;
+                        const days = inclusiveDays(segment.span.start, segment.span.end);
                         return (
                           <button
                             type="button"
@@ -174,10 +223,10 @@ export function TaskCalendar(props: { onOpen: (task: Task) => void }): JSX.Eleme
                               'grid-column': `${segment.colStart + 1} / ${segment.colEnd + 2}`,
                               'grid-row': String(segment.lane + 1),
                             }}
-                            title={days > 1 ? `${segment.task.title} · ${tn(days, 'day')}` : segment.task.title}
-                            onClick={() => props.onOpen(segment.task)}
+                            title={days > 1 ? `${segment.item.title} · ${tn(days, 'day')}` : segment.item.title}
+                            onClick={() => props.onOpen(segment.item)}
                           >
-                            <span class={styles.barLabel}>{segment.task.title}</span>
+                            <span class={styles.barLabel}>{segment.item.title}</span>
                           </button>
                         );
                       }}
@@ -190,7 +239,7 @@ export function TaskCalendar(props: { onOpen: (task: Task) => void }): JSX.Eleme
               );
             }}
           </For>
-          <Show when={tasks().length === 0}>
+          <Show when={tasks().length === 0 && projects().length === 0}>
             <p class={styles.empty}>{t('Nothing scheduled this month.')}</p>
           </Show>
         </Show>

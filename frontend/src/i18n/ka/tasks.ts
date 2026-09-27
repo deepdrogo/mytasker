@@ -18,6 +18,10 @@ export const tasks: Record<string, string> = {
   'Optional. Today still uses the due date. A start date draws this task across every day until then on the task calendar.':
     'არასავალდებულო. დღეს კვლავ ვადას იყენებს. დაწყების თარიღი ამ დავალებას კალენდარზე ვადამდე ყველა დღეზე გაწვდის.',
   'The start date is after the due date.': 'დაწყების თარიღი ვადის შემდეგაა.',
+  'Dates from the “{project}” calendar. They move with the project; pick a date here to give this task its own.':
+    'თარიღები „{project}“-ის კალენდრიდანაა და პროექტთან ერთად იცვლება. აქ თარიღის არჩევით დავალებას საკუთარ თარიღს მისცემ.',
+  'Dates from the project calendar': 'თარიღები პროექტის კალენდრიდან',
+  'from {date}': '{date}-დან',
   '{n} days on the calendar': 'კალენდარზე {n} დღე',
   'Task calendar': 'დავალებების კალენდარი',
   'A start date through the due date marks every day in between. Today still follows the due date only.':

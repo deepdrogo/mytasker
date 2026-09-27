@@ -516,7 +516,10 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
           <h2>
             {months()[0]?.label} – {months()[months().length - 1]?.label}
           </h2>
-          <p>{t('Draw across a row to schedule a project. Drag, stretch, or remove it from the calendar.')}</p>
+          <p>
+            {t('Draw across a row to schedule a project. Drag, stretch, or remove it from the calendar.')}{' '}
+            {t('Its tasks without dates of their own get the same start and due date and follow every change.')}
+          </p>
         </div>
         <div class={styles.monthActions}>
           <Button variant="ghost" size="icon-sm" onClick={() => shiftMonths(-1)} aria-label={t('Previous month')}>

@@ -56,6 +56,8 @@ function scopesFor(name: string): string[] {
     case 'comment':
       return ['comments', 'tasks'];
     case 'project':
+      // A project's calendar dates are copied onto its undated tasks.
+      return ['projects', 'ideas', 'today', 'tasks'];
     case 'idea':
       return ['projects', 'ideas', 'today'];
     case 'prompt':

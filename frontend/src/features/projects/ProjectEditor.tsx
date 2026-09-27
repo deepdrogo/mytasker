@@ -190,7 +190,13 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
             <Input type="date" value={startDate()} onInput={(e) => setStartDate(e.currentTarget.value)} disabled={!canManage()} />
           </Field>
           <Field label={t('Deadline')}>
-            <Input type="date" value={deadline()} onInput={(e) => setDeadline(e.currentTarget.value)} disabled={!canManage()} />
+            <Input
+              type="date"
+              value={deadline()}
+              min={startDate() || undefined}
+              onInput={(e) => setDeadline(e.currentTarget.value)}
+              disabled={!canManage()}
+            />
           </Field>
         </div>
 

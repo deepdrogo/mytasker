@@ -91,6 +91,27 @@
   border-style: dotted;
 }
 
+/* A project drawn on the project timeline, in that project's colour. */
+.projectBar {
+  gap: 4px;
+  border-color: hsl(var(--project-hue) 72% 74% / 0.45);
+  border-radius: var(--r-sm);
+  background: linear-gradient(135deg, hsl(var(--project-hue) 48% 42%), hsl(var(--project-hue) 36% 28%));
+  color: #fff;
+  font-weight: 560;
+  text-decoration: none;
+}
+
+.projectBar:hover {
+  background: linear-gradient(135deg, hsl(var(--project-hue) 52% 48%), hsl(var(--project-hue) 40% 32%));
+  color: #fff;
+}
+
+.projectIcon {
+  flex: none;
+  opacity: 0.8;
+}
+
 .continuesBefore {
   border-top-left-radius: 2px;
   border-bottom-left-radius: 2px;

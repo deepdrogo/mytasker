@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { inclusiveDays, taskSpan } from './span';
+import { inclusiveDays, projectSpan, taskSpan } from './span';
 
 describe('task span', () => {
   it('counts Wednesday through Friday as three days', () => {
@@ -20,5 +20,29 @@ describe('task span', () => {
 
   it('ignores a task with neither date', () => {
     expect(taskSpan({ start_at: null, due_at: null })).toBeNull();
+  });
+});
+
+describe('project span', () => {
+  it('uses the drawn start and deadline as plain days', () => {
+    expect(projectSpan({ start_date: '2026-10-02', deadline: '2026-10-10' }, '2026-11-01')).toEqual({
+      start: '2026-10-02',
+      end: '2026-10-10',
+    });
+  });
+
+  it('runs an open-ended project to the last day shown', () => {
+    expect(projectSpan({ start_date: '2026-10-02', deadline: null }, '2026-11-01')).toEqual({
+      start: '2026-10-02',
+      end: '2026-11-01',
+    });
+    expect(projectSpan({ start_date: '2026-12-02', deadline: null }, '2026-11-01')).toEqual({
+      start: '2026-12-02',
+      end: '2026-12-02',
+    });
+  });
+
+  it('leaves an unscheduled project off the calendar', () => {
+    expect(projectSpan({ start_date: null, deadline: '2026-10-10' }, '2026-11-01')).toBeNull();
   });
 });

@@ -229,6 +229,15 @@
   flex: none;
 }
 
+.fromProject {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--c-text-faint);
+  white-space: nowrap;
+  flex: none;
+}
+
 .ongoingMark {
   display: inline-flex;
   align-items: center;

@@ -147,6 +147,8 @@ export interface Task {
   reminder_at: ISODateTime | null;
   estimated_minutes: number | null;
   /** Long-term work: ticked once a day, completed only when the whole thing is finished. */
+  /** start_at / due_at were copied from the project calendar and move with it until set on the task itself. */
+  dates_from_project: boolean;
   is_ongoing: boolean;
   /** Client work: promised to a customer. Pinned to the top of lists and collected on the Clients page. */
   is_client: boolean;

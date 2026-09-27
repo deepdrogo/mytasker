@@ -29,12 +29,27 @@ export function inclusiveDays(start: string, end: string): number {
   return Math.round(ms / 86_400_000) + 1;
 }
 
+export interface DaySpan {
+  start: string;
+  end: string;
+}
+
 /** Local start through local due, inclusive. Either date alone is a one-day mark. */
-export function taskSpan(task: { start_at: string | null; due_at: string | null }): { start: string; end: string } | null {
+export function taskSpan(task: { start_at: string | null; due_at: string | null }): DaySpan | null {
   const start = localDay(task.start_at);
   const due = localDay(task.due_at);
   if (!start && !due) return null;
   const first = start ?? due!;
   const last = due ?? start!;
   return first <= last ? { start: first, end: last } : { start: last, end: first };
+}
+
+/**
+ * A project's calendar days (plain dates, no timezone shift). Unscheduled projects have no span; an
+ * open-ended one runs through `openEnd`, the last day the caller shows.
+ */
+export function projectSpan(project: { start_date: string | null; deadline: string | null }, openEnd: string): DaySpan | null {
+  if (!project.start_date) return null;
+  const end = project.deadline ?? (openEnd > project.start_date ? openEnd : project.start_date);
+  return end >= project.start_date ? { start: project.start_date, end } : { start: end, end: project.start_date };
 }

@@ -1,4 +1,5 @@
 import {
+  CalendarRange,
   ChevronLeft,
   ChevronRight,
   FolderInput,
@@ -82,6 +83,8 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
   const [recurrence, setRecurrence] = createSignal('');
   const [subtasks, setSubtasks] = createSignal<Task[]>([]);
   const [dirty, setDirty] = createSignal(false);
+  /** Start, due or the clock switch was changed by hand in this session. */
+  const [datesTouched, setDatesTouched] = createSignal(false);
   const [saving, setSaving] = createSignal(false);
   const [error, setError] = createSignal('');
   const [confirmDelete, setConfirmDelete] = createSignal(false);
@@ -106,6 +109,7 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
       setVisibility(task.visibility);
       setRecurrence(task.recurrence?.freq ?? '');
       setDirty(false);
+      setDatesTouched(false);
       setError('');
     });
     void tasksApi.subtasks(task.id).then(setSubtasks).catch(() => setSubtasks([]));
@@ -139,6 +143,12 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
     setter(value);
     setDirty(true);
   };
+  const markDate = <T,>(setter: (value: T) => void) => (value: T) => {
+    mark(setter)(value);
+    setDatesTouched(true);
+  };
+  /** Dates copied from the project calendar that this session has not overridden. */
+  const followsProject = () => Boolean(props.task?.dates_from_project && !datesTouched());
 
   /**
    * Turning the clock on starts from an empty time (the user picks it); turning it off keeps the date.
@@ -151,6 +161,7 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
       setHasTime(on);
       if (date) setDueAt(on ? (time && time !== END_OF_DAY ? `${date}T${time}` : date) : `${date}T${END_OF_DAY}`);
       setDirty(true);
+      setDatesTouched(true);
     });
   };
 
@@ -208,6 +219,12 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
         : null,
       version: task.version,
     };
+    // Untouched borrowed dates stay out of the save, so the task keeps following the project calendar.
+    if (followsProject()) {
+      delete payload.start_at;
+      delete payload.due_at;
+      delete payload.due_has_time;
+    }
     // Where the task lives and whose it is: the owner's call only.
     if (isOwner()) {
       payload.is_client = isClient();
@@ -399,7 +416,7 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
                     value={starts()}
                     dateOnly
                     defaultTime="00:00"
-                    onChange={(value) => mark(setStarts)(value)}
+                    onChange={(value) => markDate(setStarts)(value)}
                     disabled={!task().can_edit}
                   />
                 </Field>
@@ -409,7 +426,7 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
                     value={dueAt()}
                     dateOnly={!hasTime()}
                     defaultTime={hasTime() ? '' : END_OF_DAY}
-                    onChange={(value) => mark(setDueAt)(value)}
+                    onChange={(value) => markDate(setDueAt)(value)}
                     disabled={!task().can_edit}
                   />
                 </Field>
@@ -419,6 +436,18 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
                 </Field>
               </div>
 
+              <Show when={followsProject() && task().project}>
+                {(project) => (
+                  <p class={styles.hint}>
+                    <CalendarRange size={13} />
+                    <span>
+                      {t('Dates from the “{project}” calendar. They move with the project; pick a date here to give this task its own.', {
+                        project: project().name,
+                      })}
+                    </span>
+                  </p>
+                )}
+              </Show>
               <p class={styles.hint}>
                 <Show
                   when={spanCount() > 1}

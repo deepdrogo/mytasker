@@ -69,6 +69,8 @@ export const projects: Record<string, string> = {
   'Project timeline': 'პროექტების თაიმლაინი',
   'Draw across a row to schedule a project. Drag, stretch, or remove it from the calendar.':
     'გაავლე მაუსი ხაზზე პროექტის დასაგეგმად. გადაადგილე, გაწელე კიდეებით ან კალენდრიდან მოხსენი.',
+  'Its tasks without dates of their own get the same start and due date and follow every change.':
+    'მისი დავალებები, რომლებსაც საკუთარი თარიღი არ აქვთ, იგივე დაწყებასა და ვადას იღებენ და ყველა ცვლილებას მიჰყვებიან.',
   'Drag across this row to schedule it': 'გაავლე ამ ხაზზე დასაგეგმად',
   'Jump to dates': 'თარიღებზე გადასვლა',
   'In progress today': 'დღეს მიმდინარე',

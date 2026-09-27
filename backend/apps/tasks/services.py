@@ -16,6 +16,7 @@ from django.utils import timezone
 
 from apps.projects.models import Project
 from apps.tasks.models import RecurrenceRule, Reminder, Task
+from apps.tasks.project_dates import apply_project_dates
 from common.actors import Actor, ActorKind
 from common.events import DomainEvent, EventName, emit
 from common.exceptions import Conflict, Forbidden, NotFound, ValidationFailed
@@ -301,6 +302,9 @@ def create_task(
     )
     if resolved_assignees:
         task.assignees.set(resolved_assignees)
+    borrowed = apply_project_dates(task)
+    if borrowed:
+        task.save(update_fields=borrowed)
     _update_search_vector(task)
     _sync_reminder(task)
 
@@ -405,6 +409,7 @@ def update_task(actor: Actor, task_id: int, *, expected_version: int | None = No
             if "visibility" not in changed:
                 changed.append("visibility")
 
+    dates_before = (task.start_at, task.due_at, task.due_has_time)
     for key, value in fields.items():
         if key not in EDITABLE_FIELDS or key in {"status"}:
             continue
@@ -414,6 +419,14 @@ def update_task(actor: Actor, task_id: int, *, expected_version: int | None = No
                 raise ValidationFailed("Title is required.", fields={"title": ["This field is required."]})
         setattr(task, key, value)
         changed.append(key)
+
+    # A date picked on the task itself is the task's own from now on. (The editor re-sends unchanged
+    # dates with every save, so only a real difference ends the link to the project calendar.)
+    if task.dates_from_project and (task.start_at, task.due_at, task.due_has_time) != dates_before:
+        task.dates_from_project = False
+        changed.append("dates_from_project")
+    # New project, cleared dates, long-term flag: borrow the project's span again, or drop a stale one.
+    changed += apply_project_dates(task)
 
     _assert_span(task.start_at, task.due_at)
 
@@ -549,10 +562,21 @@ def move_task(actor: Actor, task_id: int, *, kind: str | None = None, project_id
         siblings = siblings.filter(project__isnull=True, kind=task.kind, owner=task.owner)
     last = siblings.exclude(pk=task.pk).aggregate(m=Max("sort_order")).get("m")
     task.sort_order = (last or 0) + 1
+    borrowed = apply_project_dates(task)
 
     task.version = F("version") + 1
     task.save(
-        update_fields=["project", "origin", "kind", "assignee", "visibility", "sort_order", "version", "updated_at"]
+        update_fields=[
+            "project",
+            "origin",
+            "kind",
+            "assignee",
+            "visibility",
+            "sort_order",
+            *borrowed,
+            "version",
+            "updated_at",
+        ]
     )
     task.refresh_from_db()
     _sync_subtasks_with_parent(task, ["project", "kind", "origin", "visibility"])
@@ -690,6 +714,8 @@ def mark_reopened(task: Task, actor: Actor) -> Task:
     task.completed_by = None
     task.completed_by_guest = None
     task.completion_source = ""
+    # The project may have moved on the calendar while this task was done.
+    borrowed = apply_project_dates(task)
     task.version = F("version") + 1
     task.save(
         update_fields=[
@@ -698,6 +724,7 @@ def mark_reopened(task: Task, actor: Actor) -> Task:
             "completed_by",
             "completed_by_guest",
             "completion_source",
+            *borrowed,
             "version",
             "updated_at",
         ]
@@ -765,6 +792,7 @@ def duplicate_task(actor: Actor, task_id: int) -> Task:
         start_at=original.start_at,
         due_at=original.due_at,
         due_has_time=original.due_has_time,
+        dates_from_project=original.dates_from_project,
         estimated_minutes=original.estimated_minutes,
         tags=list(original.tags),
     )

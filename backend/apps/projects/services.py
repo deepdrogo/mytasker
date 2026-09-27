@@ -63,12 +63,22 @@ def _event(project: Project, name: str, actor: Actor, **payload) -> None:
     )
 
 
+def _assert_schedule(start_date, deadline) -> None:
+    """Project tasks borrow this span, so it has to run forwards."""
+    if start_date and deadline and start_date > deadline:
+        raise ValidationFailed(
+            "The start date cannot be after the deadline.",
+            fields={"start_date": ["Start is after the deadline."]},
+        )
+
+
 @transaction.atomic
 def create_project(actor: Actor, *, name: str, mode: str = Project.Mode.PRIVATE, **fields) -> Project:
     name = (name or "").strip()
     if not name:
         raise ValidationFailed("Name is required.", fields={"name": ["This field is required."]})
     payload = {k: v for k, v in fields.items() if k in PROJECT_FIELDS}
+    _assert_schedule(payload.get("start_date"), payload.get("deadline"))
     project = Project.objects.create(owner=actor.user, name=name, mode=mode, **payload)
     ProjectMembership.objects.create(
         project=project, user=actor.user, role=ProjectMembership.Role.OWNER, accepted_at=timezone.now()
@@ -95,9 +105,14 @@ def update_project(actor: Actor, project_id: int, *, expected_version: int | Non
         changed.append(key)
     if not changed:
         return project
+    _assert_schedule(project.start_date, project.deadline)
     project.version = F("version") + 1
     project.save(update_fields=[*changed, "version", "updated_at"])
     project.refresh_from_db()
+    if "start_date" in changed or "deadline" in changed:
+        from apps.tasks.project_dates import sync_project_tasks
+
+        sync_project_tasks(project)
     _event(project, EventName.PROJECT_UPDATED, actor, fields=sorted(changed))
     return project
 

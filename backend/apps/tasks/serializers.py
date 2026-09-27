@@ -80,6 +80,7 @@ class TaskSerializer(serializers.ModelSerializer):
             "start_at",
             "due_at",
             "due_has_time",
+            "dates_from_project",
             "reminder_at",
             "estimated_minutes",
             "is_ongoing",
