@@ -438,6 +438,38 @@ export interface PeriodTotals extends Omit<DayMetrics, 'date'> {
   avg_sleep_minutes: number;
 }
 
+/** One line of the project calendar on a given day: a scheduled project, or the Crypto world span. */
+export interface DailyCheckinItem {
+  /** `p{projectId}` or `crypto`. */
+  key: string;
+  subject: 'project' | 'crypto';
+  label: string;
+  project: { id: ID; name: string; priority: Priority; category: ProjectCategory } | null;
+  start: ISODate;
+  end: ISODate | null;
+  checked: boolean;
+  checked_at: ISODateTime | null;
+  /** Consecutive ticked days up to today (or yesterday while today is still open). */
+  streak: number;
+}
+
+export interface DailyCheckinHistoryItem {
+  key: string;
+  label: string;
+  project_id: ID | null;
+  subject: 'project' | 'crypto';
+  checked: boolean;
+}
+
+export interface DailyCheckinHistory {
+  start: ISODate;
+  end: ISODate;
+  /** Newest first. */
+  days: Array<{ date: ISODate; done: number; total: number; items: DailyCheckinHistoryItem[] }>;
+  /** Per line over the window: days ticked vs days it was on the calendar. */
+  lines: Array<{ key: string; label: string; project_id: ID | null; subject: 'project' | 'crypto'; done: number; scheduled: number }>;
+}
+
 export interface TodayData {
   date: ISODate;
   now: ISODateTime;
@@ -451,7 +483,6 @@ export interface TodayData {
     overdue: Task[];
     due_today: Task[];
     focus: Task[];
-    ongoing: Task[];
     personal: Task[];
     business: Task[];
     upcoming: Task[];
@@ -466,6 +497,8 @@ export interface TodayData {
   };
   rules: Rule[];
   active_projects: TodayProject[];
+  /** Today's lines from the project calendar, to tick once each. */
+  daily_checkins: DailyCheckinItem[];
 }
 
 export interface TodayProject {

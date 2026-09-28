@@ -174,3 +174,17 @@ class IdeaInputSerializer(serializers.Serializer):
     notes = serializers.CharField(required=False, allow_blank=True)
     category = serializers.CharField(max_length=60, required=False, allow_blank=True)
     priority = serializers.ChoiceField(choices=Priority.choices, required=False)
+
+
+class DailyCheckinInputSerializer(serializers.Serializer):
+    """Tick one calendar line: a project (`project_id`) or the Crypto world span (`crypto: true`)."""
+
+    date = serializers.DateField(required=False)
+    project_id = serializers.IntegerField(required=False, allow_null=True, min_value=1)
+    crypto = serializers.BooleanField(required=False, default=False)
+    checked = serializers.BooleanField(required=False, default=True)
+
+    def validate(self, attrs):
+        if bool(attrs.get("project_id")) == bool(attrs.get("crypto")):
+            raise serializers.ValidationError("Send either a project_id or crypto: true.")
+        return attrs

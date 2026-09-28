@@ -160,6 +160,7 @@ export const tasks: Record<string, string> = {
   'Undo today’s check-in': 'დღევანდელი ჩეკის გაუქმება',
   'Finish for good': 'საბოლოოდ დასრულება',
   'Daily check-ins': 'ყოველდღიური ჩეკები',
+  'Task check-ins': 'დავალებების ჩეკები',
   'Skip today': 'დღეს დაიგნორება',
   'Skip today - counted as a skipped day': 'დღეს დაიგნორება - დაიგნორებულ დღედ ჩაითვლება',
   'Undo skip': 'დაიგნორების გაუქმება',

@@ -8,12 +8,12 @@ from django.db.models import Q
 from django.utils import timezone
 
 from apps.analytics import services as analytics
+from apps.projects import checkins as project_checkins
 from apps.projects.models import Project
 from apps.routines import services as routine_services
 from apps.routines.models import Routine, Rule
 from apps.routines.serializers import RoutineItemSerializer, RuleSerializer
 from apps.tasks import selectors
-from apps.tasks import services as task_services
 from apps.tasks.models import Task
 from apps.tasks.serializers import TaskSerializer
 from apps.time_tracking import services as time_services
@@ -69,13 +69,8 @@ def today_snapshot(user, request=None) -> dict:
         .filter(priority__in=["critical", "high"])
         .order_by("priority_rank", "-updated_at")[:10]
     )
-    # Long-term work: ticked daily, lives until the user completes it for good.
-    ongoing = list(
-        base.filter(OPEN, is_ongoing=True).order_by("today_checked", "-is_client", "priority_rank", "-updated_at")[
-            :30
-        ]
-    )
-    ongoing_ctx = {**ctx, "checkin_streaks": task_services.checkin_streaks([t.pk for t in ongoing], day)}
+    # Daily check-ins come from the project calendar. Long-term tasks ("Task check-ins") live on Today / Tomorrow.
+    daily_checkins = project_checkins.daily_checkins(user, day)
     # Personal / business lists without a project, so the dashboard shows the whole plate, not only dated work.
     plate = base.filter(OPEN, owner=user, project__isnull=True, is_ongoing=False, is_client=False).order_by(
         "priority_rank", models_f_nulls_last("due_at"), "-updated_at"
@@ -171,7 +166,6 @@ def today_snapshot(user, request=None) -> dict:
             "overdue": TaskSerializer(overdue, many=True, context=ctx).data,
             "due_today": TaskSerializer(due_today, many=True, context=ctx).data,
             "focus": TaskSerializer(focus, many=True, context=ctx).data,
-            "ongoing": TaskSerializer(ongoing, many=True, context=ongoing_ctx).data,
             "personal": TaskSerializer(personal, many=True, context=ctx).data,
             "business": TaskSerializer(business, many=True, context=ctx).data,
             "upcoming": TaskSerializer(upcoming, many=True, context=ctx).data,
@@ -185,5 +179,6 @@ def today_snapshot(user, request=None) -> dict:
             "personal": RoutineItemSerializer(personal_items, many=True, context=routine_ctx).data,
         },
         "rules": RuleSerializer(rules, many=True, context=rule_ctx).data,
+        "daily_checkins": daily_checkins,
         "active_projects": active_projects,
     }

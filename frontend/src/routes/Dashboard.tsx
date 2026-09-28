@@ -9,6 +9,7 @@ import { Page } from '~/components/shared/Page';
 import { PriorityMark } from '~/components/shared/Indicators';
 import { ErrorNote, Skeleton } from '~/components/ui/Feedback';
 import { Button } from '~/components/ui/Button';
+import { DailyCheckinList, NoCheckinsToday } from '~/features/checkins/DailyCheckinList';
 import { dashboardApi } from '~/features/dashboard/api';
 import { projectsApi } from '~/features/projects/api';
 import { routinesApi, rulesApi } from '~/features/routines/api';
@@ -189,14 +190,22 @@ export default function Dashboard(): JSX.Element {
                   </Section>
                 </Show>
 
-                <Show when={d().tasks.ongoing.length > 0}>
-                  <Section
-                    title={t('Daily check-ins')}
-                    hint={`${d().tasks.ongoing.filter((task) => task.today_checked).length}/${d().tasks.ongoing.length}`}
+                <Section
+                  title={t('Daily check-ins')}
+                  hint={
+                    d().daily_checkins.length
+                      ? `${d().daily_checkins.filter((item) => item.checked).length}/${d().daily_checkins.length} · ${t('from the project calendar')}`
+                      : t('from the project calendar')
+                  }
+                  link={{ href: '/projects/checkins', label: t('History') }}
+                >
+                  <Show
+                    when={d().daily_checkins.length > 0}
+                    fallback={<NoCheckinsToday />}
                   >
-                    <TaskList tasks={d().tasks.ongoing} compact showProject onOpen={setActiveTask} onChanged={refresh} onShare={share} />
-                  </Section>
-                </Show>
+                    <DailyCheckinList items={d().daily_checkins} onChanged={refresh} />
+                  </Show>
+                </Section>
 
                 <Show when={d().tasks.focus.length > 0}>
                   <Section title={t('Focus')} hint={t('High priority, no date')}>

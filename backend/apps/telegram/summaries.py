@@ -8,6 +8,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from apps.analytics import services as analytics
+from apps.projects import checkins as project_checkins
 from apps.tasks.models import Task
 from apps.telegram.services import escape
 from common.tz import day_bounds, format_local, today_for
@@ -48,11 +49,15 @@ def morning_summary(user) -> str:
     if focus:
         lines.append("\n<b>Focus</b>")
         lines += [_task_line(t, user) for t in focus]
+    calendar = project_checkins.daily_checkins(user, day)
+    if calendar:
+        lines.append(f"\n<b>Daily check-ins ({len(calendar)})</b>")
+        lines += [f"{'✓' if item['checked'] else '•'} {escape(item['label'])}" for item in calendar]
     ongoing = list(base.filter(is_ongoing=True).order_by("-updated_at")[:8])
     if ongoing:
-        lines.append("\n<b>Daily check-ins</b>")
+        lines.append("\n<b>Task check-ins</b>")
         lines += [_task_line(t, user) for t in ongoing]
-    if not (today or overdue or focus or ongoing):
+    if not (today or overdue or focus or ongoing or calendar):
         lines.append("\nNothing scheduled. A clean slate — pick one meaningful thing.")
     streak = analytics.streak(user, day - timedelta(days=1))
     if streak:

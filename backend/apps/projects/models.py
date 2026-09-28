@@ -193,3 +193,43 @@ class Idea(TimeStampedModel, SoftDeleteModel):
 
     def __str__(self) -> str:
         return self.title
+
+
+class DailyCheckin(TimeStampedModel):
+    """
+    One line of the project calendar ticked off for one day: a scheduled project, or the Crypto world span.
+    Rows exist only for ticked days; what was scheduled comes from the calendar itself. `label` keeps the
+    name at the time so the history stays readable after a rename or delete.
+    """
+
+    class Subject(models.TextChoices):
+        PROJECT = "project", "Project"
+        CRYPTO = "crypto", "Crypto world"
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="daily_checkins")
+    date = models.DateField()
+    subject = models.CharField(max_length=10, choices=Subject.choices, default=Subject.PROJECT)
+    project = models.ForeignKey(
+        Project, on_delete=models.SET_NULL, null=True, blank=True, related_name="daily_checkins"
+    )
+    label = models.CharField(max_length=200)
+
+    class Meta:
+        db_table = "projects_daily_checkin"
+        ordering = ["date", "created_at"]
+        indexes = [models.Index(fields=["user", "date"])]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "date", "project"],
+                condition=Q(project__isnull=False),
+                name="daily_checkin_one_per_project_day",
+            ),
+            models.UniqueConstraint(
+                fields=["user", "date"],
+                condition=Q(subject="crypto"),
+                name="daily_checkin_one_crypto_per_day",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.user_id}:{self.date}:{self.label}"

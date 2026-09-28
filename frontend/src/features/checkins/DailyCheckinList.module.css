@@ -1,0 +1,147 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+/* One segment per calendar line, lit when ticked. */
+.progress {
+  display: flex;
+  gap: 3px;
+  padding: 0 var(--s-2);
+}
+
+.seg {
+  flex: 1;
+  height: 3px;
+  border-radius: var(--r-full);
+  background: rgba(255, 255, 255, 0.08);
+  transition:
+    background var(--t-base),
+    box-shadow var(--t-base);
+}
+
+.segDone {
+  background: var(--g-ink);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.35);
+}
+
+.list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 32px;
+  padding: 0 var(--s-3);
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  transition: background var(--t-fast);
+}
+
+.row:hover {
+  background: var(--c-hover);
+}
+
+.check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--c-text-faint);
+  cursor: pointer;
+  transition:
+    background var(--t-fast),
+    color var(--t-fast);
+}
+
+.check:hover {
+  color: var(--c-text);
+}
+
+.done .check {
+  background: var(--g-primary);
+  color: var(--c-invert-text);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.25);
+}
+
+.done .check svg {
+  width: 13px;
+  height: 13px;
+  stroke-width: 3;
+}
+
+.crypto {
+  flex: none;
+  color: #f4b941;
+}
+
+.name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--c-text);
+  font-size: var(--fs-sm);
+}
+
+a.name:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--c-text-faint);
+}
+
+.done .name {
+  color: var(--c-text-dim);
+  text-decoration: line-through;
+  text-decoration-color: var(--c-text-faint);
+}
+
+.streak {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 7px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-full);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--c-text-dim);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.until {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  color: var(--c-text-faint);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.empty {
+  color: var(--c-text-faint);
+  font-size: var(--fs-sm);
+}
+
+.emptyLink {
+  color: var(--c-text-dim);
+  text-decoration: underline;
+  text-decoration-color: var(--c-text-faint);
+}
+
+.emptyLink:hover {
+  color: var(--c-text);
+}

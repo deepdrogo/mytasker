@@ -1,0 +1,197 @@
+.layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+  gap: var(--s-6);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-5);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
+  background: var(--g-surface);
+  box-shadow:
+    var(--shadow-card),
+    var(--rim-top);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  color: var(--c-text-dim);
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.count {
+  font-family: var(--font-mono);
+  color: var(--c-text-faint);
+  letter-spacing: 0;
+}
+
+.range {
+  margin-left: auto;
+  width: auto;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.dim {
+  color: var(--c-text-faint);
+  font-size: var(--fs-sm);
+}
+
+.link {
+  color: var(--c-text-dim);
+  text-decoration: underline;
+  text-decoration-color: var(--c-text-faint);
+}
+
+.link:hover {
+  color: var(--c-text);
+}
+
+.crypto {
+  color: #f4b941;
+}
+
+/* Per line over the period: days ticked out of days on the calendar. */
+.totals {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding-bottom: var(--s-4);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.total {
+  display: grid;
+  grid-template-columns: minmax(120px, 220px) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s-4);
+  font-size: var(--fs-sm);
+}
+
+.totalName {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bar {
+  height: 4px;
+  border-radius: var(--r-full);
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--g-ink);
+}
+
+.totalCount {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--c-text-dim);
+}
+
+/* One row per day, newest first. */
+.days {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.day {
+  display: grid;
+  grid-template-columns: 110px 44px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 34px;
+  padding: var(--s-1) var(--s-3);
+  border-radius: var(--r-md);
+}
+
+.day:hover {
+  background: var(--c-hover);
+}
+
+.dayLabel {
+  color: var(--c-text-dim);
+  font-size: var(--fs-xs);
+  text-transform: capitalize;
+}
+
+.dayCount {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--c-text-faint);
+}
+
+.dayComplete {
+  color: var(--c-text);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 220px;
+  padding: 2px 9px;
+  overflow: hidden;
+  border: 1px dashed var(--c-border-strong);
+  border-radius: var(--r-full);
+  background: none;
+  color: var(--c-text-faint);
+  font-size: 11px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition:
+    color var(--t-fast),
+    border-color var(--t-fast),
+    background var(--t-fast);
+}
+
+.chip:hover:not(:disabled) {
+  color: var(--c-text-dim);
+  border-color: var(--c-text-faint);
+}
+
+.chipDone {
+  border-style: solid;
+  border-color: var(--c-border-strong);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--c-text);
+}
+
+.chip:disabled {
+  cursor: default;
+}

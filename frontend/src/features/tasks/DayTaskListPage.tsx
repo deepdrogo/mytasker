@@ -81,7 +81,7 @@ export function DayTaskListPage(props: { day: DayView }): JSX.Element {
   );
 }
 
-/** Daily check-ins: the long tasks, with today's tick. Hidden when there are none. */
+/** Task check-ins: the long-term tasks, with today's tick. Hidden when there are none. */
 function DailyCheckins(props: { onOpen: (task: Task) => void; onShare: (task: Task) => void }): JSX.Element {
   const query = createQuery(
     () => taskListKey('ongoing', ONGOING_PARAMS),
@@ -93,10 +93,10 @@ function DailyCheckins(props: { onOpen: (task: Task) => void; onShare: (task: Ta
 
   return (
     <Show when={tasks().length > 0}>
-      <section class={styles.checkins} aria-label={t('Daily check-ins')}>
+      <section class={styles.checkins} aria-label={t('Task check-ins')}>
         <header class={styles.checkinsHead}>
           <InfinityIcon size={13} />
-          <span>{t('Daily check-ins')}</span>
+          <span>{t('Task check-ins')}</span>
           <span class={styles.checkinsCount}>
             {checked()}/{tasks().length}
           </span>

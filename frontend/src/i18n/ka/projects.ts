@@ -88,6 +88,30 @@ export const projects: Record<string, string> = {
   'No end date': 'დასრულების თარიღის გარეშე',
   'Could not save the project schedule.': 'პროექტის გრაფიკის შენახვა ვერ მოხერხდა.',
   'Could not save the Crypto world dates.': 'კრიპტოსამყაროს თარიღების შენახვა ვერ მოხერხდა.',
+
+  // Daily check-ins (from the project calendar)
+  'Check-ins': 'ჩეკები',
+  'from the project calendar': 'პროექტების კალენდრიდან',
+  History: 'ისტორია',
+  'Nothing on the calendar today.': 'დღეს კალენდარში არაფერია.',
+  'Weekend - the calendar takes the day off.': 'შაბათ-კვირაა - კალენდარი ისვენებს.',
+  'Plan on the calendar': 'კალენდარში დაგეგმვა',
+  'Whatever the project calendar puts on a day, ticked once that day.':
+    'რასაც პროექტების კალენდარი დღეზე სვამს, იმ დღეს ერთხელ მოინიშნება.',
+  'Could not load check-ins.': 'ჩეკების ჩატვირთვა ვერ მოხერხდა.',
+  'Could not save the check-in.': 'ჩეკის შენახვა ვერ მოხერხდა.',
+  Period: 'პერიოდი',
+  'Last {count} days': 'ბოლო {count} დღე',
+  'No check-ins yet': 'ჩეკები ჯერ არ არის',
+  'Place projects on the calendar; each day they cover shows up here.':
+    'განათავსე პროექტები კალენდარში; ყოველი დღე, რომელსაც ფარავს, აქ გამოჩნდება.',
+  'Checked in - click to undo': 'მონიშნულია - დააჭირე გასაუქმებლად',
+  'Missed - click to check in': 'გამოტოვებულია - დააჭირე მოსანიშნად',
+  '{done} of {total} checked in': '{done} / {total} მონიშნულია',
+  'Check in {name}': '{name} - მონიშვნა',
+  'Undo check-in for {name}': '{name} - მონიშვნის გაუქმება',
+  'On the calendar {start} → {end}': 'კალენდარში {start} → {end}',
+  'until {date}': '{date}-მდე',
   'Overlapping projects stay visible on separate rows.': 'ერთდროული პროექტები ცალკე ხაზებზე ჩანს.',
   'No dated crypto work in this range': 'ამ პერიოდში დათარიღებული კრიპტო სამუშაო არ არის',
 

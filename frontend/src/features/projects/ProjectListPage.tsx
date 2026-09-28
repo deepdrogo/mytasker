@@ -16,6 +16,7 @@ import styles from './ProjectListPage.module.css';
 
 const PROJECT_TABS = [
   { label: 'All', href: '/projects/all' },
+  { label: 'Check-ins', href: '/projects/checkins' },
   { label: 'Canvas', href: '/projects/canvas' },
   { label: 'Active', href: '/projects/active' },
   { label: 'Startups', href: '/projects/startups' },

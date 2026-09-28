@@ -23,6 +23,7 @@ const From = lazy(() => import('~/routes/From'));
 const ProjectsActive = lazy(() => import('~/routes/projects/Active'));
 const ProjectsAll = lazy(() => import('~/routes/projects/All'));
 const ProjectsCanvas = lazy(() => import('~/routes/projects/Canvas'));
+const ProjectsCheckins = lazy(() => import('~/routes/projects/Checkins'));
 const ProjectsStartups = lazy(() => import('~/routes/projects/Startups'));
 const Ideas = lazy(() => import('~/routes/projects/Ideas'));
 const ProjectDetail = lazy(() => import('~/routes/projects/Detail'));
@@ -79,6 +80,7 @@ export const routes: RouteDefinition[] = [
       { path: '/projects/startups', component: ProjectsStartups },
       { path: '/projects/all', component: ProjectsAll },
       { path: '/projects/canvas', component: ProjectsCanvas },
+      { path: '/projects/checkins', component: ProjectsCheckins },
       { path: '/projects/ideas', component: Ideas },
       { path: '/projects/:id/*tab', component: ProjectDetail },
       { path: '/prompts', component: Prompts },

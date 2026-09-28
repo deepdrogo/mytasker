@@ -22,6 +22,7 @@ export const NAV_TARGETS: NavTarget[] = [
   { id: 'completed', label: 'Completed tasks', href: '/tasks/completed', keywords: 'done დასრულებული' },
   { id: 'projects', label: 'Active projects', href: '/projects/active', keywords: 'პროექტები აქტიური' },
   { id: 'all-projects', label: 'All projects', href: '/projects/all', keywords: 'ყველა პროექტი' },
+  { id: 'checkins', label: 'Daily check-ins', href: '/projects/checkins', keywords: 'check-in history calendar ჩეკინი ისტორია' },
   { id: 'canvas', label: 'Canvas', href: '/projects/canvas', keywords: 'board columns' },
   { id: 'startups', label: 'Startups', href: '/projects/startups', keywords: 'სტარტაპი' },
   { id: 'ideas', label: 'Project ideas', href: '/projects/ideas', keywords: 'იდეები' },

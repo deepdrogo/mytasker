@@ -38,6 +38,7 @@ export const ASSISTANT_ROUTES = ['/tasks', '/projects', '/settings', '/from'];
 
 export function assistantMayOpen(pathname: string): boolean {
   if (pathname === '/projects/ideas' || pathname.startsWith('/projects/ideas/')) return false;
+  if (pathname === '/projects/checkins') return false;
   return ASSISTANT_ROUTES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 

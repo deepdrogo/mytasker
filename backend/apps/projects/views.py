@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+from datetime import date
+
 import django_filters as filters
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 
-from apps.projects import selectors, services
+from apps.projects import checkins, selectors, services
 from apps.projects.models import Idea, Project, ProjectMembership
 from apps.projects.serializers import (
+    DailyCheckinInputSerializer,
     IdeaInputSerializer,
     IdeaSerializer,
     InviteSerializer,
@@ -20,7 +23,9 @@ from apps.projects.serializers import (
     RoleSerializer,
 )
 from common.actors import Actor
+from common.exceptions import ValidationFailed
 from common.permissions import Capability
+from common.tz import today_for
 
 
 class ProjectFilter(filters.FilterSet):
@@ -249,3 +254,41 @@ class IdeaViewSet(viewsets.ModelViewSet):
         project = services.convert_idea(Actor.from_request(request), int(pk), kind=kind)
         fresh = selectors.base_queryset(request.user).filter(pk=project.pk).first()
         return Response(ProjectSerializer(fresh, context={"request": request}).data, status=status.HTTP_201_CREATED)
+
+
+def _day_param(request):
+    raw = request.query_params.get("date")
+    if not raw:
+        return None
+    try:
+        return date.fromisoformat(raw)
+    except ValueError as exc:
+        raise ValidationFailed("Use a YYYY-MM-DD date.", fields={"date": ["Invalid date."]}) from exc
+
+
+@api_view(["GET", "POST"])
+def daily_checkins(request):
+    """GET: what the project calendar puts on a day (default today). POST: tick or untick one line."""
+    if request.method == "GET":
+        day = _day_param(request) or today_for(request.user)
+        return Response({"date": day, "items": checkins.daily_checkins(request.user, day)})
+    serializer = DailyCheckinInputSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    data = serializer.validated_data
+    item = checkins.set_checkin(
+        request.user,
+        day=data.get("date"),
+        project_id=data.get("project_id"),
+        crypto=data["crypto"],
+        checked=data["checked"],
+    )
+    return Response({"item": item})
+
+
+@api_view(["GET"])
+def daily_checkin_history(request):
+    try:
+        days = int(request.query_params.get("days", 30))
+    except ValueError:
+        days = 30
+    return Response(checkins.history(request.user, days))
