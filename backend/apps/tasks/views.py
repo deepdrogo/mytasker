@@ -33,6 +33,11 @@ def _asks_for_handed(request) -> bool:
     return (params.get("delegated") or "").lower() in {"1", "true", "yes"}
 
 
+def _adds_handed_out(request) -> bool:
+    """The Clients page (`handed_out=1`) also lists what the user handed to People, grouped by person."""
+    return (request.query_params.get("handed_out") or "").lower() in {"1", "true", "yes"}
+
+
 class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer
     filterset_class = TaskFilter
@@ -66,7 +71,10 @@ class TaskViewSet(viewsets.ModelViewSet):
         qs = super().filter_queryset(queryset)
         # People and From ask for handed work on purpose. Every other list is the user's own plate.
         if self.action == "list" and not _asks_for_handed(self.request):
-            qs = selectors.own_plate(qs, self.request.user)
+            if _adds_handed_out(self.request):
+                qs = selectors.own_plate_and_handed_out(qs, self.request.user)
+            else:
+                qs = selectors.own_plate(qs, self.request.user)
         if self.action != "list" or self.request.query_params.get("pin_clients") == "0":
             return qs
         current = [
@@ -250,8 +258,15 @@ class TaskViewSet(viewsets.ModelViewSet):
 
         _, end_of_today = day_bounds(request.user)
         now = timezone.now()
-        base = selectors.own_plate(selectors.base_queryset(request.user).top_level(), request.user)
+        visible = selectors.base_queryset(request.user).top_level()
+        base = selectors.own_plate(visible, request.user)
         open_not_crypto = ~Q(status__in=["done", "cancelled"]) & ~Q(kind=Task.Kind.CRYPTO)
+        clients = (
+            selectors.own_plate_and_handed_out(visible, request.user)
+            .filter(is_client=True)
+            .exclude(status__in=["done", "cancelled"])
+            .count()
+        )
         data = base.aggregate(
             personal=Count("id", filter=Q(kind=Task.Kind.PERSONAL) & ~Q(status__in=["done", "cancelled"])),
             business=Count(
@@ -259,9 +274,8 @@ class TaskViewSet(viewsets.ModelViewSet):
                 filter=Q(kind=Task.Kind.BUSINESS, origin=Task.Origin.LIST) & ~Q(status__in=["done", "cancelled"]),
             ),
             crypto=Count("id", filter=Q(kind=Task.Kind.CRYPTO) & ~Q(status__in=["done", "cancelled"])),
-            clients=Count("id", filter=Q(is_client=True) & ~Q(status__in=["done", "cancelled"])),
             today=Count("id", filter=Q(due_at__lt=end_of_today) & open_not_crypto),
             overdue=Count("id", filter=selectors.overdue_q(request.user, now) & open_not_crypto),
             upcoming=Count("id", filter=Q(due_at__gte=end_of_today) & open_not_crypto),
         )
-        return Response(data)
+        return Response({**data, "clients": clients})

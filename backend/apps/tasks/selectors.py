@@ -101,6 +101,21 @@ def own_plate(queryset, user):
     )
 
 
+def own_plate_and_handed_out(queryset, user):
+    """
+    The user's own plate plus the work they handed to People, as on the Clients page.
+
+    Work someone else handed to this user still stays on their From page.
+    """
+    handed = Task.assignees.through.objects.filter(task_id=OuterRef("pk"))
+    handed_to_others = Exists(handed.exclude(user_id=user.pk))
+    handed_to_me = Exists(handed.filter(user_id=user.pk))
+    assigned_to_others = Q(assignee__isnull=False) & ~Q(assignee_id=user.pk)
+    return queryset.exclude(~Q(owner_id=user.pk) & (assigned_to_others | handed_to_others)).exclude(
+        ~Q(owner_id=user.pk) & (Q(assignee_id=user.pk) | handed_to_me)
+    )
+
+
 def priority_rank_expression():
     """Semantic priority rank (critical=0 .. low=3) so ordering is meaningful, not alphabetical."""
     from django.db.models import Case, When

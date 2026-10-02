@@ -25,6 +25,8 @@ export interface TaskListParams extends QueryParams {
   is_ongoing?: boolean;
   /** Client work: `true` only client tasks (the Clients page), `false` everything else. */
   is_client?: boolean;
+  /** Clients page: also list what I handed to People (other lists keep only my own plate). */
+  handed_out?: boolean;
   /** `'0'` turns off the default "client work first" pinning. */
   pin_clients?: '0';
   /** Only tasks I own (People page: what I handed to one person). */

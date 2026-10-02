@@ -96,3 +96,163 @@
 .groupProgress {
   margin-left: auto;
 }
+
+/* Who has what: one chip per person, click to see only theirs. */
+.strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+}
+
+.who {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: 4px 10px 4px 4px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--c-text-dim);
+  font: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  transition:
+    border-color var(--t-fast),
+    color var(--t-fast),
+    background var(--t-fast);
+}
+
+.who:hover {
+  color: var(--c-text);
+  border-color: var(--c-border-strong);
+}
+
+.whoActive {
+  color: var(--c-text);
+  border-color: var(--c-rim);
+  background: var(--g-glass);
+  box-shadow: var(--rim-top);
+}
+
+.whoName {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.whoCount {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  padding: 1px 7px;
+  border-radius: var(--r-full);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.whoOverdue {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--r-full);
+  background: var(--c-text);
+  box-shadow: 0 0 0 2px var(--c-bg);
+}
+
+.avatar {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-full);
+  background: var(--g-surface-raised);
+  border: 1px solid var(--c-border-strong);
+  color: var(--c-text);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-xs);
+}
+
+.avatarIcon {
+  color: var(--c-text-dim);
+}
+
+.avatarLg {
+  width: 34px;
+  height: 34px;
+  font-size: var(--fs-md);
+}
+
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-9);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  margin: 0;
+  padding-bottom: var(--s-4);
+  border-bottom: 1px solid var(--c-border);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text);
+}
+
+.sectionEmpty {
+  margin: 0;
+  color: var(--c-text-dim);
+  font-size: var(--fs-sm);
+}
+
+.personHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  padding: 0 var(--s-3) var(--s-2);
+}
+
+.personText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.personName {
+  color: var(--c-text);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  text-decoration: none;
+}
+
+a.personName:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.personMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  color: var(--c-text-dim);
+  font-size: var(--fs-xs);
+}
+
+.personOverdue {
+  color: var(--c-text);
+  font-weight: var(--fw-semibold);
+  padding: 0 6px;
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--r-full);
+}

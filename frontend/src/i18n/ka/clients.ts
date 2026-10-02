@@ -11,8 +11,15 @@ export const clients: Record<string, string> = {
     'პირველი ჩანს ყველა სიაში და დეშბორდზე; „კლიენტები“ გვერდზე პროექტების მიხედვით ჯგუფდება.',
   'Marked as client task': 'მოინიშნა კლიენტის დავალებად',
   'No longer a client task': 'აღარ არის კლიენტის დავალება',
-  'Work promised to clients, grouped by project. It comes first in every list and on the Dashboard.':
-    'კლიენტებისთვის ნაპირებული საქმეები, პროექტების მიხედვით. ყველა სიაში და დეშბორდზე პირველი ჩანს.',
+  'Work promised to clients: yours by project, then who has what on People. It comes first in every list.':
+    'კლიენტებისთვის ნაპირები საქმეები: შენი — პროექტების მიხედვით, შემდეგ ვის რა აქვს „ხალხიდან“. ყველა სიაში პირველი ჩანს.',
+  'Whose work': 'ვისი საქმე',
+  Everyone: 'ყველა',
+  'My client work': 'ჩემი კლიენტის საქმეები',
+  'Handed to People': 'ხალხზე გადაცემული',
+  'Everything here is handed to People.': 'აქ ყველაფერი ხალხზეა გადაცემული.',
+  'Open People': '„ხალხის“ გახსნა',
+  '{count} overdue': '{count} ვადაგადაცილებული',
   'Add a client task… pick the project it belongs to': 'დაამატე კლიენტის დავალება… აირჩიე მისი პროექტი',
   'No completed client work yet.': 'დასრულებული კლიენტის საქმე ჯერ არ არის.',
   'No client work pending.': 'კლიენტის საქმე არ გელოდება.',

@@ -219,6 +219,42 @@ def test_handed_work_stays_off_today_lists_counts_and_graphs(client_for, admin, 
     assert metrics.tasks_planned == 1
 
 
+def test_clients_page_lists_client_work_handed_to_people(client_for, admin, nino, make_user):
+    alina = make_user("alina@example.com", full_name="Alina")
+    owner = client_for(admin)
+    add_person(owner, nino.email)
+    add_person(owner, alina.email)
+    owner.post("/api/v1/tasks/", {"title": "My client job", "kind": "business", "is_client": True}, format="json")
+    owner.post(
+        "/api/v1/tasks/",
+        {"title": "Client job for Nino", "kind": "business", "assignee_id": nino.pk, "is_client": True},
+        format="json",
+    )
+    owner.post(
+        "/api/v1/tasks/",
+        {"title": "Client job for both", "is_client": True, "assignee_ids": [nino.pk, alina.pk]},
+        format="json",
+    )
+    owner.post("/api/v1/tasks/", {"title": "Not client for Nino", "assignee_id": nino.pk}, format="json")
+
+    clients_page = {"is_client": "true", "top_level": "true", "handed_out": "1"}
+    rows = owner.get("/api/v1/tasks/", clients_page).data["results"]
+    assert {row["title"] for row in rows} == {"My client job", "Client job for Nino", "Client job for both"}
+    both = next(row for row in rows if row["title"] == "Client job for both")
+    assert sorted(person["display_name"] for person in both["assignees"]) == ["Alina", "Nino"]
+    assert owner.get("/api/v1/tasks/counts/").data["clients"] == 3
+
+    # Without the Clients page flag, lists stay on the user's own plate, and so does the dashboard.
+    plain = owner.get("/api/v1/tasks/", {"is_client": "true", "top_level": "true"}).data["results"]
+    assert [row["title"] for row in plain] == ["My client job"]
+    assert dashboard_titles(owner.get("/api/v1/today/").data) == {"My client job"}
+
+    # The receiver's Clients page does not pick up work someone else handed to them.
+    me = client_for(nino)
+    assert me.get("/api/v1/tasks/", clients_page).data["results"] == []
+    assert me.get("/api/v1/tasks/counts/").data["clients"] == 0
+
+
 def test_removing_person_takes_back_open_work(client_for, admin, nino):
     owner = client_for(admin)
     person = add_person(owner, nino.email)
