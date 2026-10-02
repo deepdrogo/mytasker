@@ -58,6 +58,7 @@ class TaskSerializer(serializers.ModelSerializer):
     completed_by_name = serializers.SerializerMethodField()
     can_edit = serializers.SerializerMethodField()
     can_delete = serializers.SerializerMethodField()
+    added_by_assistant = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -77,6 +78,7 @@ class TaskSerializer(serializers.ModelSerializer):
             "assignee",
             "assignees",
             "created_by",
+            "added_by_assistant",
             "start_at",
             "due_at",
             "due_has_time",
@@ -126,6 +128,19 @@ class TaskSerializer(serializers.ModelSerializer):
     def _user(self):
         request = self.context.get("request")
         return getattr(request, "user", None)
+
+    def get_added_by_assistant(self, obj: Task) -> bool:
+        """Written for the owner by their assistant: an assistant login, or an account linked as one."""
+        if not obj.created_by_id or obj.created_by_id == obj.owner_id:
+            return False
+        annotated = getattr(obj, "by_assistant", None)
+        if annotated is not None:
+            return bool(annotated)
+        from apps.accounts.models import AssistantLink
+
+        if obj.created_by.assistant_for_id == obj.owner_id:
+            return True
+        return AssistantLink.objects.filter(principal_id=obj.owner_id, helper_id=obj.created_by_id).exists()
 
     def get_is_overdue(self, obj: Task) -> bool:
         # "Today" is the viewer's day; without a signed-in viewer, the owner's.
@@ -187,6 +202,8 @@ class TaskCreateSerializer(serializers.Serializer):
     parent_id = serializers.IntegerField(required=False, allow_null=True)
     assignee_id = serializers.IntegerField(required=False, allow_null=True)
     assignee_ids = serializers.ListField(child=serializers.IntegerField(min_value=1), required=False, max_length=50)
+    # Linked assistant: write the task into this account's lists instead of your own.
+    for_user = serializers.IntegerField(required=False, allow_null=True, min_value=1)
     start_at = serializers.DateTimeField(required=False, allow_null=True)
     due_at = serializers.DateTimeField(required=False, allow_null=True)
     due_has_time = serializers.BooleanField(required=False, default=False)

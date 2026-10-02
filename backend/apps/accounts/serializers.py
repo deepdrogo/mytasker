@@ -226,6 +226,10 @@ class AssistantSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class AssistantLinkSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=254)
+
+
 class AssistantCreateSerializer(serializers.Serializer):
     full_name = serializers.CharField(max_length=120)
     email = serializers.EmailField(max_length=254, required=False, allow_blank=True, default="")

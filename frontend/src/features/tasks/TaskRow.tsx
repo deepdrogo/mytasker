@@ -542,9 +542,21 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
               {(who) => (
                 <>
                   <Dot />
-                  <span class={styles.addedBy} title={t('Added by {name}', { name: who().display_name })}>
-                    <UserPlus size={11} /> {who().display_name}
-                  </span>
+                  <Show
+                    when={props.task.added_by_assistant}
+                    fallback={
+                      <span class={styles.addedBy} title={t('Added by {name}', { name: who().display_name })}>
+                        <UserPlus size={11} /> {who().display_name}
+                      </span>
+                    }
+                  >
+                    <span
+                      class={cx(styles.addedBy, styles.addedByAssistant)}
+                      title={t('Your assistant {name} added this task for you', { name: who().display_name })}
+                    >
+                      <UserPlus size={11} /> {t('{name} · assistant', { name: who().display_name })}
+                    </span>
+                  </Show>
                 </>
               )}
             </Show>

@@ -16,6 +16,7 @@ import {
   LayoutGrid,
   Lightbulb,
   ListChecks,
+  PenLine,
   Pin,
   PinOff,
   Repeat,
@@ -36,6 +37,7 @@ import { For, Show } from 'solid-js';
 import { LanguageSwitch } from '~/components/shared/LanguageSwitch';
 import { Logo } from '~/components/shared/Logo';
 import { peopleApi } from '~/features/people/api';
+import { assistantsApi } from '~/features/settings/api';
 import { createQuery } from '~/hooks/createQuery';
 import { t } from '~/i18n';
 import { authStore } from '~/stores/auth';
@@ -155,11 +157,18 @@ export function Sidebar(props: {
   const isActive = (href: string) => location.pathname === href || location.pathname.startsWith(`${href}/`);
   // Who has handed me work: one "From <name>" link each, only while they have given me something.
   const delegators = createQuery(() => 'people:delegators', () => peopleApi.delegators(), { staleMs: 10_000 });
+  // Whom I write tasks for as a linked assistant: one "For <name>" link each, while the link exists.
+  const helping = createQuery(
+    () => 'assistants:helping',
+    () => (authStore.isAssistant() ? Promise.resolve([]) : assistantsApi.helping()),
+    { staleMs: 30_000 },
+  );
   const sections = (): NavSection[] => {
     const out = authStore.isAssistant() ? [...ASSISTANT_SECTIONS] : [...SECTIONS];
+    let at = authStore.isAssistant() ? 1 : 2;
     const from = (delegators.data() ?? []).filter((row) => row.open_count + row.done_count > 0);
     if (from.length > 0) {
-      out.splice(authStore.isAssistant() ? 1 : 2, 0, {
+      out.splice(at, 0, {
         label: 'From',
         links: from.map((row) => ({
           label: row.user.display_name,
@@ -169,8 +178,23 @@ export function Sidebar(props: {
           count: row.open_count,
         })),
       });
+      at += 1;
     }
-    if (authStore.isAdmin() && !authStore.isAssistant()) out.splice(from.length > 0 ? 3 : 2, 0, { links: [PEOPLE_LINK] });
+    const writingFor = helping.data() ?? [];
+    if (writingFor.length > 0) {
+      out.splice(at, 0, {
+        label: 'Writing for',
+        links: writingFor.map((row) => ({
+          label: row.user.display_name,
+          href: `/for/${row.user.id}`,
+          icon: () => <PenLine size={15} />,
+          raw: true,
+          count: row.open_count,
+        })),
+      });
+      at += 1;
+    }
+    if (authStore.isAdmin() && !authStore.isAssistant()) out.splice(at, 0, { links: [PEOPLE_LINK] });
     return out;
   };
   const footerLinks = () => {

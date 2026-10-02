@@ -99,7 +99,7 @@ def dashboard_titles(snapshot: dict) -> set[str]:
     return titles
 
 
-def test_delegated_work_stays_off_both_dashboards(client_for, admin, nino, make_project):
+def test_delegated_work_is_off_the_givers_dashboard_and_on_the_receivers(client_for, admin, nino, make_project):
     owner = client_for(admin)
     add_person(owner, nino.email)
     today = "2030-01-01T10:00:00Z"
@@ -123,12 +123,16 @@ def test_delegated_work_stays_off_both_dashboards(client_for, admin, nino, make_
     mine = owner.get("/api/v1/today/").data
     assert dashboard_titles(mine) == {"My client job", "My chore", "My project work"}
     assert [row["title"] for row in mine["tasks"]["clients"]] == ["My client job"]
-    assert "delegated" not in mine["tasks"]
+    assert mine["tasks"]["delegated"] == []
 
-    # Receiver: someone else's tasks stay on the "From" page, not on the dashboard.
+    # Receiver: what was handed over shows at once in its own "Handed to you" block, and nowhere else.
     me = client_for(nino)
     me.post("/api/v1/tasks/", {"title": "Nino own", "kind": "personal"}, format="json")
-    assert dashboard_titles(me.get("/api/v1/today/").data) == {"Nino own"}
+    theirs = me.get("/api/v1/today/").data
+    handed = {"Client build for Nino", "Overdue for Nino", "Project work for Nino"}
+    assert {row["title"] for row in theirs["tasks"]["delegated"]} == handed
+    assert {row["owner"]["display_name"] for row in theirs["tasks"]["delegated"]} == {"Drogoz"}
+    assert dashboard_titles({**theirs, "tasks": {**theirs["tasks"], "delegated": []}}) == {"Nino own"}
 
     # Taking a task back puts it on the giver's dashboard again.
     back = Task.objects.get(title="Client build for Nino")

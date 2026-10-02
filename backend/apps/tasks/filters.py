@@ -37,6 +37,8 @@ class TaskFilter(filters.FilterSet):
     delegated = filters.BooleanFilter(method="filter_delegated")
     # Work handed to me by one specific person (the "From <name>" page).
     delegated_by = filters.NumberFilter(method="filter_delegated_by")
+    # Linked assistant's "For <name>" page: what I wrote into that account's lists.
+    added_for = filters.NumberFilter(method="filter_added_for")
     completed = filters.BooleanFilter(method="filter_completed")
     overdue = filters.BooleanFilter(method="filter_overdue")
     view = filters.CharFilter(method="filter_view")
@@ -70,6 +72,9 @@ class TaskFilter(filters.FilterSet):
     def filter_delegated_by(self, queryset, name, value):
         user = self.request.user
         return queryset.filter(owner_id=value).filter(Q(assignee=user) | Q(assignees=user)).distinct()
+
+    def filter_added_for(self, queryset, name, value):
+        return queryset.filter(owner_id=value, created_by=self.request.user, project__isnull=True)
 
     def filter_has_project(self, queryset, name, value):
         return queryset.filter(project__isnull=not value)

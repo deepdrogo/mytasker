@@ -20,6 +20,7 @@ const TasksCalendar = lazy(() => import('~/routes/tasks/Calendar'));
 const TasksClients = lazy(() => import('~/routes/tasks/Clients'));
 const People = lazy(() => import('~/routes/People'));
 const From = lazy(() => import('~/routes/From'));
+const ForPrincipal = lazy(() => import('~/routes/For'));
 const ProjectsActive = lazy(() => import('~/routes/projects/Active'));
 const ProjectsAll = lazy(() => import('~/routes/projects/All'));
 const ProjectsCanvas = lazy(() => import('~/routes/projects/Canvas'));
@@ -67,6 +68,8 @@ export const routes: RouteDefinition[] = [
       // People: administrators hand work to other accounts; each receiver gets a "From <name>" page.
       { path: '/people', component: People },
       { path: '/from/:ownerId', component: From },
+      // Linked assistants: write tasks into someone's lists from your own account.
+      { path: '/for/:principalId', component: ForPrincipal },
       { path: '/tasks/personal', component: TasksPersonal },
       { path: '/tasks/business', component: TasksBusiness },
       { path: '/tasks/crypto', component: TasksCrypto },

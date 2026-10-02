@@ -4,7 +4,19 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from django.db.models import Count, Exists, IntegerField, OuterRef, Q, Subquery, Sum, Value
+from django.db.models import (
+    BooleanField,
+    Count,
+    Exists,
+    ExpressionWrapper,
+    F,
+    IntegerField,
+    OuterRef,
+    Q,
+    Subquery,
+    Sum,
+    Value,
+)
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
@@ -14,6 +26,7 @@ from common.tz import today_for
 
 
 def base_queryset(user):
+    from apps.accounts.models import AssistantLink
     from apps.collab.models import Comment
     from apps.time_tracking.models import TimeEntry
 
@@ -79,6 +92,17 @@ def base_queryset(user):
             today_skipped=Exists(todays_checkin.filter(skipped=True)),
             checkin_done_count=checkin_count(False),
             checkin_skipped_count=checkin_count(True),
+            by_assistant=ExpressionWrapper(
+                Q(created_by__assistant_for_id=F("owner_id"))
+                | Q(
+                    Exists(
+                        AssistantLink.objects.filter(
+                            principal_id=OuterRef("owner_id"), helper_id=OuterRef("created_by_id")
+                        )
+                    )
+                ),
+                output_field=BooleanField(),
+            ),
         )
     )
 
@@ -94,11 +118,23 @@ def own_plate(queryset, user):
     handed = Task.assignees.through.objects.filter(task_id=OuterRef("pk"))
     handed_to_others = Exists(handed.exclude(user_id=user.pk))
     handed_to_me = Exists(handed.filter(user_id=user.pk))
-    return (
+    return _without_written_for_others(
         queryset.exclude(Q(assignee__isnull=False) & ~Q(assignee_id=user.pk))
         .exclude(handed_to_others)
-        .exclude(~Q(owner_id=user.pk) & (Q(assignee_id=user.pk) | handed_to_me))
+        .exclude(~Q(owner_id=user.pk) & (Q(assignee_id=user.pk) | handed_to_me)),
+        user,
     )
+
+
+def _without_written_for_others(queryset, user):
+    """
+    What a linked assistant wrote into someone else's lists lives on its "For <name>" page, not on its own plate.
+
+    Assistant logins are the exception: everything they see is written for their principal, and that is their list.
+    """
+    if getattr(user, "assistant_for_id", None) is not None:
+        return queryset
+    return queryset.exclude(~Q(owner_id=user.pk) & Q(project__isnull=True))
 
 
 def own_plate_and_handed_out(queryset, user):
@@ -111,8 +147,11 @@ def own_plate_and_handed_out(queryset, user):
     handed_to_others = Exists(handed.exclude(user_id=user.pk))
     handed_to_me = Exists(handed.filter(user_id=user.pk))
     assigned_to_others = Q(assignee__isnull=False) & ~Q(assignee_id=user.pk)
-    return queryset.exclude(~Q(owner_id=user.pk) & (assigned_to_others | handed_to_others)).exclude(
-        ~Q(owner_id=user.pk) & (Q(assignee_id=user.pk) | handed_to_me)
+    return _without_written_for_others(
+        queryset.exclude(~Q(owner_id=user.pk) & (assigned_to_others | handed_to_others)).exclude(
+            ~Q(owner_id=user.pk) & (Q(assignee_id=user.pk) | handed_to_me)
+        ),
+        user,
     )
 
 

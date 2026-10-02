@@ -201,6 +201,41 @@ def _payload(task: Task, **extra) -> dict[str, Any]:
     return data
 
 
+def _principal_for_linked_assistant(user, principal_id: int, *, project_id, parent_id, kind: str):
+    """A linked assistant writes into the principal's personal / business lists - never a project, never handed on."""
+    from apps.accounts.models import User, helped_principal_ids
+
+    if principal_id not in helped_principal_ids(user):
+        raise Forbidden("You do not write tasks for this account.")
+    if project_id is not None or parent_id is not None:
+        raise ValidationFailed(
+            "Tasks you write for someone go to their lists, not into a project.",
+            fields={"project": ["Not available here."]},
+        )
+    if kind not in (Task.Kind.PERSONAL, Task.Kind.BUSINESS):
+        raise ValidationFailed("Pick personal or business.", fields={"kind": ["Personal or business only."]})
+    return User.objects.get(pk=principal_id)
+
+
+def _tell_principal(task: Task, user) -> None:
+    """The owner hears about what their assistant wrote for them, the moment it lands."""
+    from apps.notifications.services import create_notification
+
+    title = f"{user.display_name} added a task for you"
+    transaction.on_commit(
+        lambda: create_notification(
+            task.owner,
+            title=title,
+            body=task.title,
+            url=f"/tasks/{'business' if task.kind == Task.Kind.BUSINESS else 'personal'}",
+            category="assignment",
+            event_name="assistant.task_added",
+            dedupe_key=f"assistant-task:{task.pk}",
+            payload={"target_type": "task", "target_id": task.pk},
+        )
+    )
+
+
 def _assert_span(start_at, due_at) -> None:
     """A start date may sit on or before the due date. It never replaces the due date."""
     if start_at and due_at and start_at > due_at:
@@ -227,11 +262,15 @@ def create_task(
     recurrence: dict | None = None,
     owner=None,
     origin: str | None = None,
+    for_user: int | None = None,
     **fields,
 ) -> Task:
     user = actor.user
     if user is None:
         raise Forbidden("Authentication required.")
+    if for_user is not None and for_user != user.pk:
+        owner = _principal_for_linked_assistant(user, for_user, project_id=project_id, parent_id=parent_id, kind=kind)
+        assignee_id, assignee_ids = None, None
 
     title = (title or "").strip()
     if not title:
@@ -318,6 +357,8 @@ def create_task(
             **_event_project_fields(task),
         )
     )
+    if parent is None and task.owner_id != user.pk and (user.assistant_for_id == task.owner_id or for_user):
+        _tell_principal(task, user)
     return task
 
 

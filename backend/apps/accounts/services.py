@@ -10,7 +10,7 @@ from django.core.mail import send_mail
 from django.db import transaction
 from django.utils import timezone
 
-from apps.accounts.models import EmailToken, LoginEvent, User, UserPreference
+from apps.accounts.models import AssistantLink, EmailToken, LoginEvent, User, UserPreference
 from apps.notifications.models import NotificationPreference
 from common.exceptions import Conflict, Forbidden, ValidationFailed
 from common.models import Source
@@ -290,6 +290,93 @@ def remove_assistant(principal: User, assistant_id: int) -> None:
     if assistant.is_active:
         assistant.is_active = False
         assistant.save(update_fields=["is_active"])
+
+
+# --------------------------------------------------------------------------- linked assistants
+# An existing account writes tasks for its principal from a "For <name>" page and sees only those.
+
+MAX_LINKED_ASSISTANTS = 10
+
+
+def linked_assistants(principal: User):
+    """The principal's linked assistants, each with how many live tasks it wrote for them."""
+    from django.db.models import Count, OuterRef, Subquery
+    from django.db.models.functions import Coalesce
+
+    from apps.tasks.models import Task
+
+    written = (
+        Task.objects.filter(owner_id=principal.pk, created_by_id=OuterRef("helper_id"))
+        .values("created_by_id")
+        .annotate(c=Count("id"))
+        .values("c")[:1]
+    )
+    return (
+        AssistantLink.objects.filter(principal=principal)
+        .select_related("helper")
+        .annotate(tasks_created=Coalesce(Subquery(written), 0))
+        .order_by("created_at")
+    )
+
+
+@transaction.atomic
+def link_assistant(principal: User, *, email: str) -> AssistantLink:
+    if principal.is_assistant:
+        raise Forbidden("Assistant accounts cannot have assistants.")
+    target = User.objects.filter(email__iexact=(email or "").strip(), is_active=True).first()
+    if target is None:
+        raise ValidationFailed("No account with that e-mail.", fields={"email": ["Unknown account."]})
+    if target.pk == principal.pk:
+        raise ValidationFailed("You cannot add yourself.", fields={"email": ["That is you."]})
+    if target.is_assistant:
+        raise ValidationFailed(
+            "This is already an assistant login. It writes for its own principal.",
+            fields={"email": ["Assistant login."]},
+        )
+    existing = AssistantLink.objects.filter(principal=principal, helper=target).first()
+    if existing is not None:
+        return existing
+    if AssistantLink.objects.filter(principal=principal).count() >= MAX_LINKED_ASSISTANTS:
+        raise ValidationFailed(f"You can link at most {MAX_LINKED_ASSISTANTS} accounts.")
+    return AssistantLink.objects.create(principal=principal, helper=target)
+
+
+@transaction.atomic
+def unlink_assistant(principal: User, link_id: int) -> None:
+    """The account stops writing for the principal. Tasks it already added stay, still credited to it."""
+    from common.exceptions import NotFound
+
+    deleted, _ = AssistantLink.objects.filter(pk=link_id, principal=principal).delete()
+    if not deleted:
+        raise NotFound("Assistant not found.")
+
+
+def helping(helper: User) -> list[dict]:
+    """Whom this account writes for, with open / done counts of what it added. Drives the "For <name>" pages."""
+    from django.db.models import Count, Q
+
+    from apps.tasks.models import Task
+
+    links = list(AssistantLink.objects.filter(helper=helper).select_related("principal").order_by("created_at"))
+    counts = {
+        row["owner_id"]: row
+        for row in Task.objects.filter(
+            created_by=helper, owner_id__in=[link.principal_id for link in links], project__isnull=True
+        )
+        .values("owner_id")
+        .annotate(
+            open_count=Count("id", filter=~Q(status__in=[Task.Status.DONE, Task.Status.CANCELLED])),
+            done_count=Count("id", filter=Q(status=Task.Status.DONE)),
+        )
+    }
+    return [
+        {
+            "user": link.principal,
+            "open_count": counts.get(link.principal_id, {}).get("open_count", 0),
+            "done_count": counts.get(link.principal_id, {}).get("done_count", 0),
+        }
+        for link in links
+    ]
 
 
 @transaction.atomic

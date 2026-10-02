@@ -35,6 +35,8 @@ export interface TaskListParams extends QueryParams {
   delegated?: boolean;
   /** Work handed to me by one specific person. */
   delegated_by?: ID;
+  /** "For <name>": what I wrote into that account's lists as their linked assistant. */
+  added_for?: ID;
   q?: string;
   ordering?: string;
   page?: number;
@@ -56,6 +58,8 @@ export interface TaskInput {
   assignee_id?: ID | null;
   /** Hand the task to these People (replaces the current set; `[]` takes it back). */
   assignee_ids?: ID[];
+  /** Create only, linked assistants: write the task into this account's lists. */
+  for_user?: ID;
   start_at?: string | null;
   due_at?: string | null;
   due_has_time?: boolean;

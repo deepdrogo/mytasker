@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.utils import timezone
 
 from apps.analytics import services as analytics
@@ -41,12 +41,23 @@ def today_snapshot(user, request=None) -> dict:
     ctx = {"request": request}
 
     # Crypto world is a private list — never mixed into the Today dashboard.
-    base = only_my_own(
+    visible = (
         selectors.base_queryset(user)
         .top_level()
         .exclude(kind=Task.Kind.CRYPTO)
-        .annotate(priority_rank=selectors.priority_rank_expression()),
-        user,
+        .annotate(priority_rank=selectors.priority_rank_expression())
+    )
+    base = only_my_own(visible, user)
+    # Work other people handed to me (People): its own block, named after whoever gave it.
+    # What I handed out never shows here; it lives on People and Clients.
+    handed_to_me = Task.assignees.through.objects.filter(task_id=OuterRef("pk"), user_id=user.pk)
+    delegated = (
+        visible.filter(OPEN)
+        .exclude(owner=user)
+        .filter(Q(assignee=user) | Exists(handed_to_me))
+        .order_by("owner__full_name", "owner__email", "priority_rank", models_f_nulls_last("due_at"), "-updated_at")[
+            :60
+        ]
     )
     # Client work first: every open promise to a customer, grouped by project on the client side.
     clients = base.filter(OPEN, is_client=True).order_by(
@@ -163,6 +174,7 @@ def today_snapshot(user, request=None) -> dict:
         },
         "tasks": {
             "clients": TaskSerializer(clients, many=True, context=ctx).data,
+            "delegated": TaskSerializer(delegated, many=True, context=ctx).data,
             "overdue": TaskSerializer(overdue, many=True, context=ctx).data,
             "due_today": TaskSerializer(due_today, many=True, context=ctx).data,
             "focus": TaskSerializer(focus, many=True, context=ctx).data,

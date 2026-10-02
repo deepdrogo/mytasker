@@ -26,9 +26,12 @@ from common.tz import today_for
 
 
 def _asks_for_handed(request) -> bool:
-    """People (`assignee`) and From (`delegated` / `delegated_by`) are the only lists that show handed work."""
+    """
+    People (`assignee`), From (`delegated` / `delegated_by`) and a linked assistant's For page (`added_for`)
+    are the only lists that show work living on someone else's plate.
+    """
     params = request.query_params
-    if params.get("assignee") or params.get("delegated_by"):
+    if params.get("assignee") or params.get("delegated_by") or params.get("added_for"):
         return True
     return (params.get("delegated") or "").lower() in {"1", "true", "yes"}
 

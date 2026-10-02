@@ -84,6 +84,10 @@ ASSISTANT_CAPABILITIES = frozenset(
 )
 
 
+# A linked assistant (ordinary account) on a task it wrote for its principal: fix, finish, comment or remove it.
+LINKED_ASSISTANT_CAPABILITIES = ASSISTANT_CAPABILITIES | {Capability.COMMENT}
+
+
 # What someone a task was handed to (Task.assignee outside a project) may do with it: everything except
 # deleting it or handing it on. Deleting stays with the owner.
 DELEGATE_CAPABILITIES = frozenset(
@@ -107,6 +111,15 @@ def _is_assignee(user_id: int, assignee_id: int | None, assignee_ids: Iterable[i
 def is_assistant_of(user, owner_id: int) -> bool:
     """True when `user` is an assistant account acting for the user with pk `owner_id`."""
     return user is not None and getattr(user, "assistant_for_id", None) == owner_id
+
+
+def wrote_as_linked_assistant(user, *, owner_id: int, project, created_by_id: int | None) -> bool:
+    """A list task this ordinary account wrote for a principal it is still linked to as an assistant."""
+    if project is not None or created_by_id is None or created_by_id != user.pk or owner_id == user.pk:
+        return False
+    from apps.accounts.models import helped_principal_ids
+
+    return owner_id in helped_principal_ids(user)
 
 
 @dataclass(frozen=True)
@@ -191,6 +204,8 @@ def can_view_object(
     if getattr(user, "assistant_for_id", None) is not None:
         # Assistants never inherit membership visibility; they only see what they created.
         return is_assistant_of(user, owner_id) and created_by_id is not None and created_by_id == user.pk
+    if wrote_as_linked_assistant(user, owner_id=owner_id, project=project, created_by_id=created_by_id):
+        return True
     if project is None:
         return False
     if visibility == Visibility.PRIVATE:
@@ -224,6 +239,8 @@ def can_edit_object(
             and created_by_id == user.pk
             and capability in ASSISTANT_CAPABILITIES
         )
+    if wrote_as_linked_assistant(user, owner_id=owner_id, project=project, created_by_id=created_by_id):
+        return capability in LINKED_ASSISTANT_CAPABILITIES
     if project is None or visibility == Visibility.PRIVATE or project.mode == project.Mode.PRIVATE:
         return False
     return project_access(user, project).can(capability)

@@ -147,6 +147,34 @@ class EmailToken(TimeStampedModel):
         return self.used_at is None and self.expires_at > timezone.now()
 
 
+class AssistantLink(models.Model):
+    """
+    An ordinary account that writes tasks for someone else, keeping its own account untouched.
+
+    The helper adds tasks straight into the principal's personal / business lists and only ever sees
+    the ones it wrote there. Unlike `User.assistant_for` it is not a restricted login.
+    """
+
+    principal = models.ForeignKey(User, on_delete=models.CASCADE, related_name="assistant_links")
+    helper = models.ForeignKey(User, on_delete=models.CASCADE, related_name="helping_links")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "accounts_assistant_link"
+        constraints = [
+            models.UniqueConstraint(fields=["principal", "helper"], name="uniq_assistant_link"),
+            models.CheckConstraint(condition=~models.Q(principal=models.F("helper")), name="assistant_link_not_self"),
+        ]
+
+    def __str__(self) -> str:
+        return f"assistant:{self.helper_id}->{self.principal_id}"
+
+
+def helped_principal_ids(user) -> set[int]:
+    """Principals this account writes tasks for as a linked assistant."""
+    return set(AssistantLink.objects.filter(helper_id=user.pk).values_list("principal_id", flat=True))
+
+
 class LoginEvent(models.Model):
     """Lightweight session/login audit (no credentials stored)."""
 

@@ -345,6 +345,12 @@
   border-radius: var(--r-full);
 }
 
+.addedByAssistant {
+  color: var(--c-text);
+  border-color: var(--c-border-strong);
+  background: rgba(255, 255, 255, 0.05);
+}
+
 .actions {
   flex: none;
   display: flex;

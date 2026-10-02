@@ -141,6 +141,8 @@ export interface Task {
   owner: UserRef;
   /** Who added the task; differs from `owner` for assistant-created and member-created tasks. */
   created_by: UserRef | null;
+  /** `created_by` is the owner's assistant (an assistant login or an account linked as one). */
+  added_by_assistant?: boolean;
   start_at: ISODateTime | null;
   due_at: ISODateTime | null;
   due_has_time: boolean;
@@ -476,8 +478,10 @@ export interface TodayData {
   metrics: DayMetrics;
   streak: number;
   timer: { running: TimeEntry | null; sleep: SleepSession | null };
-  /** Only the user's own work: nothing handed to People and nothing handed to the user by others. */
+  /** The user's own work; nothing they handed to People. Work handed to them sits apart in `delegated`. */
   tasks: {
+    /** Open work other people handed to me, ordered by giver - its own "Handed to you" block. */
+    delegated: Task[];
     /** Open client work, ordered by project - the first block on the dashboard. */
     clients: Task[];
     overdue: Task[];
@@ -597,6 +601,21 @@ export interface Person {
   done_count: number;
   last_assigned_at: ISODateTime | null;
   created_at: ISODateTime;
+}
+
+/** An existing account linked as my assistant: it writes tasks into my lists from its own login. */
+export interface LinkedAssistant {
+  id: ID;
+  user: UserRef & { email: string };
+  tasks_created: number;
+  created_at: ISODateTime;
+}
+
+/** Someone I write tasks for as their linked assistant - one "For <name>" page each. */
+export interface Helping {
+  user: UserRef;
+  open_count: number;
+  done_count: number;
 }
 
 /** Someone who handed work to me - one "From <name>" page each. */

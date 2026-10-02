@@ -1,4 +1,4 @@
-import { Copy, KeyRound, Power, UserPlus } from 'lucide-solid';
+import { Copy, KeyRound, Link2, Power, Unlink, UserPlus } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For, Show, createSignal } from 'solid-js';
 import { ApiError } from '~/api/client';
@@ -10,12 +10,124 @@ import { copyToClipboard } from '~/features/prompts/api';
 import { assistantsApi } from '~/features/settings/api';
 import { createQuery } from '~/hooks/createQuery';
 import { t, tn } from '~/i18n';
+import { authStore } from '~/stores/auth';
 import { toast } from '~/stores/ui';
-import type { Assistant } from '~/types';
+import type { Assistant, LinkedAssistant } from '~/types';
 import { formatRelative } from '~/utils/format';
 import styles from './Settings.module.css';
 
 const MAX_ASSISTANTS = 5;
+
+/**
+ * Existing accounts linked as assistants. They keep their own account and write tasks for me from a
+ * "For <my name>" page; they see only what they wrote there, and each task shows it came from them.
+ */
+function LinkedAssistants(): JSX.Element {
+  const query = createQuery<LinkedAssistant[]>(() => 'assistants:linked', () => assistantsApi.linked());
+  const [email, setEmail] = createSignal('');
+  const [busy, setBusy] = createSignal(false);
+  const [error, setError] = createSignal<string | null>(null);
+  const [removing, setRemoving] = createSignal<LinkedAssistant | null>(null);
+  const [removeBusy, setRemoveBusy] = createSignal(false);
+
+  const add = async (event: Event) => {
+    event.preventDefault();
+    const value = email().trim();
+    if (!value) {
+      setError(t('Type the e-mail of their MyTasker account.'));
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const row = await assistantsApi.link(value);
+      setEmail('');
+      toast(t('{name} can now write tasks for you', { name: row.user.display_name }));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : t('Action failed.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async () => {
+    const row = removing();
+    if (!row) return;
+    setRemoveBusy(true);
+    try {
+      await assistantsApi.unlink(row.id);
+      toast(t('{name} no longer writes for you', { name: row.user.display_name }));
+    } catch (err) {
+      toast(err instanceof ApiError ? err.message : t('Action failed.'));
+    } finally {
+      setRemoveBusy(false);
+      setRemoving(null);
+    }
+  };
+
+  return (
+    <>
+      <form class={styles.card} onSubmit={(e) => void add(e)}>
+        <Field
+          label={t('Use an existing account')}
+          hint={t('They keep their own account and get a “For {name}” page where they write tasks for you. They see only those.', {
+            name: authStore.user()?.display_name ?? '',
+          })}
+          error={error() ?? undefined}
+        >
+          <Input
+            type="email"
+            value={email()}
+            onInput={(e) => setEmail(e.currentTarget.value)}
+            placeholder="assistant@example.com"
+            autocomplete="off"
+          />
+        </Field>
+        <div class={styles.actions}>
+          <Button type="submit" loading={busy()}>
+            <Link2 size={14} />
+            {t('Link account')}
+          </Button>
+        </div>
+      </form>
+
+      <Show when={(query.data()?.length ?? 0) > 0}>
+        <ul class={styles.list}>
+          <For each={query.data()}>
+            {(row) => (
+              <li class={styles.row}>
+                <div class={styles.rowText}>
+                  <span>{row.user.display_name}</span>
+                  <span class={styles.rowHint}>
+                    <span class={styles.mono}>{row.user.email}</span> · {tn(row.tasks_created, 'task')} ·{' '}
+                    {t('linked {time}', { time: formatRelative(row.created_at) })}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: 'var(--s-2)', 'align-items': 'center' }}>
+                  <span class={styles.badge}>{t('linked account')}</span>
+                  <Button variant="ghost" size="sm" title={t('Remove')} onClick={() => setRemoving(row)}>
+                    <Unlink size={13} />
+                  </Button>
+                </div>
+              </li>
+            )}
+          </For>
+        </ul>
+      </Show>
+
+      <ConfirmDialog
+        open={removing() !== null}
+        title={t('Stop {name} writing for you?', { name: removing()?.user.display_name ?? '' })}
+        message={t('Tasks they already added stay in your lists. Their own account is untouched.')}
+        confirmLabel={t('Remove')}
+        destructive
+        busy={removeBusy()}
+        onConfirm={() => void remove()}
+        onCancel={() => setRemoving(null)}
+      />
+    </>
+  );
+}
 
 /**
  * Principal-side management of assistant logins. The generated password is shown exactly once
@@ -93,10 +205,14 @@ export default function AssistantsSection(): JSX.Element {
         <h2>{t('Assistants')}</h2>
         <p>
           {t(
-            'An assistant signs in with its own login and can add tasks to your personal and business lists and to your projects. It only ever sees the tasks it created itself - never your other tasks, routines, prompts or insights.',
+            'An assistant writes tasks into your lists. Every such task is marked with the assistant’s name, and the assistant only ever sees what it wrote - never your other tasks, routines, prompts or insights. People is the other way round: work you hand out.',
           )}
         </p>
       </header>
+
+      <LinkedAssistants />
+
+      <p class={styles.dim}>{t('Or create a separate assistant login:')}</p>
 
       <form class={styles.card} onSubmit={(e) => void create(e)}>
         <div class={styles.grid}>

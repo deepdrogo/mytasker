@@ -16,6 +16,7 @@ from rest_framework.response import Response
 from apps.accounts import services
 from apps.accounts.serializers import (
     AssistantCreateSerializer,
+    AssistantLinkSerializer,
     AssistantSerializer,
     AssistantUpdateSerializer,
     ChangePasswordSerializer,
@@ -238,6 +239,62 @@ def assistant_reset_password(request: Request, assistant_id: int) -> Response:
         raise Forbidden("Assistants cannot manage assistants.")
     assistant, password = services.reset_assistant_password(request.user, assistant_id)
     return Response(_assistant_payload(assistant, password=password))
+
+
+def _link_payload(link) -> dict:
+    helper = link.helper
+    return {
+        "id": link.pk,
+        "user": {"id": helper.pk, "display_name": helper.display_name, "email": helper.email},
+        "tasks_created": getattr(link, "tasks_created", 0),
+        "created_at": link.created_at,
+    }
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def linked_assistants(request: Request) -> Response:
+    """Existing accounts that write tasks for the user from their own login."""
+    from common.exceptions import Forbidden
+
+    if request.user.is_assistant:
+        raise Forbidden("Assistants cannot manage assistants.")
+    if request.method == "POST":
+        serializer = AssistantLinkSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        link = services.link_assistant(request.user, email=serializer.validated_data["email"])
+        link = services.linked_assistants(request.user).get(pk=link.pk)
+        return Response(_link_payload(link), status=status.HTTP_201_CREATED)
+    return Response([_link_payload(link) for link in services.linked_assistants(request.user)])
+
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def linked_assistant_detail(request: Request, link_id: int) -> Response:
+    from common.exceptions import Forbidden
+
+    if request.user.is_assistant:
+        raise Forbidden("Assistants cannot manage assistants.")
+    services.unlink_assistant(request.user, link_id)
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def helping(request: Request) -> Response:
+    """Whom I write tasks for as a linked assistant: one "For <name>" page each."""
+    if request.user.is_assistant:
+        return Response([])
+    return Response(
+        [
+            {
+                "user": {"id": row["user"].pk, "display_name": row["user"].display_name},
+                "open_count": row["open_count"],
+                "done_count": row["done_count"],
+            }
+            for row in services.helping(request.user)
+        ]
+    )
 
 
 @api_view(["GET"])

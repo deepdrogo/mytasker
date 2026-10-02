@@ -1,7 +1,7 @@
 import { api } from '~/api/client';
 import { invalidate } from '~/hooks/createQuery';
 import { applyMe } from '~/stores/auth';
-import type { Assistant, Me, NotificationPreferences, TelegramStatus, UserPreferences } from '~/types';
+import type { Assistant, Helping, LinkedAssistant, Me, NotificationPreferences, TelegramStatus, UserPreferences } from '~/types';
 
 export interface TelegramLinkStart {
   token: string;
@@ -62,6 +62,19 @@ export const assistantsApi = {
     await api.delete(`/auth/assistants/${id}/`);
     invalidate('assistants');
   },
+  /** Existing accounts that write tasks for me from their own login. */
+  linked: () => api.get<LinkedAssistant[]>('/auth/assistants/linked/'),
+  link: async (email: string) => {
+    const row = await api.post<LinkedAssistant>('/auth/assistants/linked/', { email });
+    invalidate('assistants');
+    return row;
+  },
+  unlink: async (id: number) => {
+    await api.delete(`/auth/assistants/linked/${id}/`);
+    invalidate('assistants');
+  },
+  /** Whom I write tasks for: one "For <name>" page each. */
+  helping: () => api.get<Helping[]>('/auth/helping/'),
 };
 
 export const telegramApi = {

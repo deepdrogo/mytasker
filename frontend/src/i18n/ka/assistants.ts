@@ -1,8 +1,31 @@
 // Georgian UI strings — assistant accounts (Settings › Assistants + assistant-mode shell).
 export const assistants: Record<string, string> = {
   Assistants: 'ასისტენტები',
-  'An assistant signs in with its own login and can add tasks to your personal and business lists and to your projects. It only ever sees the tasks it created itself - never your other tasks, routines, prompts or insights.':
-    'ასისტენტი შედის საკუთარი ლოგინით და შეუძლია დაამატოს დავალებები შენს პირად და ბიზნეს სიებში და პროექტებში. ის ხედავს მხოლოდ იმ დავალებებს, რომლებიც თვითონ შექმნა - შენს სხვა დავალებებს, რუტინას, პრომპტებს ან ანალიტიკას არასდროს.',
+  'An assistant writes tasks into your lists. Every such task is marked with the assistant’s name, and the assistant only ever sees what it wrote - never your other tasks, routines, prompts or insights. People is the other way round: work you hand out.':
+    'ასისტენტი შენს სიებში წერს დავალებებს. ყოველ ასეთ დავალებას ასისტენტის სახელი აწერია, ასისტენტი კი ხედავს მხოლოდ იმას, რაც თვითონ დაწერა - შენს სხვა დავალებებს, რუტინას, პრომპტებს ან ანალიტიკას არასდროს. „ხალხი“ პირიქითაა: საქმე, რომელსაც შენ გასცემ.',
+  'Use an existing account': 'არსებული ანგარიშის გამოყენება',
+  'They keep their own account and get a “For {name}” page where they write tasks for you. They see only those.':
+    'საკუთარი ანგარიში რჩებათ და უჩნდებათ გვერდი „{name}-სთვის“, სადაც შენთვის წერენ დავალებებს. მხოლოდ იმას ხედავენ, რაც იქ დაწერეს.',
+  'Type the e-mail of their MyTasker account.': 'ჩაწერე მათი MyTasker ანგარიშის ელფოსტა.',
+  'Link account': 'ანგარიშის მიბმა',
+  '{name} can now write tasks for you': '{name}-ს ახლა შეუძლია შენთვის დავალებების წერა',
+  '{name} no longer writes for you': '{name} აღარ წერს შენთვის',
+  'linked {time}': 'მიება {time}',
+  'linked account': 'მიბმული ანგარიში',
+  'Stop {name} writing for you?': 'შევუწყვიტო {name}-ს შენთვის წერა?',
+  'Tasks they already added stay in your lists. Their own account is untouched.':
+    'უკვე დამატებული დავალებები შენს სიებში რჩება. მათ ანგარიშს არაფერი ემართება.',
+  'Or create a separate assistant login:': 'ან შექმენი ცალკე ასისტენტის ლოგინი:',
+  'Writing for': 'ვისთვის ვწერ',
+  'For {name}': '{name}-სთვის',
+  'Tasks you write here go straight into {name}’s lists, marked as added by you. You see only these.':
+    'აქ დაწერილი დავალებები პირდაპირ {name}-ის სიებში ხვდება, შენი სახელით მონიშნული. შენ მხოლოდ ამათ ხედავ.',
+  'Which list': 'რომელ სიაში',
+  'Write a task for {name}…': 'დაწერე დავალება {name}-სთვის…',
+  'Nothing written yet.': 'ჯერ არაფერი დაგიწერია.',
+  'Type a task above. {name} sees it right away.': 'დაწერე დავალება ზემოთ. {name} მაშინვე დაინახავს.',
+  'Your assistant {name} added this task for you': 'შენმა ასისტენტმა {name} ეს დავალება შენთვის დაამატა',
+  '{name} · assistant': '{name} · ასისტენტი',
   'Assistant name': 'ასისტენტის სახელი',
   'Login email (optional)': 'შესვლის ელფოსტა (არასავალდებულო)',
   'Leave empty and we generate a login for you.': 'დატოვე ცარიელი და ლოგინს ჩვენ შევქმნით.',

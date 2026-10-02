@@ -54,6 +54,7 @@ class TaskQuerySet(SoftDeleteQuerySet):
         - project tasks: accepted member of a group / group_plus project AND visibility=group
         - private (Group Plus) tasks of other users: never
         - assistant accounts: only the principal's tasks the assistant created itself
+        - linked assistants (ordinary accounts): their own data, plus the list tasks they wrote for the principal
         """
         if user is None or not getattr(user, "is_authenticated", False):
             return self.none()
@@ -65,10 +66,15 @@ class TaskQuerySet(SoftDeleteQuerySet):
                 Q(owner_id=user.assistant_for_id, created_by=user) | Q(assignee=user) | Q(assignees=user)
             ).distinct()
 
+        from apps.accounts.models import AssistantLink
+
+        helped = AssistantLink.objects.filter(helper_id=user.pk).values("principal_id")
         return self.filter(
             Q(owner=user)
             | Q(assignee=user)
             | Q(assignees=user)
+            # Linked assistant: the list tasks it wrote for a principal it still writes for.
+            | Q(created_by=user, project__isnull=True, owner_id__in=helped)
             | Q(
                 visibility=Visibility.GROUP,
                 project__isnull=False,
