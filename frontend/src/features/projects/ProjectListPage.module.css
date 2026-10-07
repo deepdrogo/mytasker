@@ -26,4 +26,17 @@
   .grid {
     grid-template-columns: 1fr;
   }
+  /* Search on its own line, the selects share the line under it. */
+  .toolbar {
+    flex-wrap: wrap;
+  }
+  .toolbar > :first-child {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+  .toolbar > :not(:first-child) {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+  }
 }

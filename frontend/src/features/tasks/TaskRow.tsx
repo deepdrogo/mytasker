@@ -426,7 +426,9 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
             </span>
           </Show>
           <Show when={!props.dense}>
-            <VisibilityMark visibility={props.task.visibility} />
+            <span class={styles.visibilityMark}>
+              <VisibilityMark visibility={props.task.visibility} />
+            </span>
           </Show>
         </div>
 
@@ -584,7 +586,7 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
         </Show>
         <Show when={canPolish() && !props.dense}>
           <button
-            class={[styles.iconAction, polishing() ? styles.iconActionBusy : ''].filter(Boolean).join(' ')}
+            class={cx(styles.iconAction, styles.menuDuplicate, polishing() && styles.iconActionBusy)}
             onClick={(e) => void polish(e)}
             disabled={polishing()}
             aria-label={t('Polish {title} with AI', { title: title() })}
@@ -595,7 +597,7 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
         </Show>
         <Show when={!props.dense}>
           <button
-            class={styles.iconAction}
+            class={cx(styles.iconAction, styles.menuDuplicate)}
             onClick={toggleTimer}
             aria-label={isRunning() ? t('Stop timer') : t('Start timer for this task')}
             title={isRunning() ? t('Stop timer') : t('Start timer')}

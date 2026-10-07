@@ -452,6 +452,38 @@
   }
 }
 
+.visibilityMark {
+  display: contents;
+}
+
+/* Phones: the title gets the whole row. Badges that don't fit drop to the next line, and the timer / AI buttons
+   (both also in the ⋯ menu) step aside. */
+@media (max-width: 600px) {
+  .row {
+    gap: var(--s-4);
+    padding: var(--s-4) var(--s-3) var(--s-4) var(--s-4);
+  }
+  .titleLine {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+  .title {
+    flex: 1 1 70%;
+  }
+  .clientMark {
+    padding: 0 5px;
+  }
+  .clientMarkText,
+  .visibilityMark,
+  .menuDuplicate {
+    display: none;
+  }
+  .actions {
+    gap: 0;
+    margin-top: -5px;
+  }
+}
+
 .addedOn {
   font-family: var(--font-mono);
   font-size: var(--fs-xs);

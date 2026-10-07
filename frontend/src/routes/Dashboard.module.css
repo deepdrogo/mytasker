@@ -1235,8 +1235,54 @@
   }
 }
 
-@media (max-width: 420px) {
+/* Phones: the numbers shrink to one swipeable strip so the day's tasks start right below the timers. */
+@media (max-width: 600px) {
+  .timers {
+    gap: var(--s-3);
+  }
+  .tile {
+    padding: var(--s-3) var(--s-4);
+  }
+  .tileValue {
+    font-size: 18px;
+  }
   .stats {
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
+    gap: var(--s-3);
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin: 0 calc(-1 * var(--s-5));
+    padding: 0 var(--s-5);
+  }
+  .stats::-webkit-scrollbar {
+    display: none;
+  }
+  .stat {
+    flex: none;
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--s-3);
+    padding: var(--s-3) var(--s-4);
+    border-radius: var(--r-full);
+    box-shadow: none;
+  }
+  .stat:hover {
+    transform: none;
+  }
+  .statValue {
+    font-size: 15px;
+  }
+  .statLabel {
+    font-size: 9px;
+  }
+  .sectionHead {
+    white-space: nowrap;
+  }
+  .hint:not(.sectionLink) {
+    display: none;
+  }
+  .sectionLink,
+  .hint + .sectionLink {
+    margin-left: auto;
   }
 }

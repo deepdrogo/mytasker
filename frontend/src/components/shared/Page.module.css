@@ -182,11 +182,32 @@
 }
 
 @media (max-width: 899px) {
+  /* Phones: one compact line for the title; actions wrap beneath it instead of squeezing it. */
   .headRow {
-    padding: var(--s-6) var(--s-5) var(--s-5);
+    flex-wrap: wrap;
+    gap: var(--s-4);
+    min-height: 0;
+    padding: var(--s-5) var(--s-5) var(--s-4);
+  }
+  .titleBlock {
+    flex: 1 1 auto;
   }
   .title {
     font-size: 20px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* The date and the page description are desktop furniture; on a phone they only push the work down. */
+  .subtitle {
+    display: none;
+  }
+  .actions {
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    min-width: 0;
+    max-width: 100%;
   }
   .tabs {
     margin: 0 var(--s-5) var(--s-4);
