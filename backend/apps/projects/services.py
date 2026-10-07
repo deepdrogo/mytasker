@@ -94,6 +94,7 @@ def update_project(actor: Actor, project_id: int, *, expected_version: int | Non
         raise Conflict("Project changed elsewhere. Reload and try again.", code="version_conflict")
 
     changed = []
+    schedule_before = (project.start_date, project.deadline)
     for key, value in fields.items():
         if key not in PROJECT_FIELDS:
             continue
@@ -113,6 +114,8 @@ def update_project(actor: Actor, project_id: int, *, expected_version: int | Non
         from apps.tasks.project_dates import sync_project_tasks
 
         sync_project_tasks(project)
+        if (project.start_date, project.deadline) != schedule_before:
+            follow_calendar(actor.user)
     _event(project, EventName.PROJECT_UPDATED, actor, fields=sorted(changed))
     return project
 
@@ -180,6 +183,14 @@ def reorder_projects(user, ordered_ids: list[int]) -> list[int]:
         if current.get(pid) != index:
             Project.objects.filter(pk=pid).update(sort_order=index)
     return applied
+
+
+def follow_calendar(user) -> int:
+    """
+    Drop the hand-made order so the dashboard lists projects the way the project calendar does. Runs whenever
+    a project is rescheduled: a saved order no longer matches the plan once the dates move.
+    """
+    return Project.objects.visible_to(user).exclude(sort_order=0).update(sort_order=0)
 
 
 @transaction.atomic

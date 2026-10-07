@@ -77,6 +77,11 @@ export const projectsApi = {
     return project;
   },
   /** Manual order (dashboard / Active projects): every visible project id in the new order, first on top. */
+  /** Drop the manual order; the dashboard follows the project calendar again. */
+  followCalendar: async () => {
+    await api.post('/projects/follow-calendar/', {});
+    invalidate('projects');
+  },
   reorder: async (ids: ID[]) => {
     const result = await api.post<{ ids: ID[] }>('/projects/reorder/', { ids });
     // The dashboard keeps its own optimistic copy; only the project lists need to refetch.

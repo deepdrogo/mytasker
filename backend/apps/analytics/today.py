@@ -108,14 +108,16 @@ def today_snapshot(user, request=None) -> dict:
     business_items = [i for i in routine_items if i.routine.kind == Routine.Kind.BUSINESS]
     personal_items = [i for i in routine_items if i.routine.kind == Routine.Kind.PERSONAL]
 
-    # Every project that still has something to do; a project with zero open tasks is noise on the dashboard.
-    # Untouched lists follow the project calendar. Once the user drags (or explicitly aligns by calendar),
-    # reorder_projects writes non-zero sort positions and that saved manual sequence becomes authoritative.
-    # No cap: the dashboard list scrolls.
+    # Every project that still has something to do, plus every project on the calendar that has not ended yet
+    # (even before it has tasks), so the list matches the project timeline. Untouched lists follow the calendar;
+    # a drag writes non-zero sort positions and that sequence wins until the next reschedule resets it
+    # (projects.services.follow_calendar). No cap: the dashboard list scrolls.
+    on_calendar = Q(start_date__isnull=False) & (Q(deadline__isnull=True) | Q(deadline__gte=day))
     active_qs = (
         Project.objects.visible_to(user)
         .with_progress(user)
-        .filter(status__in=[Project.Status.ACTIVE, Project.Status.PAUSED], task_open__gt=0)
+        .filter(status__in=[Project.Status.ACTIVE, Project.Status.PAUSED])
+        .filter(Q(task_open__gt=0) | on_calendar)
     )
     manually_ordered = active_qs.exclude(sort_order=0).exists()
     ordering = (

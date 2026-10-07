@@ -1,4 +1,7 @@
+from datetime import timedelta
+
 import pytest
+from django.utils import timezone
 
 from apps.projects.models import Project
 
@@ -83,6 +86,60 @@ def test_dashboard_defaults_to_project_calendar_order(auth_client):
     projects = auth_client.get("/api/v1/today/").data["active_projects"]
     assert [project["id"] for project in projects] == [sooner["id"], later["id"], unscheduled["id"]]
     assert str(projects[0]["start_date"]) == "2026-09-20"
+
+
+def test_dashboard_lists_calendar_projects_before_they_have_tasks(auth_client):
+    today = timezone.localdate()
+    running = auth_client.post(
+        BASE,
+        {"name": "Running", "start_date": str(today - timedelta(days=2)), "deadline": str(today + timedelta(days=4))},
+        format="json",
+    ).data
+    upcoming = auth_client.post(
+        BASE, {"name": "Upcoming", "start_date": str(today + timedelta(days=9))}, format="json"
+    ).data
+    auth_client.post(
+        BASE,
+        {"name": "Over", "start_date": str(today - timedelta(days=20)), "deadline": str(today - timedelta(days=10))},
+        format="json",
+    )
+    auth_client.post(BASE, {"name": "Empty, unscheduled"}, format="json")
+
+    projects = auth_client.get("/api/v1/today/").data["active_projects"]
+    assert [p["id"] for p in projects] == [running["id"], upcoming["id"]]
+    assert projects[0]["task_open"] is None
+
+
+def test_rescheduling_a_project_puts_the_dashboard_back_on_calendar_order(auth_client):
+    today = timezone.localdate()
+    first = auth_client.post(BASE, {"name": "First", "start_date": str(today)}, format="json").data
+    second = auth_client.post(
+        BASE, {"name": "Second", "start_date": str(today + timedelta(days=3))}, format="json"
+    ).data
+    third = auth_client.post(
+        BASE, {"name": "Third", "start_date": str(today + timedelta(days=6))}, format="json"
+    ).data
+
+    def dashboard():
+        return [p["id"] for p in auth_client.get("/api/v1/today/").data["active_projects"]]
+
+    auth_client.post(f"{BASE}reorder/", {"ids": [third["id"], second["id"], first["id"]]}, format="json")
+    assert dashboard() == [third["id"], second["id"], first["id"]]
+
+    # Edits that leave the dates alone keep the hand-made order.
+    auth_client.patch(
+        f"{BASE}{second['id']}/", {"name": "Second!", "start_date": second["start_date"]}, format="json"
+    )
+    assert dashboard() == [third["id"], second["id"], first["id"]]
+
+    # Moving a project on the calendar hands the order back to the calendar.
+    moved = auth_client.patch(f"{BASE}{third['id']}/", {"start_date": str(today + timedelta(days=1))}, format="json")
+    assert moved.status_code == 200, moved.content
+    assert dashboard() == [first["id"], third["id"], second["id"]]
+
+    auth_client.post(f"{BASE}reorder/", {"ids": [second["id"], first["id"], third["id"]]}, format="json")
+    assert auth_client.post(f"{BASE}follow-calendar/", {}, format="json").status_code == 204
+    assert dashboard() == [first["id"], third["id"], second["id"]]
 
 
 def test_invite_join_and_group_visibility(client_for, user, other_user, stranger):

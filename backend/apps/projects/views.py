@@ -114,6 +114,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
         applied = services.reorder_projects(request.user, serializer.validated_data["ids"])
         return Response({"ids": applied})
 
+    @action(detail=False, methods=["post"], url_path="follow-calendar")
+    def follow_calendar(self, request):
+        """Forget the manual order: the dashboard goes back to the project calendar's order."""
+        services.follow_calendar(request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     @action(detail=True, methods=["post"])
     def mode(self, request, pk=None):
         serializer = ModeChangeSerializer(data=request.data)

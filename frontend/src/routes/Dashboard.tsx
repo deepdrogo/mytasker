@@ -26,7 +26,7 @@ import { tx } from '~/stores/translations';
 import { startSleep, stopSleep, timerStore, toggleTimer } from '~/stores/timer';
 import { toast } from '~/stores/ui';
 import type { RoutineItem, Rule, Task, TodayData, TodayProject } from '~/types';
-import { endOfDay, formatClock, formatDateFull, formatDueDate, formatMinutes, percent } from '~/utils/format';
+import { endOfDay, formatClock, formatDate, formatDateFull, formatDueDate, formatMinutes, percent } from '~/utils/format';
 import styles from './Dashboard.module.css';
 import { cx } from '~/utils/cx';
 
@@ -73,12 +73,12 @@ export default function Dashboard(): JSX.Element {
     setAligningProjects(true);
     query.mutate((current) => (current ? { ...current, active_projects: projects } : current));
     try {
-      await projectsApi.reorder(projects.map((project) => project.id));
+      await projectsApi.followCalendar();
       toast(t('Projects aligned with calendar'));
     } catch {
       toast(t('Could not save the order.'));
-      query.refetch();
     } finally {
+      query.refetch();
       setAligningProjects(false);
     }
   };
@@ -334,7 +334,7 @@ export default function Dashboard(): JSX.Element {
                 <Section
                   title={t('Active projects')}
                   count={projectOrder.items().length}
-                  hint={projectOrder.items().length > 1 ? t('Calendar order · drag to customize') : t('with open tasks')}
+                  hint={projectOrder.items().length > 1 ? t('Calendar order · drag to customize') : undefined}
                   action={
                     <Button
                       variant="ghost"
@@ -350,7 +350,7 @@ export default function Dashboard(): JSX.Element {
                 >
                   <Show
                     when={projectOrder.items().length > 0}
-                    fallback={<p class={styles.dim}>{t('No project has open tasks right now.')}</p>}
+                    fallback={<p class={styles.dim}>{t('No project has open tasks or a place on the calendar right now.')}</p>}
                   >
                     {/* The wrapper scrolls, not the list itself: the drag hook measures rows against the list and
                         auto-scrolls the nearest scrolling ancestor. */}
@@ -748,6 +748,15 @@ function ProjectCardMini(props: {
         <div class={styles.miniBar}>
           <div class={styles.miniBarFill} style={{ width: `${percent(done(), total())}%` }} />
         </div>
+      </Show>
+      <Show when={props.project.start_date && !props.project.task_open}>
+        <p class={styles.projectSchedule}>
+          <CalendarRange size={11} />
+          {props.project.deadline
+            ? `${formatDate(props.project.start_date)} – ${formatDate(props.project.deadline)}`
+            : t('from {date}', { date: formatDate(props.project.start_date) })}
+          <span>· {t('No tasks yet')}</span>
+        </p>
       </Show>
       <ul class={styles.nextTasks}>
         <For each={props.project.next_tasks}>

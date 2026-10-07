@@ -227,6 +227,8 @@ export const projects: Record<string, string> = {
   'Every project and its tasks, side by side.': 'ყველა პროექტი და მისი დავალებები, გვერდიგვერდ.',
   'Show empty projects': 'ცარიელი პროექტების ჩვენება',
   'No project has open tasks right now.': 'ახლა არცერთ პროექტს არ აქვს ღია დავალება.',
+  'No project has open tasks or a place on the calendar right now.':
+    'ახლა არცერთ პროექტს არ აქვს ღია დავალება ან ადგილი კალენდარში.',
   'Turn on "Show empty projects" to add tasks to a project.': 'ჩართე „ცარიელი პროექტების ჩვენება“, რომ პროექტს დავალება დაუმატო.',
   'Open canvas view': 'ტილოს ხედის გახსნა',
   'with open tasks': 'ღია დავალებებით',
