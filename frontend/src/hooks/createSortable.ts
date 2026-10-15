@@ -85,6 +85,9 @@ export function createSortable<T>(options: SortableOptions<T>): Sortable<T> {
   const keyOf = (item: T) => String(options.key(item));
   const rows = (): HTMLElement[] => (container ? Array.from(container.querySelectorAll<HTMLElement>(`:scope > [${ATTR}]`)) : []);
   const rowFor = (key: SortableKey) => rows().find((el) => el.getAttribute(ATTR) === String(key));
+  /** Row top in container coordinates. An unpositioned container shares its rows' offsetParent, so subtract its own top. */
+  const topOf = (el: HTMLElement) =>
+    !container || el.offsetParent === container ? el.offsetTop : el.offsetTop - container.offsetTop;
 
   const commit = (next: T[], previous: T[]) => {
     const before = previous.map(keyOf).join('\u0000');
@@ -179,7 +182,7 @@ export function createSortable<T>(options: SortableOptions<T>): Sortable<T> {
       let slot = 0;
       for (const el of rows()) {
         if (el === row) continue;
-        if (el.offsetTop + el.offsetHeight / 2 < centre) slot += 1;
+        if (topOf(el) + el.offsetHeight / 2 < centre) slot += 1;
       }
       if (slot !== currentIndex && currentIndex >= 0) {
         const next = [...current];
@@ -190,7 +193,7 @@ export function createSortable<T>(options: SortableOptions<T>): Sortable<T> {
       }
       const maxTop = Math.max(0, container.clientHeight - row.offsetHeight);
       const clamped = Math.max(0, Math.min(maxTop, localY));
-      setOffset(clamped - row.offsetTop);
+      setOffset(clamped - topOf(row));
     };
 
     const autoScroll = () => {

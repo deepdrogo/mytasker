@@ -144,6 +144,33 @@
   min-width: max-content;
 }
 
+/* Each row is one element (label + track) so it can be dragged up and down as a whole. */
+/* Positioned so row offsetTop is measured from here, which the drag-to-reorder math expects. */
+.rows {
+  position: relative;
+  grid-column: 1 / -1;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: var(--label) calc(var(--days) * var(--day));
+}
+
+/* Above the other rows' sticky labels (3), below the sticky day and month headers. */
+.rowDragging {
+  z-index: 4 !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+}
+
+.rowDragging .rowLabel {
+  background: #1b1b1d;
+  color: var(--c-text);
+}
+
+.rowDragging .track {
+  background: #141416;
+}
+
 .labelCell,
 .rowLabel {
   position: sticky;
@@ -163,7 +190,7 @@
 .cornerTop,
 .corner {
   position: sticky;
-  z-index: 6;
+  z-index: 7;
   color: var(--c-text-faint);
   font-size: 10px;
   letter-spacing: 0.1em;
@@ -191,7 +218,7 @@
 .monthBand {
   position: sticky;
   top: 0;
-  z-index: 5;
+  z-index: 6;
   height: var(--band-h);
   border-bottom: 1px solid var(--c-border);
   background: #111112;
@@ -220,7 +247,7 @@
 .dayHeader {
   position: sticky;
   top: var(--band-h);
-  z-index: 4;
+  z-index: 5;
   height: 44px;
   border-bottom: 1px solid var(--c-border);
   background: #111112;
@@ -268,12 +295,62 @@
 
 .rowLabel {
   height: var(--row-h);
+  gap: var(--s-1);
+  padding-left: var(--s-2);
   color: var(--c-text-dim);
   font-size: var(--fs-sm);
 }
 
 .rowLabel:hover {
   color: var(--c-text);
+}
+
+.rowLink {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+  height: 100%;
+  color: inherit;
+}
+
+.rowGrip,
+.gripSlot {
+  width: 22px;
+  height: 28px;
+  flex: none;
+}
+
+.rowGrip {
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--c-text-faint);
+  cursor: grab;
+  opacity: 0.55;
+  transition:
+    opacity 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.rowLabel:hover .rowGrip,
+.rowGrip:focus-visible {
+  opacity: 1;
+}
+
+.rowGrip:hover,
+.rowGrip:focus-visible {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--c-text);
+}
+
+.rowDragging .rowGrip {
+  opacity: 1;
+  cursor: grabbing;
 }
 
 .rowName {
@@ -619,12 +696,23 @@
   }
 
   .rowLabel {
-    padding: 0 var(--s-4);
+    padding: 0 var(--s-3) 0 var(--s-1);
     font-size: var(--fs-xs);
+  }
+
+  .rowLink {
+    gap: var(--s-2);
   }
 
   .scroller {
     max-height: 58vh;
+  }
+}
+
+/* No hover on touch screens: the handle stays visible so rows can be grabbed. */
+@media (hover: none) {
+  .rowGrip {
+    opacity: 1;
   }
 }
 

@@ -213,6 +213,8 @@ export interface Project {
   member_count: number;
   prompt_count: number;
   tracked_seconds: number;
+  /** Hand-made order shared by the calendar and the dashboard; 0 everywhere means "by date". */
+  sort_order: number;
   version: number;
   created_at: ISODateTime;
   updated_at: ISODateTime;

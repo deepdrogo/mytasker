@@ -1,14 +1,24 @@
 import { A } from '@solidjs/router';
-import { Bitcoin, CalendarDays, CalendarX, ChevronLeft, ChevronRight, Infinity as InfinityIcon } from 'lucide-solid';
+import {
+  ArrowDownWideNarrow,
+  Bitcoin,
+  CalendarDays,
+  CalendarX,
+  ChevronLeft,
+  ChevronRight,
+  GripVertical,
+  Infinity as InfinityIcon,
+} from 'lucide-solid';
 import type { JSX } from 'solid-js';
-import { For, Show, createMemo, createSignal, onCleanup, onMount } from 'solid-js';
+import { For, Show, createEffect, createMemo, createSignal, on, onCleanup, onMount } from 'solid-js';
 import { Button } from '~/components/ui/Button';
 import { Input, Select } from '~/components/ui/Input';
 import { projectsApi } from '~/features/projects/api';
 import { CRYPTO_HUE, projectHue } from '~/features/projects/hue';
 import { settingsApi } from '~/features/settings/api';
 import { tasksApi } from '~/features/tasks/api';
-import { createQuery } from '~/hooks/createQuery';
+import { createQuery, invalidate } from '~/hooks/createQuery';
+import { createSortable } from '~/hooks/createSortable';
 import { locale, t } from '~/i18n';
 import { authStore } from '~/stores/auth';
 import { toast } from '~/stores/ui';
@@ -132,9 +142,18 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
 
   const visible = (dates: DateRange): boolean => overlapsWindow(dates, rangeStart(), rangeEnd());
 
-  /** Scheduled projects first, in date order; unscheduled rows stay below, ready to be drawn on. */
-  const projectRows = createMemo<TimelineRow[]>(() =>
-    props
+  /** Row order just dragged, held until the refetched list carries the saved `sort_order`. */
+  const [arranged, setArranged] = createSignal<Record<string, number> | null>(null);
+  createEffect(on(props.projects, () => setArranged(null), { defer: true }));
+
+  /**
+   * The order the dashboard uses too: the hand-made order first, then date (unscheduled rows below),
+   * then name. With no hand-made order every `sort_order` is 0, so rows simply follow their dates.
+   */
+  const projectRows = createMemo<TimelineRow[]>(() => {
+    const local = arranged();
+    const rank = (row: TimelineRow) => local?.[row.key] ?? row.project?.sort_order ?? 0;
+    return props
       .projects()
       .map((project) => {
         const fresh = resolve(project);
@@ -150,14 +169,46 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
         };
       })
       .sort((a, b) => {
+        if (rank(a) !== rank(b)) return rank(a) - rank(b);
         const first = baseDates(a).start;
         const second = baseDates(b).start;
-        if (first && second) return first === second ? a.name.localeCompare(b.name) : first < second ? -1 : 1;
-        if (first) return -1;
-        if (second) return 1;
-        return a.name.localeCompare(b.name);
-      }),
-  );
+        if (first !== second) {
+          if (!first) return 1;
+          if (!second) return -1;
+          return first < second ? -1 : 1;
+        }
+        return a.name.localeCompare(b.name) || a.project!.id - b.project!.id;
+      });
+  });
+
+  const hasHandMadeOrder = () => props.projects().some((project) => project.sort_order !== 0);
+  const [sortingByDates, setSortingByDates] = createSignal(false);
+
+  const saveRowOrder = async (rows: TimelineRow[]) => {
+    setArranged(Object.fromEntries(rows.map((row, index) => [row.key, index + 1])));
+    try {
+      await projectsApi.reorder(rows.map((row) => row.project!.id));
+      invalidate('today');
+    } catch {
+      setArranged(null);
+      toast(t('Could not save the order.'));
+    }
+  };
+
+  const rowSort = createSortable({ items: projectRows, key: (row) => row.key, onReorder: saveRowOrder });
+
+  const sortByDates = async () => {
+    setSortingByDates(true);
+    try {
+      await projectsApi.followCalendar();
+      invalidate('today');
+      toast(t('Sorted by dates'));
+    } catch {
+      toast(t('Could not save the order.'));
+    } finally {
+      setSortingByDates(false);
+    }
+  };
 
   /** Crypto world always sits on the last line: it is a private list, not one of the projects. */
   const cryptoRow = createMemo<TimelineRow>(() => {
@@ -365,17 +416,26 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
         : weekdaySegments(dates(), rangeStart(), rangeEnd());
     return (
       <>
-        <A
-          class={[styles.rowLabel, isCrypto ? styles.cryptoLabel : ''].filter(Boolean).join(' ')}
-          href={row.href}
-          title={row.name}
-          style={hueStyle(row)}
-        >
-          <Show when={isCrypto} fallback={<span class={styles.projectDot} data-priority={row.priority} />}>
-            <Bitcoin size={14} />
+        <div class={[styles.rowLabel, isCrypto ? styles.cryptoLabel : ''].filter(Boolean).join(' ')} style={hueStyle(row)}>
+          {/* Crypto world is pinned to the last line; its empty slot keeps the names aligned. */}
+          <Show when={!isCrypto} fallback={<span class={styles.gripSlot} />}>
+            <button
+              type="button"
+              class={styles.rowGrip}
+              {...rowSort.handleProps(row)}
+              aria-label={t('Move {name} up or down', { name: row.name })}
+              title={t('Drag to move up or down')}
+            >
+              <GripVertical size={14} />
+            </button>
           </Show>
-          <span class={styles.rowName}>{row.name}</span>
-        </A>
+          <A class={styles.rowLink} href={row.href} title={row.name}>
+            <Show when={isCrypto} fallback={<span class={styles.projectDot} data-priority={row.priority} />}>
+              <Bitcoin size={14} />
+            </Show>
+            <span class={styles.rowName}>{row.name}</span>
+          </A>
+        </div>
         <div
           class={[
             styles.track,
@@ -517,10 +577,23 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
           </h2>
           <p>
             {t('Draw across a row to schedule a project. Drag, stretch, or remove it from the calendar.')}{' '}
-            {t('Its tasks without dates of their own get the same start and due date and follow every change.')}
+            {t('Its tasks without dates of their own get the same start and due date and follow every change.')}{' '}
+            {t('Drag a row by its handle to move it up or down; the dashboard shows projects in the same order.')}
           </p>
         </div>
         <div class={styles.monthActions}>
+          <Show when={hasHandMadeOrder()}>
+            <Button
+              variant="ghost"
+              size="sm"
+              loading={sortingByDates()}
+              onClick={() => void sortByDates()}
+              title={t('Drop the hand-made order and list projects by their start date')}
+            >
+              <ArrowDownWideNarrow size={14} />
+              {t('Sort by dates')}
+            </Button>
+          </Show>
           <Button variant="ghost" size="icon-sm" onClick={() => shiftMonths(-1)} aria-label={t('Previous month')}>
             <ChevronLeft size={16} />
           </Button>
@@ -618,8 +691,20 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
             </For>
           </div>
 
-          <For each={projectRows()}>{(row) => renderRow(row)}</For>
-          {renderRow(cryptoRow())}
+          <div class={styles.rows} ref={rowSort.setContainer}>
+            <For each={rowSort.items()}>
+              {(row) => (
+                <div
+                  class={[styles.row, rowSort.isDragging(row) ? styles.rowDragging : ''].filter(Boolean).join(' ')}
+                  {...rowSort.itemProps(row)}
+                  style={rowSort.itemStyle(row)}
+                >
+                  {renderRow(row)}
+                </div>
+              )}
+            </For>
+          </div>
+          <div class={styles.row}>{renderRow(cryptoRow())}</div>
         </div>
       </div>
 

@@ -110,36 +110,48 @@ def test_dashboard_lists_calendar_projects_before_they_have_tasks(auth_client):
     assert projects[0]["task_open"] is None
 
 
-def test_rescheduling_a_project_puts_the_dashboard_back_on_calendar_order(auth_client):
+def test_calendar_rows_and_dashboard_share_one_hand_made_order(auth_client):
     today = timezone.localdate()
-    first = auth_client.post(BASE, {"name": "First", "start_date": str(today)}, format="json").data
-    second = auth_client.post(
-        BASE, {"name": "Second", "start_date": str(today + timedelta(days=3))}, format="json"
-    ).data
-    third = auth_client.post(
-        BASE, {"name": "Third", "start_date": str(today + timedelta(days=6))}, format="json"
-    ).data
+
+    def create(name, offset=None):
+        start = {"start_date": str(today + timedelta(days=offset))} if offset is not None else {}
+        return auth_client.post(BASE, {"name": name, **start}, format="json").data["id"]
+
+    first, second, third = create("First", 0), create("Second", 3), create("Third", 6)
+    # Not on the dashboard: finished and without tasks, but still a row on the calendar.
+    finished = create("Finished", -30)
+    auth_client.patch(f"{BASE}{finished}/", {"deadline": str(today - timedelta(days=20))}, format="json")
+
+    def calendar():
+        return [p["id"] for p in auth_client.get(f"{BASE}?ordering=manual").data["results"]]
 
     def dashboard():
         return [p["id"] for p in auth_client.get("/api/v1/today/").data["active_projects"]]
 
-    auth_client.post(f"{BASE}reorder/", {"ids": [third["id"], second["id"], first["id"]]}, format="json")
-    assert dashboard() == [third["id"], second["id"], first["id"]]
+    assert calendar() == [finished, first, second, third]
+    assert dashboard() == [first, second, third]
 
-    # Edits that leave the dates alone keep the hand-made order.
-    auth_client.patch(
-        f"{BASE}{second['id']}/", {"name": "Second!", "start_date": second["start_date"]}, format="json"
-    )
-    assert dashboard() == [third["id"], second["id"], first["id"]]
+    # Calendar drag (every row): Third to the top, Finished to the bottom.
+    auth_client.post(f"{BASE}reorder/", {"ids": [third, first, second, finished]}, format="json")
+    assert calendar() == [third, first, second, finished]
+    assert dashboard() == [third, first, second]
 
-    # Moving a project on the calendar hands the order back to the calendar.
-    moved = auth_client.patch(f"{BASE}{third['id']}/", {"start_date": str(today + timedelta(days=1))}, format="json")
+    # Dashboard drag (only its rows): the dashboard projects swap among their slots, Finished stays last.
+    auth_client.post(f"{BASE}reorder/", {"ids": [second, third, first]}, format="json")
+    assert calendar() == [second, third, first, finished]
+    assert dashboard() == [second, third, first]
+
+    # Moving a bar to other dates keeps the rows where the user put them.
+    moved = auth_client.patch(f"{BASE}{first}/", {"start_date": str(today - timedelta(days=5))}, format="json")
     assert moved.status_code == 200, moved.content
-    assert dashboard() == [first["id"], third["id"], second["id"]]
+    assert dashboard() == [second, third, first]
 
-    auth_client.post(f"{BASE}reorder/", {"ids": [second["id"], first["id"], third["id"]]}, format="json")
+    # A new project joins the bottom of the hand-made order instead of jumping to the top.
+    newcomer = create("Newcomer", -1)
+    assert calendar() == [second, third, first, finished, newcomer]
+
     assert auth_client.post(f"{BASE}follow-calendar/", {}, format="json").status_code == 204
-    assert dashboard() == [first["id"], third["id"], second["id"]]
+    assert calendar() == [finished, first, newcomer, second, third]
 
 
 def test_invite_join_and_group_visibility(client_for, user, other_user, stranger):

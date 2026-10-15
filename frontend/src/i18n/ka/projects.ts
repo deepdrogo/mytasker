@@ -244,4 +244,8 @@ export const projects: Record<string, string> = {
   'Move {name} to Not important': '{name} — არამნიშვნელოვანში გადატანა',
   'Important - click to move to Not important': 'მნიშვნელოვანი — დააჭირე არამნიშვნელოვანში გადასატანად',
   'Could not update the project.': 'პროექტი ვერ განახლდა.',
+  'Move {name} up or down': '{name} — ზემოთ ან ქვემოთ გადატანა',
+  'Drag to move up or down': 'გადაათრიე ზემოთ ან ქვემოთ',
+  'Drag a row by its handle to move it up or down; the dashboard shows projects in the same order.':
+    'რიგი სახელურით გადაათრიე ზემოთ ან ქვემოთ — დეშბორდზე პროექტები იმავე რიგით გამოჩნდება.',
 };

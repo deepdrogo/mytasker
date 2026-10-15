@@ -7,7 +7,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, Max
 from django.utils import timezone
 
 from apps.projects.models import Idea, Project, ProjectMembership
@@ -79,6 +79,7 @@ def create_project(actor: Actor, *, name: str, mode: str = Project.Mode.PRIVATE,
         raise ValidationFailed("Name is required.", fields={"name": ["This field is required."]})
     payload = {k: v for k, v in fields.items() if k in PROJECT_FIELDS}
     _assert_schedule(payload.get("start_date"), payload.get("deadline"))
+    payload.setdefault("sort_order", next_sort_order(actor.user))
     project = Project.objects.create(owner=actor.user, name=name, mode=mode, **payload)
     ProjectMembership.objects.create(
         project=project, user=actor.user, role=ProjectMembership.Role.OWNER, accepted_at=timezone.now()
@@ -94,7 +95,6 @@ def update_project(actor: Actor, project_id: int, *, expected_version: int | Non
         raise Conflict("Project changed elsewhere. Reload and try again.", code="version_conflict")
 
     changed = []
-    schedule_before = (project.start_date, project.deadline)
     for key, value in fields.items():
         if key not in PROJECT_FIELDS:
             continue
@@ -114,8 +114,6 @@ def update_project(actor: Actor, project_id: int, *, expected_version: int | Non
         from apps.tasks.project_dates import sync_project_tasks
 
         sync_project_tasks(project)
-        if (project.start_date, project.deadline) != schedule_before:
-            follow_calendar(actor.user)
     _event(project, EventName.PROJECT_UPDATED, actor, fields=sorted(changed))
     return project
 
@@ -166,30 +164,49 @@ def change_mode(actor: Actor, project_id: int, *, mode: str) -> Project:
     return project
 
 
+def _in_shared_order(user):
+    """Every project the user sees, in the one order the calendar, the project lists and the dashboard share."""
+    # visible_to() is DISTINCT, which cannot be ordered by columns outside the select list.
+    return (
+        Project.objects.filter(pk__in=Project.objects.visible_to(user).values("pk"))
+        .order_by("sort_order", F("start_date").asc(nulls_last=True), "name", "pk")
+        .values_list("pk", "sort_order")
+    )
+
+
 @transaction.atomic
 def reorder_projects(user, ordered_ids: list[int]) -> list[int]:
     """
-    Manual order for the dashboard / Active projects: `ordered_ids` is the full list as the user arranged it,
-    first id on top. Only projects the user can see are touched; unknown ids are ignored. `sort_order` is
-    written directly so `updated_at` / `version` stay put - ordering is a preference, not an edit.
-    Returns the ids that were actually reordered.
+    Manual order, first id on top. Callers send only the rows they show (the dashboard has its active projects,
+    the calendar everything), so the given projects swap places among the slots they already hold and every
+    other project keeps its position. The whole list is then numbered 1..n, which keeps the calendar and the
+    dashboard in the same order whichever of them was dragged. `sort_order` is written directly so
+    `updated_at` / `version` stay put - ordering is a preference, not an edit. Returns the ids reordered.
     """
     seen: set[int] = set()
     unique_ids = [pid for pid in ordered_ids if not (pid in seen or seen.add(pid))]
-    visible = set(Project.objects.visible_to(user).filter(pk__in=unique_ids).values_list("pk", flat=True))
-    applied = [pid for pid in unique_ids if pid in visible]
-    current = dict(Project.objects.filter(pk__in=applied).values_list("pk", "sort_order"))
-    for index, pid in enumerate(applied):
-        if current.get(pid) != index:
-            Project.objects.filter(pk=pid).update(sort_order=index)
+    everything = list(_in_shared_order(user))
+    position = {pk: index for index, (pk, _) in enumerate(everything)}
+    applied = [pid for pid in unique_ids if pid in position]
+    arranged = [pk for pk, _ in everything]
+    for slot, pid in zip(sorted(position[pid] for pid in applied), applied, strict=True):
+        arranged[slot] = pid
+    current = dict(everything)
+    changed = [
+        Project(pk=pid, sort_order=index) for index, pid in enumerate(arranged, start=1) if current[pid] != index
+    ]
+    Project.objects.bulk_update(changed, ["sort_order"])
     return applied
 
 
+def next_sort_order(user) -> int:
+    """New projects join the bottom of a hand-made order; without one (all zero) they simply sort by date."""
+    last = Project.objects.visible_to(user).aggregate(last=Max("sort_order"))["last"]
+    return last + 1 if last else 0
+
+
 def follow_calendar(user) -> int:
-    """
-    Drop the hand-made order so the dashboard lists projects the way the project calendar does. Runs whenever
-    a project is rescheduled: a saved order no longer matches the plan once the dates move.
-    """
+    """Drop the hand-made order: the calendar, the project lists and the dashboard go back to date order."""
     return Project.objects.visible_to(user).exclude(sort_order=0).update(sort_order=0)
 
 

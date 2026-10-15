@@ -40,13 +40,16 @@ export default function Dashboard(): JSX.Element {
   const activeProjects = () => query.data()?.active_projects ?? [];
   const projectGroups = createMemo(() => groupProjects(activeProjects()));
 
-  /** One group was dragged into a new order: save the whole list (every group, in shelf order) as the manual order. */
+  /**
+   * One group was dragged into a new order. Only that group is sent: its projects swap among the places they
+   * hold in the shared order, so the calendar rows of every other project stay where the user put them.
+   */
   const saveProjectOrder = async (key: ProjectGroupKey, arranged: TodayProject[]) => {
     const projects = projectGroups().flatMap((group) => (group.key === key ? arranged : group.items));
     // Keep the snapshot in step so any re-render shows the arranged order before the refetch lands.
     query.mutate((current) => (current ? { ...current, active_projects: projects } : current));
     try {
-      await projectsApi.reorder(projects.map((project) => project.id));
+      await projectsApi.reorder(arranged.map((project) => project.id));
     } catch {
       toast(t('Could not save the order.'));
       query.refetch();
@@ -93,7 +96,7 @@ export default function Dashboard(): JSX.Element {
     query.mutate((current) => (current ? { ...current, active_projects: projects } : current));
     try {
       await projectsApi.followCalendar();
-      toast(t('Projects aligned with calendar'));
+      toast(t('Sorted by dates'));
     } catch {
       toast(t('Could not save the order.'));
     } finally {
@@ -347,16 +350,17 @@ export default function Dashboard(): JSX.Element {
                 <Section
                   title={t('Active projects')}
                   count={activeProjects().length}
-                  hint={activeProjects().length > 1 ? t('Calendar order · drag to customize') : undefined}
+                  hint={activeProjects().length > 1 ? t('Same order as the project calendar · drag to change') : undefined}
                   action={
                     <Button
                       variant="ghost"
                       size="sm"
                       loading={aligningProjects()}
                       onClick={() => void alignProjectsWithCalendar()}
+                      title={t('Drop the hand-made order and list projects by their start date')}
                     >
                       <CalendarRange size={13} />
-                      {t('Align with calendar')}
+                      {t('Sort by dates')}
                     </Button>
                   }
                   link={{ href: '/projects/canvas', label: t('Canvas') }}

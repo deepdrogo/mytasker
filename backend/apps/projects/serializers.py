@@ -54,6 +54,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             "member_count",
             "prompt_count",
             "tracked_seconds",
+            "sort_order",
             "version",
             "created_at",
             "updated_at",
