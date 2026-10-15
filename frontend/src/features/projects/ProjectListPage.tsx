@@ -1,4 +1,4 @@
-import { FolderKanban, Plus } from 'lucide-solid';
+import { CircleDot, FolderKanban, Plus, Rocket, Star } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { createSignal, For, Show } from 'solid-js';
 import { Page } from '~/components/shared/Page';
@@ -8,11 +8,19 @@ import { Input, Select } from '~/components/ui/Input';
 import { projectListKey, projectsApi, type ProjectListParams } from '~/features/projects/api';
 import { ProjectCard } from '~/features/projects/ProjectCard';
 import { ProjectEditor } from '~/features/projects/ProjectEditor';
+import { GROUP_LABEL, groupProjects, type ProjectGroupKey } from '~/features/projects/groups';
 import { ProjectTimeline } from '~/features/projects/ProjectTimeline';
 import { createQuery } from '~/hooks/createQuery';
 import { t } from '~/i18n';
 import type { ProjectCategory, ProjectKind } from '~/types';
+import { cx } from '~/utils/cx';
 import styles from './ProjectListPage.module.css';
+
+const GROUP_ICON: Record<ProjectGroupKey, () => JSX.Element> = {
+  important: () => <Star size={12} />,
+  normal: () => <CircleDot size={12} />,
+  startup: () => <Rocket size={12} />,
+};
 
 const PROJECT_TABS = [
   { label: 'All', href: '/projects/all' },
@@ -128,8 +136,22 @@ export function ProjectListPage(props: ProjectListPageProps): JSX.Element {
                     />
                   }
                 >
-                  <div class={styles.grid}>
-                    <For each={data().results}>{(project) => <ProjectCard project={project} />}</For>
+                  {/* Important / Not important / Startups, each keeping the chosen sort inside it. */}
+                  <div class={styles.groups}>
+                    <For each={groupProjects(data().results, props.defaultCategory !== 'startup')}>
+                      {(group) => (
+                        <section class={cx(styles.group, styles[`group-${group.key}`])}>
+                          <h3 class={styles.groupHead}>
+                            {GROUP_ICON[group.key]()}
+                            <span>{t(GROUP_LABEL[group.key])}</span>
+                            <span class={styles.groupCount}>{group.items.length}</span>
+                          </h3>
+                          <div class={styles.grid}>
+                            <For each={group.items}>{(project) => <ProjectCard project={project} />}</For>
+                          </div>
+                        </section>
+                      )}
+                    </For>
                   </div>
                 </Show>
               </>

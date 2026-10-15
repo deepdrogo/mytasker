@@ -60,6 +60,8 @@ class RoutineCompletion(TimeStampedModel):
     completed = models.BooleanField(default=False)
     completed_at = models.DateTimeField(null=True, blank=True)
     manual_minutes = models.PositiveIntegerField(null=True, blank=True)
+    # Set when the user unticks the item; reaching the time target then no longer ticks it again that day.
+    auto_dismissed = models.BooleanField(default=False)
 
     class Meta:
         db_table = "routines_completion"

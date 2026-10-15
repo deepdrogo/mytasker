@@ -971,7 +971,8 @@ def reorder_tasks(user, ordered_ids: list[int]) -> list[int]:
         siblings = siblings.filter(project_id=first.project_id)
     else:
         siblings = siblings.filter(project__isnull=True, kind=first.kind)
-    siblings = list(siblings.order_by("sort_order", "id"))
+    # Same order the "manual" list shows, so tasks the client did not send keep the place the user saw them in.
+    siblings = list(siblings.order_by("sort_order", "-created_at"))
 
     by_id = {task.pk: task for task in siblings}
     ordered = [by_id[task_id] for task_id in unique_ids if task_id in by_id]

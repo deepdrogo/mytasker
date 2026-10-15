@@ -158,15 +158,15 @@ def test_start_through_due_spans_the_calendar_and_leaves_today_alone(auth_client
         "/api/v1/tasks/",
         {
             "title": "Span",
-            "start_at": "2026-10-07T00:00:00Z",
-            "due_at": "2026-10-09T23:59:00Z",
+            "start_at": "2030-10-07T00:00:00Z",
+            "due_at": "2030-10-09T23:59:00Z",
             "due_has_time": False,
         },
         format="json",
     )
     auth_client.post(
         "/api/v1/tasks/",
-        {"title": "Thursday only", "due_at": "2026-10-08T23:59:00Z", "due_has_time": False},
+        {"title": "Thursday only", "due_at": "2030-10-08T23:59:00Z", "due_has_time": False},
         format="json",
     )
 
@@ -177,17 +177,17 @@ def test_start_through_due_spans_the_calendar_and_leaves_today_alone(auth_client
         ).data
         return sorted(row["title"] for row in data["results"])
 
-    assert titles("2026-10-07") == ["Span"]
-    assert titles("2026-10-08") == ["Span", "Thursday only"]
-    assert titles("2026-10-09") == ["Span"]
-    assert titles("2026-10-10") == []
+    assert titles("2030-10-07") == ["Span"]
+    assert titles("2030-10-08") == ["Span", "Thursday only"]
+    assert titles("2030-10-09") == ["Span"]
+    assert titles("2030-10-10") == []
 
     today = auth_client.get("/api/v1/tasks/", {"view": "today", "top_level": "true"}).data
     assert "Span" not in {row["title"] for row in today["results"]}
 
     rejected = auth_client.post(
         "/api/v1/tasks/",
-        {"title": "Backwards", "start_at": "2026-10-09T00:00:00Z", "due_at": "2026-10-07T23:59:00Z"},
+        {"title": "Backwards", "start_at": "2030-10-09T00:00:00Z", "due_at": "2030-10-07T23:59:00Z"},
         format="json",
     )
     assert rejected.status_code == 400

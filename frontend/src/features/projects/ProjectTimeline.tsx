@@ -5,6 +5,7 @@ import { For, Show, createMemo, createSignal, onCleanup, onMount } from 'solid-j
 import { Button } from '~/components/ui/Button';
 import { Input, Select } from '~/components/ui/Input';
 import { projectsApi } from '~/features/projects/api';
+import { CRYPTO_HUE, projectHue } from '~/features/projects/hue';
 import { settingsApi } from '~/features/settings/api';
 import { tasksApi } from '~/features/tasks/api';
 import { createQuery } from '~/hooks/createQuery';
@@ -35,8 +36,6 @@ const WINDOW_MONTHS = 12;
 const DEFAULT_SPAN_DAYS = 3;
 const DRAG_THRESHOLD_PX = 4;
 const CRYPTO_KEY = 'crypto';
-/** Crypto world's gold, matching its icon. */
-const CRYPTO_HUE = 40;
 
 /**
  * One schedulable line on the board: a project, or the Crypto world list (not a project, so its dates
@@ -145,7 +144,7 @@ export function ProjectTimeline(props: { projects: () => Project[]; onChanged: (
           href: `/projects/${project.id}/tasks`,
           editable: Boolean(project.capabilities.manage_project),
           dates: { start: fresh.start_date, end: fresh.deadline },
-          hue: (project.id * 47 + 185) % 360,
+          hue: projectHue(project.id),
           priority: project.priority,
           project,
         };

@@ -71,3 +71,36 @@
   color: var(--c-text);
   font-weight: var(--fw-medium);
 }
+
+.star {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin: -3px 0 -3px -4px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: none;
+  color: var(--c-text-faint);
+  cursor: pointer;
+  transition:
+    color var(--t-fast),
+    border-color var(--t-fast);
+}
+
+.star:hover {
+  color: #f4c95d;
+  border-color: rgba(244, 201, 93, 0.35);
+}
+
+.starOn,
+.starOn:hover {
+  color: #f4c95d;
+}
+
+.starOn svg {
+  fill: currentColor;
+  filter: drop-shadow(0 0 6px rgba(244, 201, 93, 0.55));
+}

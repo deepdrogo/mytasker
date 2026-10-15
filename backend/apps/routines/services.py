@@ -8,7 +8,7 @@ from django.utils import timezone
 from apps.routines.models import Routine, RoutineCompletion, RoutineItem, Rule, RuleCompletion
 from apps.translations.services import request_translation
 from common.exceptions import NotFound, ValidationFailed
-from common.tz import now_for, today_for
+from common.tz import day_bounds, now_for, today_for
 
 ITEM_FIELDS = {
     "name",
@@ -145,6 +145,7 @@ def set_completion(
     completion, _ = RoutineCompletion.objects.get_or_create(item=item, date=day)
     completion.completed = completed
     completion.completed_at = timezone.now() if completed else None
+    completion.auto_dismissed = not completed
     if manual_minutes is not None:
         completion.manual_minutes = manual_minutes
     completion.save()
@@ -155,6 +156,53 @@ def completions_for_day(user, day: date | None = None) -> dict[int, RoutineCompl
     day = day or today_for(user)
     rows = RoutineCompletion.objects.filter(item__routine__owner=user, date=day)
     return {row.item_id: row for row in rows}
+
+
+def tracked_for_day(user, day: date | None = None) -> dict[int, int]:
+    """
+    Seconds spent on each routine item that day. An item that counts as business time measures the whole
+    day's business time (the dashboard's Business timer included), not only time started from the item itself.
+    """
+    from apps.time_tracking.services import totals_for_window
+
+    day = day or today_for(user)
+    totals = totals_for_window(user, *day_bounds(user, day))
+    tracked = dict(totals["by_routine_item"])
+    business_items = RoutineItem.objects.filter(
+        routine__owner=user, routine__deleted_at__isnull=True, counts_as_business=True
+    ).values_list("pk", flat=True)
+    for pk in business_items:
+        tracked[pk] = max(tracked.get(pk, 0), totals["business"])
+    return tracked
+
+
+def minutes_spent(item: RoutineItem, completion: RoutineCompletion | None, tracked: dict[int, int]) -> int:
+    if completion is not None and completion.manual_minutes is not None:
+        return completion.manual_minutes
+    return int(tracked.get(item.pk, 0) // 60)
+
+
+def progress_for_day(user, day: date | None = None) -> tuple[dict[int, RoutineCompletion], dict[int, int]]:
+    """
+    Completions and tracked seconds for the day, after ticking every item whose time target has been reached
+    (Business once the day's business hours are in, Training once its timer hits the target, ...).
+    An item the user unticked by hand stays unticked for that day.
+    """
+    day = day or today_for(user)
+    tracked = tracked_for_day(user, day)
+    completions = completions_for_day(user, day)
+    now = timezone.now()
+    for item in items_for_day(user, None, day):
+        completion = completions.get(item.pk)
+        if completion is not None and (completion.completed or completion.auto_dismissed):
+            continue
+        if item.target_minutes <= 0 or minutes_spent(item, completion, tracked) < item.target_minutes:
+            continue
+        completion, _ = RoutineCompletion.objects.update_or_create(
+            item=item, date=day, defaults={"completed": True, "completed_at": now}
+        )
+        completions[item.pk] = completion
+    return completions, tracked
 
 
 # ------------------------------------------------------------------------------- rules

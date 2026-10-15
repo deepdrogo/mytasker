@@ -22,6 +22,67 @@
   gap: var(--s-4);
 }
 
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-8);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin: 0;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-text-dim);
+}
+
+.groupHead::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--c-border-strong), transparent);
+}
+
+.groupCount {
+  padding: 1px 7px;
+  border-radius: var(--r-full);
+  background: rgba(255, 255, 255, 0.06);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0;
+  color: var(--c-text-dim);
+}
+
+.group-important .groupHead {
+  color: #f4c95d;
+}
+
+.group-important .groupHead svg {
+  fill: currentColor;
+}
+
+.group-important .groupHead::after {
+  background: linear-gradient(90deg, rgba(244, 201, 93, 0.45), transparent);
+}
+
+.group-startup .groupHead {
+  color: #9db8ff;
+}
+
+.group-startup .groupHead::after {
+  background: linear-gradient(90deg, rgba(157, 184, 255, 0.4), transparent);
+}
+
 @media (max-width: 599px) {
   .grid {
     grid-template-columns: 1fr;

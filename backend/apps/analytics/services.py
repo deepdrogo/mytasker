@@ -117,7 +117,7 @@ def compute_day(user, day: date) -> DayMetrics:
     m.sleep_target_minutes = int(getattr(prefs, "sleep_target_minutes", 480) or 0)
 
     items = routine_services.items_for_day(user, None, day)
-    completions = routine_services.completions_for_day(user, day)
+    completions, _ = routine_services.progress_for_day(user, day)
     m.routine_items_total = len(items)
     m.routine_items_completed = sum(
         1 for item in items if completions.get(item.pk) and completions[item.pk].completed

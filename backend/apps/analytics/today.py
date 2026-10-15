@@ -101,8 +101,7 @@ def today_snapshot(user, request=None) -> dict:
     routine_kind = None
     current_item = routine_services.current_item(user)
     routine_items = routine_services.items_for_day(user, routine_kind, day)
-    completions = routine_services.completions_for_day(user, day)
-    tracked = time_services.tracked_seconds_by_routine_item(user, day)
+    completions, tracked = routine_services.progress_for_day(user, day)
     routine_ctx = {"completions": completions, "tracked": tracked}
 
     business_items = [i for i in routine_items if i.routine.kind == Routine.Kind.BUSINESS]
@@ -119,17 +118,8 @@ def today_snapshot(user, request=None) -> dict:
         .filter(status__in=[Project.Status.ACTIVE, Project.Status.PAUSED])
         .filter(Q(task_open__gt=0) | on_calendar)
     )
-    manually_ordered = active_qs.exclude(sort_order=0).exists()
-    ordering = (
-        ("sort_order", "-updated_at")
-        if manually_ordered
-        else (
-            models_f_nulls_last("start_date"),
-            "name",
-        )
-    )
     active_projects = list(
-        active_qs.order_by(*ordering).values(
+        active_qs.order_by("sort_order", models_f_nulls_last("start_date"), "name").values(
             "id",
             "name",
             "priority",
@@ -149,7 +139,7 @@ def today_snapshot(user, request=None) -> dict:
         # Up to five next open tasks per project so the card shows what is actually pending.
         rows = (
             base.filter(OPEN, project_id__in=project_ids)
-            .order_by("project_id", "priority_rank", "due_at", "id")
+            .order_by("project_id", "sort_order", "-created_at")
             .values("id", "project_id", "title", "priority", "due_at", "status")
         )
         for row in rows:

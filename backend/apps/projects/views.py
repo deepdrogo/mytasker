@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date
 
 import django_filters as filters
+from django.db.models import Q
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
@@ -44,7 +45,8 @@ class ProjectFilter(filters.FilterSet):
 
     def filter_view(self, queryset, name, value):
         if value == "active":
-            return queryset.filter(kind=Project.Kind.ACTIVE).exclude(
+            # Startups are always in play: they sit with the active projects, in their own group.
+            return queryset.filter(Q(kind=Project.Kind.ACTIVE) | Q(category=Project.Category.STARTUP)).exclude(
                 status__in=[Project.Status.ARCHIVED, Project.Status.COMPLETED]
             )
         if value == "open":
@@ -66,7 +68,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectSerializer
     filterset_class = ProjectFilter
     ordering_map = {
-        "manual": ["sort_order", "-created_at"],
+        # Hand-made order first; untouched projects follow the project calendar, like the dashboard.
+        "manual": ["sort_order", "start_date", "name"],
         "name": ["name"],
         "deadline": ["deadline", "id"],
         "updated": ["updated_at"],

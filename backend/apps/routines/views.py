@@ -17,17 +17,14 @@ from apps.routines.serializers import (
     RuleKeptSerializer,
     RuleSerializer,
 )
-from apps.time_tracking.services import tracked_seconds_by_routine_item
 from common.exceptions import ValidationFailed
 from common.tz import today_for
 
 
 def _context(user, day: date | None = None) -> dict:
     day = day or today_for(user)
-    return {
-        "completions": services.completions_for_day(user, day),
-        "tracked": tracked_seconds_by_routine_item(user, day),
-    }
+    completions, tracked = services.progress_for_day(user, day)
+    return {"completions": completions, "tracked": tracked}
 
 
 def _parse_day(request) -> date | None:

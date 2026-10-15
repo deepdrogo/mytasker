@@ -549,7 +549,6 @@ def _routine_row(item, completion=None, tracked_seconds: int = 0) -> dict[str, A
 def list_routine(actor: Actor, args: ListRoutineIn) -> dict:
     from apps.routines import services
     from apps.routines.models import RoutineItem
-    from apps.time_tracking.services import tracked_seconds_by_routine_item
 
     user = actor.user
     day = today_for(user)
@@ -563,8 +562,7 @@ def list_routine(actor: Actor, args: ListRoutineIn) -> dict:
             qs = qs.filter(routine__kind=args.kind)
         items = list(qs)
     items.sort(key=lambda i: (i.routine.kind, i.order, i.start_time or datetime.min.time(), i.pk))
-    completions = services.completions_for_day(user, day)
-    tracked = tracked_seconds_by_routine_item(user, day)
+    completions, tracked = services.progress_for_day(user, day)
     current = services.current_item(user, args.kind)
     return {
         "date": str(day),

@@ -2,7 +2,7 @@
 // Built by drogoz · https://github.com/deepdrogo/mytasker
 
 import { A } from '@solidjs/router';
-import { CalendarOff, CalendarRange, Check, Circle, Flame, GripVertical, Handshake, Moon, Play, Rocket, ScrollText, Square, Undo2, UserCheck, X } from 'lucide-solid';
+import { CalendarOff, CalendarRange, Check, Circle, CircleDot, Flame, GripVertical, Handshake, Moon, Play, Rocket, ScrollText, Square, Star, Undo2, UserCheck, X } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For, Show, createMemo, createSignal, onCleanup } from 'solid-js';
 import { Page } from '~/components/shared/Page';
@@ -12,6 +12,7 @@ import { Button } from '~/components/ui/Button';
 import { DailyCheckinList, NoCheckinsToday } from '~/features/checkins/DailyCheckinList';
 import { dashboardApi } from '~/features/dashboard/api';
 import { projectsApi } from '~/features/projects/api';
+import { GROUP_LABEL, groupProjects, isImportant, toggledPriority, type ProjectGroupKey } from '~/features/projects/groups';
 import { routinesApi, rulesApi } from '~/features/routines/api';
 import { ShareDialog } from '~/features/sharing/ShareDialog';
 import { tasksApi } from '~/features/tasks/api';
@@ -36,21 +37,39 @@ export default function Dashboard(): JSX.Element {
   const [shareTasks, setShareTasks] = createSignal<Task[] | null>(null);
   const [aligningProjects, setAligningProjects] = createSignal(false);
 
-  // Active projects are arranged by hand: drag the grip (or use arrow keys on it), the order is saved per user list.
-  const projectOrder = createSortable<TodayProject>({
-    items: () => query.data()?.active_projects ?? [],
-    key: (project) => project.id,
-    onReorder: async (projects) => {
-      // Keep the snapshot in step so any re-render shows the arranged order before the refetch lands.
-      query.mutate((current) => (current ? { ...current, active_projects: projects } : current));
-      try {
-        await projectsApi.reorder(projects.map((project) => project.id));
-      } catch {
-        toast(t('Could not save the order.'));
-        query.refetch();
-      }
-    },
-  });
+  const activeProjects = () => query.data()?.active_projects ?? [];
+  const projectGroups = createMemo(() => groupProjects(activeProjects()));
+
+  /** One group was dragged into a new order: save the whole list (every group, in shelf order) as the manual order. */
+  const saveProjectOrder = async (key: ProjectGroupKey, arranged: TodayProject[]) => {
+    const projects = projectGroups().flatMap((group) => (group.key === key ? arranged : group.items));
+    // Keep the snapshot in step so any re-render shows the arranged order before the refetch lands.
+    query.mutate((current) => (current ? { ...current, active_projects: projects } : current));
+    try {
+      await projectsApi.reorder(projects.map((project) => project.id));
+    } catch {
+      toast(t('Could not save the order.'));
+      query.refetch();
+    }
+  };
+
+  /** Star / unstar: moves the project between Important and Not important everywhere. */
+  const toggleImportant = async (project: TodayProject) => {
+    const priority = toggledPriority(project);
+    query.mutate((current) =>
+      current
+        ? { ...current, active_projects: current.active_projects.map((p) => (p.id === project.id ? { ...p, priority } : p)) }
+        : current,
+    );
+    try {
+      await projectsApi.update(project.id, { priority });
+      toast(isImportant({ priority }) ? t('Marked important') : t('Moved to Not important'));
+    } catch {
+      toast(t('Could not update the project.'));
+    } finally {
+      query.refetch();
+    }
+  };
 
   // Live clock so elapsed timers tick without refetching.
   const [tick, setTick] = createSignal(0);
@@ -61,7 +80,7 @@ export default function Dashboard(): JSX.Element {
   const refresh = () => query.refetch();
 
   const alignProjectsWithCalendar = async () => {
-    const projects = [...projectOrder.items()].sort((a, b) => {
+    const projects = [...activeProjects()].sort((a, b) => {
       if (a.start_date && b.start_date) {
         if (a.start_date !== b.start_date) return a.start_date < b.start_date ? -1 : 1;
         return a.name.localeCompare(b.name);
@@ -220,23 +239,6 @@ export default function Dashboard(): JSX.Element {
                   </Section>
                 </Show>
 
-                <Section
-                  title={t('Daily check-ins')}
-                  hint={
-                    d().daily_checkins.length
-                      ? `${d().daily_checkins.filter((item) => item.checked).length}/${d().daily_checkins.length} · ${t('from the project calendar')}`
-                      : t('from the project calendar')
-                  }
-                  link={{ href: '/projects/checkins', label: t('History') }}
-                >
-                  <Show
-                    when={d().daily_checkins.length > 0}
-                    fallback={<NoCheckinsToday />}
-                  >
-                    <DailyCheckinList items={d().daily_checkins} onChanged={refresh} />
-                  </Show>
-                </Section>
-
                 <Show when={d().tasks.focus.length > 0}>
                   <Section title={t('Focus')} hint={t('High priority, no date')}>
                     <TaskList tasks={d().tasks.focus} compact showProject onOpen={setActiveTask} onChanged={refresh} onShare={share} />
@@ -269,6 +271,17 @@ export default function Dashboard(): JSX.Element {
                     />
                   </Section>
                 </div>
+
+                <Section
+                  title={t('Daily check-ins')}
+                  count={d().daily_checkins.length || undefined}
+                  hint={t('from the project calendar')}
+                  link={{ href: '/projects/checkins', label: t('History') }}
+                >
+                  <Show when={d().daily_checkins.length > 0} fallback={<NoCheckinsToday />}>
+                    <DailyCheckinList items={d().daily_checkins} onChanged={refresh} />
+                  </Show>
+                </Section>
 
                 <Section title={t('Next 7 days')} count={d().tasks.upcoming.length} link={{ href: '/tasks/upcoming', label: t('Upcoming') }}>
                   <Show when={upcomingGroups().length > 0} fallback={<p class={styles.dim}>{t('Nothing scheduled ahead.')}</p>}>
@@ -333,8 +346,8 @@ export default function Dashboard(): JSX.Element {
               <section class={styles.col}>
                 <Section
                   title={t('Active projects')}
-                  count={projectOrder.items().length}
-                  hint={projectOrder.items().length > 1 ? t('Calendar order · drag to customize') : undefined}
+                  count={activeProjects().length}
+                  hint={activeProjects().length > 1 ? t('Calendar order · drag to customize') : undefined}
                   action={
                     <Button
                       variant="ghost"
@@ -349,26 +362,24 @@ export default function Dashboard(): JSX.Element {
                   link={{ href: '/projects/canvas', label: t('Canvas') }}
                 >
                   <Show
-                    when={projectOrder.items().length > 0}
+                    when={activeProjects().length > 0}
                     fallback={<p class={styles.dim}>{t('No project has open tasks or a place on the calendar right now.')}</p>}
                   >
-                    {/* The wrapper scrolls, not the list itself: the drag hook measures rows against the list and
-                        auto-scrolls the nearest scrolling ancestor. */}
-                    <div class={cx(projectOrder.items().length > 4 && styles.projectsScroll)}>
-                      <ul class={styles.projects} ref={projectOrder.setContainer}>
-                        <For each={projectOrder.items()}>
-                          {(p, index) => (
-                            <ProjectCardMini
-                              project={p}
-                              minutes={d().metrics.project_minutes[String(p.id)] ?? 0}
-                              onOpenTask={(id) => void tasksApi.get(id).then(setActiveTask)}
-                              sortable={projectOrder}
-                              position={index() + 1}
-                              total={projectOrder.items().length}
-                            />
-                          )}
-                        </For>
-                      </ul>
+                    <div class={styles.projectGroups}>
+                      {/* Keyed by group name, so a refetch updates a group in place instead of remounting it. */}
+                      <For each={projectGroups().map((group) => group.key)}>
+                        {(key) => (
+                          <ProjectGroupBlock
+                            group={key}
+                            projects={projectGroups().find((group) => group.key === key)?.items ?? []}
+                            minutes={d().metrics.project_minutes}
+                            onReorder={(items) => void saveProjectOrder(key, items)}
+                            onToggleImportant={(project) => void toggleImportant(project)}
+                            onOpenTask={(id) => void tasksApi.get(id).then(setActiveTask)}
+                            onTasksReordered={refresh}
+                          />
+                        )}
+                      </For>
                     </div>
                   </Show>
                 </Section>
@@ -692,12 +703,70 @@ function RulesBlock(props: { rules: Rule[]; onChanged: () => void }): JSX.Elemen
 
 /** The top three slots carry a faint colour so the day's order reads at a glance: 1 red, 2 amber, 3 green. */
 const RANK_CLASS: Record<number, string> = { 1: 'rank1', 2: 'rank2', 3: 'rank3' };
+const GROUP_ICON: Record<ProjectGroupKey, () => JSX.Element> = {
+  important: () => <Star size={12} />,
+  normal: () => <CircleDot size={12} />,
+  startup: () => <Rocket size={12} />,
+};
 
-/** Compact project card for the dashboard: progress, next open tasks, tracked minutes, drag grip to reorder. */
+/** One shelf of the Active projects list (Important / Not important / Startups), arranged by drag inside it. */
+function ProjectGroupBlock(props: {
+  group: ProjectGroupKey;
+  projects: TodayProject[];
+  minutes: Record<string, number>;
+  onReorder: (projects: TodayProject[]) => void;
+  onToggleImportant: (project: TodayProject) => void;
+  onOpenTask: (id: number) => void;
+  onTasksReordered: () => void;
+}): JSX.Element {
+  const sortable = createSortable<TodayProject>({
+    items: () => props.projects,
+    key: (project) => project.id,
+    onReorder: (projects) => props.onReorder(projects),
+  });
+  return (
+    <div class={cx(styles.projectGroup, styles[`group-${props.group}`])}>
+      <div class={styles.projectGroupHead}>
+        {GROUP_ICON[props.group]()}
+        <span>{t(GROUP_LABEL[props.group])}</span>
+        <span class={styles.count}>{props.projects.length}</span>
+      </div>
+      {/* The wrapper scrolls, not the list itself: the drag hook measures rows against the list and
+          auto-scrolls the nearest scrolling ancestor. */}
+      <div class={cx(props.projects.length > 4 && styles.projectsScroll)}>
+        <ul class={styles.projects} ref={sortable.setContainer}>
+          <For each={sortable.items()}>
+            {(project, index) => (
+              <ProjectCardMini
+                project={project}
+                minutes={props.minutes[String(project.id)] ?? 0}
+                onOpenTask={props.onOpenTask}
+                onToggleImportant={() => props.onToggleImportant(project)}
+                onTasksReordered={props.onTasksReordered}
+                sortable={sortable}
+                position={index() + 1}
+                total={sortable.items().length}
+              />
+            )}
+          </For>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+type NextTask = TodayProject['next_tasks'][number];
+
+/**
+ * Compact project card for the dashboard: progress, the next open tasks in the project's own order (drag them
+ * here or on the project page - it is one order), tracked minutes, a star for Important, a grip to reorder.
+ */
 function ProjectCardMini(props: {
   project: TodayProject;
   minutes: number;
   onOpenTask: (id: number) => void;
+  onToggleImportant: () => void;
+  onTasksReordered: () => void;
   sortable: Sortable<TodayProject>;
   position: number;
   total: number;
@@ -706,10 +775,24 @@ function ProjectCardMini(props: {
   const done = () => props.project.task_done ?? 0;
   const use12h = () => authStore.user()?.preferences.time_format === '12h';
   const name = () => tx('project', props.project.id, 'name', props.project.name);
+  const important = () => isImportant(props.project);
   const rankClass = () => {
     const key = RANK_CLASS[props.position];
     return key ? styles[key] : undefined;
   };
+  const taskOrder = createSortable<NextTask>({
+    items: () => props.project.next_tasks,
+    key: (task) => task.id,
+    onReorder: async (tasks) => {
+      try {
+        await tasksApi.reorder(tasks.map((task) => task.id));
+      } catch {
+        toast(t('Could not save the order.'));
+      } finally {
+        props.onTasksReordered();
+      }
+    },
+  });
   return (
     <li
       class={cx(styles.projectCard, rankClass(), props.sortable.isDragging(props.project) && styles.projectDragging)}
@@ -743,6 +826,16 @@ function ProjectCardMini(props: {
             <Show when={props.minutes > 0}> · {formatMinutes(props.minutes)}</Show>
           </span>
         </A>
+        <button
+          type="button"
+          class={cx(styles.starBtn, important() && styles.starOn)}
+          onClick={() => props.onToggleImportant()}
+          aria-pressed={important()}
+          aria-label={important() ? t('Move {name} to Not important', { name: name() }) : t('Mark {name} important', { name: name() })}
+          title={important() ? t('Important - click to move to Not important') : t('Mark important')}
+        >
+          <Star size={14} />
+        </button>
       </div>
       <Show when={total() > 0}>
         <div class={styles.miniBar}>
@@ -758,10 +851,29 @@ function ProjectCardMini(props: {
           <span>· {t('No tasks yet')}</span>
         </p>
       </Show>
-      <ul class={styles.nextTasks}>
-        <For each={props.project.next_tasks}>
-          {(task) => (
-            <li>
+      <ul class={styles.nextTasks} ref={taskOrder.setContainer}>
+        <For each={taskOrder.items()}>
+          {(task, index) => (
+            <li
+              class={cx(styles.nextTaskRow, taskOrder.isDragging(task) && styles.nextTaskDragging)}
+              {...taskOrder.itemProps(task)}
+              style={taskOrder.itemStyle(task)}
+            >
+              <Show when={taskOrder.items().length > 1}>
+                <button
+                  type="button"
+                  class={styles.taskGrip}
+                  {...taskOrder.handleProps(task)}
+                  aria-label={t('Reorder {name} ({position} of {total})', {
+                    name: tx('task', task.id, 'title', task.title),
+                    position: index() + 1,
+                    total: taskOrder.items().length,
+                  })}
+                  title={t('Drag to reorder · arrow keys to move')}
+                >
+                  <GripVertical size={12} />
+                </button>
+              </Show>
               <button type="button" class={styles.nextTask} onClick={() => props.onOpenTask(task.id)}>
                 <PriorityMark priority={task.priority} />
                 <span class={styles.nextTaskTitle}>{tx('task', task.id, 'title', task.title)}</span>

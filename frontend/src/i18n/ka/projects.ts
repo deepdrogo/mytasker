@@ -234,4 +234,14 @@ export const projects: Record<string, string> = {
   'with open tasks': 'ღია დავალებებით',
   'Position {position}': 'პოზიცია {position}',
   'Time on this project counts as business time': 'ამ პროექტზე დახარჯული დრო ბიზნეს დროდ ითვლება',
+  // Important / Not important / Startups shelves
+  Important: 'მნიშვნელოვანი',
+  'Not important': 'არამნიშვნელოვანი',
+  'Marked important': 'მონიშნულია მნიშვნელოვნად',
+  'Moved to Not important': 'გადავიდა არამნიშვნელოვანში',
+  'Mark important': 'მნიშვნელოვნად მონიშვნა',
+  'Mark {name} important': '{name} — მნიშვნელოვნად მონიშვნა',
+  'Move {name} to Not important': '{name} — არამნიშვნელოვანში გადატანა',
+  'Important - click to move to Not important': 'მნიშვნელოვანი — დააჭირე არამნიშვნელოვანში გადასატანად',
+  'Could not update the project.': 'პროექტი ვერ განახლდა.',
 };

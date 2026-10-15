@@ -79,3 +79,50 @@ def test_routine_pauses_on_weekends_unless_opted_in(auth_client, user):
     ids = {i.pk for i in services.items_for_day(user, "personal", date.fromisoformat(saturday))}
     assert ids == {everyday["id"], weekend_only["id"]}
     assert services.routine_paused_on(user, date.fromisoformat(saturday)) is False
+
+
+def test_routine_items_tick_themselves_once_their_time_target_is_met(auth_client, user):
+    from datetime import timedelta
+
+    from apps.accounts.models import UserPreference
+    from apps.time_tracking.models import TimeEntry
+    from common.tz import day_bounds
+
+    UserPreference.objects.update_or_create(user=user, defaults={"routine_on_weekends": True})
+    url = "/api/v1/routines/personal/items/"
+    business = auth_client.post(
+        url, {"name": "Business", "target_minutes": 2, "counts_as_business": True}, format="json"
+    ).data
+    training = auth_client.post(url, {"name": "Training", "target_minutes": 3}, format="json").data
+
+    def state() -> dict[str, tuple[bool, int]]:
+        return {i["name"]: (i["today_completed"], i["today_minutes"]) for i in auth_client.get(url).data["items"]}
+
+    # Anchored inside today so the entries never straddle midnight.
+    now = day_bounds(user)[0] + timedelta(hours=1)
+    # Business time from the dashboard timer (no routine item attached) counts for the Business block.
+    TimeEntry.objects.create(
+        owner=user, category="business", started_at=now - timedelta(minutes=4), ended_at=now - timedelta(minutes=1)
+    )
+    TimeEntry.objects.create(
+        owner=user,
+        category="personal",
+        routine_item_id=training["id"],
+        started_at=now - timedelta(minutes=3),
+        ended_at=now - timedelta(minutes=1),
+    )
+    assert state() == {"Business": (True, 3), "Training": (False, 2)}
+
+    TimeEntry.objects.create(
+        owner=user,
+        category="personal",
+        routine_item_id=training["id"],
+        started_at=now - timedelta(seconds=70),
+        ended_at=now - timedelta(seconds=5),
+    )
+    assert state()["Training"][0] is True
+
+    # Unticked by hand: reaching the target again does not override the user.
+    auth_client.post(f"/api/v1/routines/items/{business['id']}/complete/", {"completed": False}, format="json")
+    assert state()["Business"][0] is False
+    assert auth_client.get("/api/v1/today/").data["metrics"]["routine_items_completed"] == 1

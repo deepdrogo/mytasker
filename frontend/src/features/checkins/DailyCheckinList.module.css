@@ -1,84 +1,146 @@
 .wrap {
   display: flex;
   flex-direction: column;
-  gap: var(--s-3);
+  gap: var(--s-4);
 }
 
-/* One segment per calendar line, lit when ticked. */
-.progress {
+/* Tally, a bar that fills as the day gets ticked, and the percentage. */
+.summary {
   display: flex;
-  gap: 3px;
+  align-items: center;
+  gap: var(--s-4);
   padding: 0 var(--s-2);
 }
 
-.seg {
+.tally {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--c-text-faint);
+}
+
+.tally strong {
+  font-size: 18px;
+  font-weight: var(--fw-semibold);
+  color: var(--c-text);
+}
+
+.bar {
   flex: 1;
-  height: 3px;
+  height: 6px;
   border-radius: var(--r-full);
-  background: rgba(255, 255, 255, 0.08);
-  transition:
-    background var(--t-base),
-    box-shadow var(--t-base);
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
 }
 
-.segDone {
-  background: var(--g-ink);
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.35);
+.barFill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.55), #fff);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
+  transition: width var(--t-base);
 }
 
-.list {
+.pct {
+  flex: none;
+  min-width: 34px;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--c-text-dim);
+}
+
+/* One tile per calendar line, wearing the project's calendar colour. */
+.grid {
   list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--s-3);
 }
 
-.row {
+.tile {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: var(--s-3);
-  min-height: 32px;
-  padding: 0 var(--s-3);
-  border: 1px solid transparent;
-  border-radius: var(--r-md);
-  transition: background var(--t-fast);
+  gap: var(--s-4);
+  min-width: 0;
+  padding: var(--s-3) var(--s-4) var(--s-3) var(--s-5);
+  border: 1px solid hsl(var(--project-hue) 60% 70% / 0.18);
+  border-radius: var(--r-lg);
+  background: linear-gradient(135deg, hsl(var(--project-hue) 55% 45% / 0.12), rgba(255, 255, 255, 0.015) 70%);
+  overflow: hidden;
+  transition:
+    border-color var(--t-fast),
+    background var(--t-fast),
+    opacity var(--t-fast);
 }
 
-.row:hover {
-  background: var(--c-hover);
+.tile::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: hsl(var(--project-hue) 72% 62%);
+  box-shadow: 0 0 10px hsl(var(--project-hue) 72% 60% / 0.6);
+}
+
+.tile:hover {
+  border-color: hsl(var(--project-hue) 60% 70% / 0.4);
 }
 
 .check {
   flex: none;
   display: grid;
   place-items: center;
-  width: 18px;
-  height: 18px;
+  width: 26px;
+  height: 26px;
   padding: 0;
-  border: none;
+  border: 1.5px solid hsl(var(--project-hue) 60% 72% / 0.55);
   border-radius: 50%;
-  background: none;
-  color: var(--c-text-faint);
+  background: rgba(0, 0, 0, 0.25);
+  color: transparent;
   cursor: pointer;
   transition:
     background var(--t-fast),
-    color var(--t-fast);
+    border-color var(--t-fast),
+    color var(--t-fast),
+    transform var(--t-fast),
+    box-shadow var(--t-fast);
 }
 
 .check:hover {
-  color: var(--c-text);
+  border-color: #fff;
+  color: var(--c-text-faint);
+}
+
+.check:active {
+  transform: scale(0.9);
 }
 
 .done .check {
-  background: var(--g-primary);
-  color: var(--c-invert-text);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.25);
+  border-color: hsl(var(--project-hue) 72% 70%);
+  background: hsl(var(--project-hue) 62% 58%);
+  color: #fff;
+  box-shadow: 0 0 12px hsl(var(--project-hue) 70% 55% / 0.55);
 }
 
 .done .check svg {
-  width: 13px;
-  height: 13px;
   stroke-width: 3;
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nameLine {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
 }
 
 .crypto {
@@ -87,18 +149,22 @@
 }
 
 .name {
-  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--c-text);
   font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
 }
 
 a.name:hover {
   text-decoration: underline;
   text-decoration-color: var(--c-text-faint);
+}
+
+.done {
+  background: linear-gradient(135deg, hsl(var(--project-hue) 55% 45% / 0.2), rgba(255, 255, 255, 0.02) 75%);
 }
 
 .done .name {
@@ -107,22 +173,24 @@ a.name:hover {
   text-decoration-color: var(--c-text-faint);
 }
 
+.meta {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
 .streak {
   flex: none;
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  padding: 1px 7px;
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-full);
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--c-text-dim);
+  color: hsl(var(--project-hue) 75% 75%);
   font-family: var(--font-mono);
   font-size: 10px;
 }
 
 .until {
-  flex: none;
   display: inline-flex;
   align-items: center;
   color: var(--c-text-faint);
@@ -144,4 +212,15 @@ a.name:hover {
 
 .emptyLink:hover {
   color: var(--c-text);
+}
+
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--s-2);
+  }
+  .tile {
+    gap: var(--s-3);
+    padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4);
+  }
 }

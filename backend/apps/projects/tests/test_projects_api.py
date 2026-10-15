@@ -228,3 +228,42 @@ def test_clearing_calendar_dates_unschedules_project(auth_client):
     assert cleared.status_code == 200, cleared.content
     assert cleared.data["start_date"] is None
     assert cleared.data["deadline"] is None
+
+
+def test_dashboard_cards_list_tasks_in_the_projects_manual_order(auth_client):
+    project = auth_client.post(BASE, {"name": "Ordered", "start_date": str(timezone.localdate())}, format="json").data
+    ids = [
+        auth_client.post(
+            "/api/v1/tasks/", {"title": title, "kind": "business", "project_id": project["id"]}, format="json"
+        ).data["id"]
+        for title in ("one", "two", "three")
+    ]
+
+    def card() -> list[int]:
+        projects = auth_client.get("/api/v1/today/").data["active_projects"]
+        return [t["id"] for t in next(p for p in projects if p["id"] == project["id"])["next_tasks"]]
+
+    def page() -> list[int]:
+        data = auth_client.get(
+            "/api/v1/tasks/", {"project": project["id"], "top_level": "true", "ordering": "manual"}
+        ).data
+        return [t["id"] for t in data["results"]]
+
+    assert card() == page()
+    assert auth_client.post("/api/v1/tasks/reorder/", {"ids": [ids[1], ids[2]]}, format="json").status_code == 200
+    assert card() == page() == [ids[1], ids[2], ids[0]]
+
+
+def test_active_view_includes_startups_and_follows_the_calendar(auth_client):
+    today = timezone.localdate()
+    later = auth_client.post(
+        BASE, {"name": "Later", "kind": "active", "start_date": str(today + timedelta(days=5))}, format="json"
+    ).data
+    startup = auth_client.post(
+        BASE, {"name": "Rocket", "category": "startup", "start_date": str(today + timedelta(days=1))}, format="json"
+    ).data
+    plain = auth_client.post(BASE, {"name": "Plain"}, format="json").data
+
+    listed = [p["id"] for p in auth_client.get(BASE, {"view": "active", "ordering": "manual"}).data["results"]]
+    assert listed == [startup["id"], later["id"]]
+    assert plain["id"] not in listed

@@ -377,6 +377,7 @@ function TasksTab(props: { project: Project }): JSX.Element {
         selectable
         selectedIds={selected()}
         onToggleSelect={toggleSelect}
+        onReorder={filter() === 'done' ? undefined : (tasks) => tasksApi.reorder(tasks.map((task) => task.id))}
         emptyTitle={filter() === 'done' ? t('Nothing completed yet') : t('No open tasks')}
         emptyHint={filter() === 'done' ? undefined : t('Add the next concrete step above.')}
       />

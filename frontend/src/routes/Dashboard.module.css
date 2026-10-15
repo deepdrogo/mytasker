@@ -749,10 +749,10 @@
 }
 
 .ruleRow {
-  min-height: 26px;
-  padding: 0 var(--s-2) 0 var(--s-3);
-  gap: var(--s-2);
-  font-size: var(--fs-xs);
+  min-height: 40px;
+  padding: var(--s-1) var(--s-2) var(--s-1) var(--s-4);
+  gap: var(--s-3);
+  font-size: var(--fs-sm);
 }
 
 .ruleRow .routineBody {
@@ -760,7 +760,7 @@
 }
 
 .ruleRow .routineName {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-sm);
 }
 
 .ruleIcon {
@@ -779,76 +779,79 @@
 
 .ruleActions {
   display: inline-flex;
-  gap: 2px;
+  gap: var(--s-2);
   flex: none;
 }
 
+/* Kept / broken: big enough to hit without aiming, always visible. */
 .ruleBtn {
   display: grid;
   place-items: center;
-  width: 20px;
-  height: 20px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  border: 1px solid transparent;
-  background: none;
+  border: 1.5px solid var(--c-border-strong);
+  background: rgba(255, 255, 255, 0.03);
   color: var(--c-text-faint);
   cursor: pointer;
   padding: 0;
-  opacity: 0.55;
   transition:
     background var(--t-fast),
     color var(--t-fast),
     border-color var(--t-fast),
-    opacity var(--t-fast),
+    transform var(--t-fast),
     box-shadow var(--t-fast);
 }
 
 .ruleBtn svg {
-  width: 11px;
-  height: 11px;
-}
-
-.ruleRow:hover .ruleBtn,
-.ruleBtn:focus-visible {
-  opacity: 1;
+  width: 16px;
+  height: 16px;
 }
 
 .ruleBtn:hover {
   color: var(--c-text);
-  border-color: var(--c-border-strong);
+  border-color: #fff;
 }
 
-.ruleBtnKept {
-  opacity: 1;
+.ruleBtn:active {
+  transform: scale(0.9);
+}
+
+.ruleBtnKept,
+.ruleBtnKept:hover {
   background: var(--g-primary);
+  border-color: #fff;
   color: var(--c-invert-text);
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.35);
 }
 
 .ruleBtnKept svg {
   stroke-width: 3;
 }
 
-.ruleBtnBroken {
-  opacity: 1;
-  background: rgba(255, 255, 255, 0.1);
+.ruleBtnBroken,
+.ruleBtnBroken:hover {
+  background: rgba(255, 255, 255, 0.12);
   color: var(--c-text);
   border-color: var(--c-border-strong);
 }
 
+.ruleBtnBroken svg {
+  stroke-width: 2.6;
+}
+
 .ruleRow .streakPill {
-  padding: 0 5px;
-  font-size: 9px;
+  padding: 0 6px;
+  font-size: 10px;
 }
 
 @media (hover: none) {
   .ruleBtn {
-    width: 28px;
-    height: 28px;
-    opacity: 1;
+    width: 34px;
+    height: 34px;
   }
   .ruleRow {
-    min-height: 34px;
+    min-height: 44px;
   }
 }
 
@@ -1187,6 +1190,151 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* A card's tasks share the project page's manual order; the small grip moves them. */
+.nextTaskRow {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  border-radius: var(--r-sm);
+}
+
+.nextTaskDragging {
+  background: var(--g-surface-raised);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+}
+
+.taskGrip {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 24px;
+  margin-left: calc(var(--s-2) * -1);
+  padding: 0;
+  border: none;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--c-text-faint);
+  cursor: grab;
+  opacity: 0;
+  touch-action: none;
+  transition: opacity var(--t-fast);
+}
+
+.nextTaskRow:hover .taskGrip,
+.taskGrip:focus-visible,
+.nextTaskDragging .taskGrip {
+  opacity: 1;
+}
+
+.taskGrip:active {
+  cursor: grabbing;
+}
+
+@media (hover: none) {
+  .taskGrip {
+    opacity: 0.7;
+  }
+}
+
+/* Important / Not important / Startups: each shelf has its own heading and colour cue. */
+.projectGroups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+}
+
+.projectGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.projectGroupHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 0 var(--s-2);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-text-dim);
+}
+
+.projectGroupHead::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--c-border-strong), transparent);
+}
+
+.group-important .projectGroupHead {
+  color: #f4c95d;
+}
+
+.group-important .projectGroupHead svg {
+  fill: currentColor;
+}
+
+.group-important .projectGroupHead::after {
+  background: linear-gradient(90deg, rgba(244, 201, 93, 0.45), transparent);
+}
+
+.group-startup .projectGroupHead {
+  color: #9db8ff;
+}
+
+.group-startup .projectGroupHead::after {
+  background: linear-gradient(90deg, rgba(157, 184, 255, 0.4), transparent);
+}
+
+.starBtn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: none;
+  color: var(--c-text-faint);
+  cursor: pointer;
+  opacity: 0.5;
+  transition:
+    opacity var(--t-fast),
+    color var(--t-fast),
+    border-color var(--t-fast);
+}
+
+.projectCard:hover .starBtn,
+.starBtn:focus-visible {
+  opacity: 1;
+}
+
+.starBtn:hover {
+  color: #f4c95d;
+  border-color: rgba(244, 201, 93, 0.35);
+}
+
+.starOn,
+.starOn:hover {
+  opacity: 1;
+  color: #f4c95d;
+}
+
+.starOn svg {
+  fill: currentColor;
+  filter: drop-shadow(0 0 6px rgba(244, 201, 93, 0.55));
+}
+
+@media (hover: none) {
+  .starBtn {
+    opacity: 0.8;
+  }
 }
 
 /* Two columns: plate + projects on top, the side column stretched underneath as two halves side by side. */

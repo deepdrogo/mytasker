@@ -5,3 +5,60 @@
   background: var(--g-surface);
   box-shadow: var(--shadow-card);
 }
+
+.sortRow {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: start;
+  border-radius: var(--r-md);
+}
+
+.sortRow + .sortRow {
+  margin-top: 2px;
+}
+
+.sortRowDragging {
+  background: var(--g-surface-raised);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
+}
+
+.grip {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 32px;
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--c-text-faint);
+  cursor: grab;
+  opacity: 0.45;
+  touch-action: none;
+  transition:
+    opacity var(--t-fast),
+    color var(--t-fast),
+    background var(--t-fast);
+}
+
+.sortRow:hover .grip,
+.grip:focus-visible,
+.sortRowDragging .grip {
+  opacity: 1;
+}
+
+.grip:hover {
+  color: var(--c-text);
+  background: var(--c-hover);
+}
+
+.grip:active {
+  cursor: grabbing;
+}
+
+@media (hover: none) {
+  .grip {
+    opacity: 0.8;
+  }
+}

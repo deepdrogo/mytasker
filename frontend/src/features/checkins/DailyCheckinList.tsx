@@ -2,10 +2,11 @@
 // Built by drogoz · https://github.com/deepdrogo/mytasker
 
 import { A } from '@solidjs/router';
-import { Bitcoin, Check, Circle, Flame, Infinity as InfinityIcon } from 'lucide-solid';
+import { Bitcoin, Check, Flame, Infinity as InfinityIcon } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { createEffect, createSignal, For, Show } from 'solid-js';
 import { checkinsApi, targetOf } from '~/features/checkins/api';
+import { CRYPTO_HUE, projectHue } from '~/features/projects/hue';
 import { t } from '~/i18n';
 import { tx } from '~/stores/translations';
 import { toast } from '~/stores/ui';
@@ -85,15 +86,34 @@ export function DailyCheckinList(props: {
 
   const itemRef = (item: DailyCheckinItem) => ({ subject: item.subject, label: item.label, project_id: item.project?.id ?? null });
 
+  const hueOf = (item: DailyCheckinItem) => (item.subject === 'crypto' || !item.project ? CRYPTO_HUE : projectHue(item.project.id));
+  const pct = () => (props.items.length ? Math.round((done() / props.items.length) * 100) : 0);
+
   return (
     <div class={styles.wrap}>
-      <div class={styles.progress} aria-label={t('{done} of {total} checked in', { done: done(), total: props.items.length })}>
-        <For each={props.items}>{(item) => <span class={cx(styles.seg, checked(item) && styles.segDone)} />}</For>
+      <div class={styles.summary}>
+        <span class={styles.tally}>
+          <strong>{done()}</strong>/{props.items.length}
+        </span>
+        <div
+          class={styles.bar}
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={props.items.length}
+          aria-valuenow={done()}
+          aria-label={t('{done} of {total} checked in', { done: done(), total: props.items.length })}
+        >
+          <div class={styles.barFill} style={{ width: `${pct()}%` }} />
+        </div>
+        <span class={styles.pct}>{pct()}%</span>
       </div>
-      <ul class={styles.list}>
+      <ul class={styles.grid}>
         <For each={props.items}>
           {(item) => (
-            <li class={cx(styles.row, checked(item) && styles.done)}>
+            <li
+              class={cx(styles.tile, checked(item) && styles.done)}
+              style={{ '--project-hue': String(hueOf(item)) } as JSX.CSSProperties}
+            >
               <button
                 type="button"
                 class={styles.check}
@@ -101,30 +121,37 @@ export function DailyCheckinList(props: {
                 aria-pressed={checked(item)}
                 aria-label={checked(item) ? t('Undo check-in for {name}', { name: checkinLabel(itemRef(item)) }) : t('Check in {name}', { name: checkinLabel(itemRef(item)) })}
               >
-                <Show when={checked(item)} fallback={<Circle size={15} />}>
-                  <Check size={15} />
-                </Show>
+                <Check size={14} />
               </button>
-              <Show when={item.subject === 'crypto'}>
-                <Bitcoin size={13} class={styles.crypto} />
-              </Show>
-              <Show when={checkinHref(itemRef(item))} fallback={<span class={styles.name}>{checkinLabel(itemRef(item))}</span>}>
-                {(href) => (
-                  <A href={href()} class={styles.name}>
-                    {checkinLabel(itemRef(item))}
-                  </A>
-                )}
-              </Show>
-              <Show when={item.streak > 1}>
-                <span class={styles.streak} title={t('{count} days in a row', { count: item.streak })}>
-                  <Flame size={11} /> {item.streak}
-                </span>
-              </Show>
-              <span class={styles.until} title={t('On the calendar {start} → {end}', { start: formatDate(item.start), end: item.end ? formatDate(item.end) : t('ongoing') })}>
-                <Show when={item.end} fallback={<InfinityIcon size={11} />}>
-                  {(end) => t('until {date}', { date: formatDate(end()) })}
-                </Show>
-              </span>
+              <div class={styles.body}>
+                <div class={styles.nameLine}>
+                  <Show when={item.subject === 'crypto'}>
+                    <Bitcoin size={12} class={styles.crypto} />
+                  </Show>
+                  <Show when={checkinHref(itemRef(item))} fallback={<span class={styles.name}>{checkinLabel(itemRef(item))}</span>}>
+                    {(href) => (
+                      <A href={href()} class={styles.name}>
+                        {checkinLabel(itemRef(item))}
+                      </A>
+                    )}
+                  </Show>
+                </div>
+                <div class={styles.meta}>
+                  <span
+                    class={styles.until}
+                    title={t('On the calendar {start} → {end}', { start: formatDate(item.start), end: item.end ? formatDate(item.end) : t('ongoing') })}
+                  >
+                    <Show when={item.end} fallback={<InfinityIcon size={11} />}>
+                      {(end) => t('until {date}', { date: formatDate(end()) })}
+                    </Show>
+                  </span>
+                  <Show when={item.streak > 1}>
+                    <span class={styles.streak} title={t('{count} days in a row', { count: item.streak })}>
+                      <Flame size={10} /> {item.streak}
+                    </span>
+                  </Show>
+                </div>
+              </div>
             </li>
           )}
         </For>

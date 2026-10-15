@@ -1,11 +1,15 @@
 import { A } from '@solidjs/router';
-import { Clock, Users } from 'lucide-solid';
+import { Clock, Star, Users } from 'lucide-solid';
 import type { JSX } from 'solid-js';
-import { Show } from 'solid-js';
+import { createSignal, Show } from 'solid-js';
 import { Badge, Meta, PriorityMark, ProgressBar, VisibilityMark } from '~/components/shared/Indicators';
+import { projectsApi } from '~/features/projects/api';
+import { isImportant, toggledPriority } from '~/features/projects/groups';
 import { t } from '~/i18n';
 import { tx } from '~/stores/translations';
+import { toast } from '~/stores/ui';
 import type { Project, Role } from '~/types';
+import { cx } from '~/utils/cx';
 import { formatDate, formatDuration } from '~/utils/format';
 import styles from './ProjectCard.module.css';
 
@@ -26,12 +30,40 @@ export function ProjectCard(props: { project: Project }): JSX.Element {
     const diff = (new Date(p().deadline as string).getTime() - Date.now()) / 86400000;
     return diff < 3;
   };
+  const [busy, setBusy] = createSignal(false);
+  const important = () => isImportant(p());
+  /** The star sits inside the card link: it must not open the project. */
+  const toggleImportant = async (event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (busy()) return;
+    setBusy(true);
+    try {
+      await projectsApi.update(p().id, { priority: toggledPriority(p()) });
+    } catch {
+      toast(t('Could not update the project.'));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <A href={`/projects/${p().id}/tasks`} class={styles.card}>
       <div class={styles.head}>
         <div class={styles.titleRow}>
-          <PriorityMark priority={p().priority} />
+          <Show when={p().capabilities.manage_project} fallback={<PriorityMark priority={p().priority} />}>
+            <button
+              type="button"
+              class={cx(styles.star, important() && styles.starOn)}
+              onClick={(event) => void toggleImportant(event)}
+              disabled={busy()}
+              aria-pressed={important()}
+              aria-label={important() ? t('Move {name} to Not important', { name: p().name }) : t('Mark {name} important', { name: p().name })}
+              title={important() ? t('Important - click to move to Not important') : t('Mark important')}
+            >
+              <Star size={14} />
+            </button>
+          </Show>
           <span class={styles.name}>{tx('project', p().id, 'name', p().name)}</span>
         </div>
         <div class={styles.badges}>
