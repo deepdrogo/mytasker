@@ -55,7 +55,16 @@ class TaskViewSet(viewsets.ModelViewSet):
     }
     ordering = ["manual"]
 
+    def _wants_archived(self) -> bool:
+        return (self.request.query_params.get("archived") or "").lower() in {"1", "true", "yes"}
+
     def get_queryset(self):
+        # The Archive section asks for archived tasks explicitly; every other view stays clean.
+        if self.action == "list" and self._wants_archived():
+            qs = selectors.base_queryset(self.request.user, archived=True).annotate(
+                priority_rank=selectors.priority_rank_expression()
+            )
+            return qs
         qs = selectors.base_queryset(self.request.user).annotate(priority_rank=selectors.priority_rank_expression())
         if self.action == "list" and self.request.query_params.get("include_subtasks") == "1":
             qs = qs.prefetch_related(
@@ -165,6 +174,31 @@ class TaskViewSet(viewsets.ModelViewSet):
     def duplicate(self, request, pk=None):
         task = services.duplicate_task(self._actor(), int(pk))
         return self._respond(task, status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"])
+    def archive(self, request, pk=None):
+        """Reversibly archive a task (and its subtasks); it leaves every default list until restored."""
+        task = services.archive_task(self._actor(), int(pk))
+        return Response(TaskWithSubtasksSerializer(task, context=self._context_for([task])).data)
+
+    @action(detail=True, methods=["post"])
+    def unarchive(self, request, pk=None):
+        """Restore a previously archived task back into the normal lists."""
+        task = services.unarchive_task(self._actor(), int(pk))
+        return self._respond(task)
+
+    @action(detail=False, methods=["post"], url_path="archive-all")
+    def archive_all(self, request):
+        """Archive all of the caller's own tasks at once (the 'clean my lists' action)."""
+        include_completed = (str(request.data.get("include_completed", "true")).lower()) not in {"0", "false", "no"}
+        count = services.archive_all_for_owner(request.user, include_completed=include_completed)
+        return Response({"archived": count})
+
+    @action(detail=False, methods=["post"], url_path="unarchive-all")
+    def unarchive_all(self, request):
+        """Restore every archived task the caller owns."""
+        count = services.unarchive_all_for_owner(request.user)
+        return Response({"restored": count})
 
     @action(detail=True, methods=["post"])
     def move(self, request, pk=None):

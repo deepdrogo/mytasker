@@ -42,6 +42,8 @@ export interface TaskListParams extends QueryParams {
   page?: number;
   page_size?: number;
   include_subtasks?: '1';
+  /** The Archive section: list archived tasks instead of the normal ones. */
+  archived?: '1';
 }
 
 export interface TaskInput {
@@ -233,6 +235,36 @@ export const tasksApi = {
     const task = await api.post<Task>(`/tasks/${id}/subtasks/`, input);
     changed(task.id, id);
     return task;
+  },
+
+  /** Reversibly archive a task (and its subtasks); it leaves every default list until restored. */
+  archive: async (id: ID): Promise<Task> => {
+    const task = await api.post<Task>(`/tasks/${id}/archive/`);
+    changed(id);
+    return task;
+  },
+
+  /** Restore an archived task into the normal lists. */
+  unarchive: async (id: ID): Promise<Task> => {
+    const task = await api.post<Task>(`/tasks/${id}/unarchive/`);
+    changed(id);
+    return task;
+  },
+
+  /** Archive all of my tasks at once. `includeCompleted: false` keeps done/cancelled on the lists. */
+  archiveAll: async (includeCompleted = true): Promise<{ archived: number }> => {
+    const result = await api.post<{ archived: number }>('/tasks/archive-all/', {
+      include_completed: includeCompleted,
+    });
+    invalidate(...TASK_SCOPES);
+    return result;
+  },
+
+  /** Restore every archived task I own. */
+  unarchiveAll: async (): Promise<{ restored: number }> => {
+    const result = await api.post<{ restored: number }>('/tasks/unarchive-all/');
+    invalidate(...TASK_SCOPES);
+    return result;
   },
 };
 

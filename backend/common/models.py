@@ -53,6 +53,70 @@ class SoftDeleteModel(models.Model):
         self.save(update_fields=["deleted_at"])
 
 
+class ArchivableQuerySet(SoftDeleteQuerySet):
+    """Soft-delete queryset that also understands a reversible `archived_at` marker."""
+
+    def unarchived(self):
+        return self.filter(archived_at__isnull=True)
+
+    def archived(self):
+        return self.filter(archived_at__isnull=False)
+
+    def archive(self):
+        return self.filter(archived_at__isnull=True).update(archived_at=timezone.now())
+
+    def unarchive(self):
+        return self.filter(archived_at__isnull=False).update(archived_at=None)
+
+
+class ArchivableManager(SoftDeleteManager):
+    """
+    Default manager hides soft-deleted *and* archived rows, so archived items drop out of every default
+    list, dashboard aggregate, selector and search without each call site remembering to filter. Reach
+    the archived rows explicitly via `archived()` (or `with_archived()`).
+    """
+
+    queryset_class = ArchivableQuerySet
+
+    def get_queryset(self):
+        return self.queryset_class(self.model, using=self._db).alive().unarchived()
+
+    def with_archived(self):
+        return self.queryset_class(self.model, using=self._db).alive()
+
+    def archived(self):
+        return self.queryset_class(self.model, using=self._db).alive().archived()
+
+
+class ArchivableModel(SoftDeleteModel):
+    """
+    Reversible archive on top of soft delete. Archiving keeps the row and its relations and simply stamps
+    `archived_at`; restoring clears it. Orthogonal to `deleted_at`.
+    """
+
+    archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    objects = ArchivableManager()
+    all_objects = models.Manager()  # noqa: DJ012 - custom manager above, not a field
+
+    class Meta:
+        abstract = True
+
+    @property
+    def is_archived(self) -> bool:
+        return self.archived_at is not None
+
+    def archive(self) -> None:
+        if self.archived_at is None:
+            self.archived_at = timezone.now()
+            self.save(update_fields=["archived_at"])
+
+    def unarchive(self) -> None:
+        if self.archived_at is not None:
+            self.archived_at = None
+            self.save(update_fields=["archived_at"])
+
+
 class Priority(models.TextChoices):
     CRITICAL = "critical", "Critical"
     HIGH = "high", "High"

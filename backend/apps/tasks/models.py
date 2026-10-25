@@ -11,10 +11,10 @@ from django.db import models
 from django.db.models import Q
 
 from common.models import (
+    ArchivableManager,
+    ArchivableModel,
+    ArchivableQuerySet,
     Priority,
-    SoftDeleteManager,
-    SoftDeleteModel,
-    SoftDeleteQuerySet,
     Source,
     TimeStampedModel,
     Visibility,
@@ -44,7 +44,7 @@ class RecurrenceRule(TimeStampedModel):
         return f"{self.freq}/{self.interval}"
 
 
-class TaskQuerySet(SoftDeleteQuerySet):
+class TaskQuerySet(ArchivableQuerySet):
     def visible_to(self, user):
         """
         Single source of truth for task visibility.
@@ -95,15 +95,18 @@ class TaskQuerySet(SoftDeleteQuerySet):
         return self.filter(status=Task.Status.DONE)
 
 
-class TaskManager(SoftDeleteManager):
-    def get_queryset(self):
-        return TaskQuerySet(self.model, using=self._db).alive()
+class TaskManager(ArchivableManager):
+    queryset_class = TaskQuerySet
 
     def visible_to(self, user):
         return self.get_queryset().visible_to(user)
 
+    def archived_visible_to(self, user):
+        """Archived tasks the user may see — powers the Archive section."""
+        return self.archived().visible_to(user)
 
-class Task(TimeStampedModel, SoftDeleteModel):
+
+class Task(TimeStampedModel, ArchivableModel):
     """
     Unified task model. A subtask is a Task with `parent` set (max depth 1, enforced in the service
     layer and by a DB check on `depth`).

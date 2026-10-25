@@ -11,6 +11,12 @@ export const projects: Record<string, string> = {
   Member: 'წევრი',
   Viewer: 'მნახველი',
 
+  // Project editor — activity (working) choice
+  Inactive: 'არააქტიური',
+  'Shown as working on the Working projects page.': 'გამოჩნდება როგორც მიმდინარე „მიმდინარე პროექტების" გვერდზე.',
+  'Kept off the working set; still listed on the Working projects page.':
+    'არ ითვლება მიმდინარედ; თუმცა მაინც ჩანს „მიმდინარე პროექტების" გვერდზე.',
+
   // Working projects catalog
   'Working projects': 'მიმდინარე პროექტები',
   'Everything you are building — and what you are working on right now.':

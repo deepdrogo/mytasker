@@ -26,6 +26,7 @@ PROJECT_FIELDS = {
     "category",
     "status",
     "priority",
+    "is_working",
     "start_date",
     "deadline",
     "notes",

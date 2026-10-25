@@ -59,6 +59,7 @@ class TaskSerializer(serializers.ModelSerializer):
     can_edit = serializers.SerializerMethodField()
     can_delete = serializers.SerializerMethodField()
     added_by_assistant = serializers.SerializerMethodField()
+    is_archived = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Task
@@ -107,6 +108,8 @@ class TaskSerializer(serializers.ModelSerializer):
             "recurrence",
             "created_at",
             "updated_at",
+            "archived_at",
+            "is_archived",
             "can_edit",
             "can_delete",
         ]

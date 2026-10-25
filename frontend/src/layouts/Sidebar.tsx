@@ -1,5 +1,6 @@
 import { A, useLocation } from '@solidjs/router';
 import {
+  Archive,
   Bitcoin,
   BookText,
   Briefcase,
@@ -83,6 +84,7 @@ const SECTIONS: NavSection[] = [
       { label: 'Calendar', href: '/tasks/calendar', icon: () => <CalendarRange size={15} /> },
       { label: 'No date', href: '/tasks/no-date', icon: () => <CalendarOff size={15} /> },
       { label: 'Completed', href: '/tasks/completed', icon: () => <CheckCircle2 size={15} /> },
+      { label: 'Archive', href: '/tasks/archive', icon: () => <Archive size={15} /> },
     ],
   },
   {
@@ -214,11 +216,21 @@ export function Sidebar(props: {
     return out;
   };
 
-  // Projects-home users (e.g. the owner) get a projects-first nav: Projects leads, everything else folds
-  // under a collapsible "More". Everyone else keeps the full, flat navigation exactly as before.
+  // Projects-home users (e.g. the owner) get a focused nav: a single "Workspace" group holding Projects
+  // and Prompts together, with everything else folded under a collapsible "More". Everyone else keeps the
+  // full, flat navigation exactly as before.
   const projectsHome = () => prefersProjectsHome();
-  const projectSections = () => sections().filter((section) => section.label === 'Projects');
-  const otherSections = () => sections().filter((section) => section.label !== 'Projects');
+  const isPromptsSection = (section: NavSection) =>
+    !section.label && section.links.length === 1 && section.links[0]?.href === '/prompts';
+  // Projects + Prompts in one group ("not scattered"), Projects links first, then Prompts.
+  const workspaceSection = (): NavSection => {
+    const all = sections();
+    const projectLinks = all.find((section) => section.label === 'Projects')?.links ?? [];
+    const promptLinks = all.find(isPromptsSection)?.links ?? [];
+    return { label: 'Workspace', links: [...projectLinks, ...promptLinks] };
+  };
+  const otherSections = () =>
+    sections().filter((section) => section.label !== 'Projects' && !isPromptsSection(section));
 
   const [showMore, setShowMore] = createSignal(readShowMore());
   // Keep "More" open whenever the active route lives there, so the current page is never hidden.
@@ -301,7 +313,7 @@ export function Sidebar(props: {
           )}
         </Show>
         <Show when={projectsHome()} fallback={<For each={sections()}>{(section) => renderSection(section)}</For>}>
-          <For each={projectSections()}>{(section) => renderSection(section)}</For>
+          {renderSection(workspaceSection())}
           <button
             type="button"
             class={styles.moreToggle}
