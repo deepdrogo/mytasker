@@ -25,7 +25,7 @@ from common.models import PRIORITY_RANK
 from common.tz import today_for
 
 
-def base_queryset(user):
+def base_queryset(user, *, archived: bool = False):
     from apps.accounts.models import AssistantLink
     from apps.collab.models import Comment
     from apps.time_tracking.models import TimeEntry
@@ -59,9 +59,9 @@ def base_queryset(user):
             Value(0),
         )
 
+    base = Task.objects.archived_visible_to(user) if archived else Task.objects.visible_to(user)
     return (
-        Task.objects.visible_to(user)
-        .select_related(
+        base.select_related(
             "project",
             "owner",
             "assignee",

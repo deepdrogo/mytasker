@@ -18,6 +18,7 @@ const TasksAll = lazy(() => import('~/routes/tasks/All'));
 const TasksNoDate = lazy(() => import('~/routes/tasks/NoDate'));
 const TasksCalendar = lazy(() => import('~/routes/tasks/Calendar'));
 const TasksClients = lazy(() => import('~/routes/tasks/Clients'));
+const TasksArchive = lazy(() => import('~/routes/tasks/Archive'));
 const People = lazy(() => import('~/routes/People'));
 const From = lazy(() => import('~/routes/From'));
 const ForPrincipal = lazy(() => import('~/routes/For'));
@@ -76,6 +77,7 @@ export const routes: RouteDefinition[] = [
       { path: '/tasks/crypto', component: TasksCrypto },
       { path: '/tasks/upcoming', component: TasksUpcoming },
       { path: '/tasks/completed', component: TasksCompleted },
+      { path: '/tasks/archive', component: TasksArchive },
       { path: '/tasks/all', component: TasksAll },
       { path: '/tasks/no-date', component: TasksNoDate },
       { path: '/tasks/calendar', component: TasksCalendar },

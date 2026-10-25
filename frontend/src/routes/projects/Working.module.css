@@ -3,15 +3,15 @@
 .wrap {
   display: flex;
   flex-direction: column;
-  gap: var(--s-6);
-  max-width: 760px;
+  gap: var(--s-4);
+  max-width: 960px;
 }
 
 .summary {
   display: flex;
   align-items: baseline;
   gap: var(--s-4);
-  font-size: var(--fs-md);
+  font-size: var(--fs-sm);
 }
 
 .summaryStrong {
@@ -23,10 +23,11 @@
   color: var(--c-text-dim);
 }
 
+/* Dense catalog: tight single-line rows so many projects fit on one screen at once. */
 .list {
   display: flex;
   flex-direction: column;
-  gap: var(--s-4);
+  gap: 3px;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -35,37 +36,36 @@
 .row {
   display: flex;
   align-items: center;
-  gap: var(--s-5);
-  padding: var(--s-5) var(--s-6);
-  border-radius: var(--r-lg);
-  background: var(--g-surface);
+  gap: var(--s-4);
+  padding: var(--s-2) var(--s-4);
+  min-height: 34px;
+  border-radius: var(--r-sm);
+  background: var(--g-glass);
   border: 1px solid var(--c-border);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--rim-top);
   transition:
     border-color var(--t-fast),
-    transform var(--t-fast),
-    box-shadow var(--t-base);
+    background var(--t-fast);
 }
 
 .row:hover {
   border-color: var(--c-border-strong);
-  transform: translateY(-1px);
+  background: var(--g-glass-hover);
 }
 
-/* A project in progress gets a quietly lit rim so the eye finds it first — depth, not loud colour. */
+/* A project in progress gets a quietly lit green rim so the eye finds it first — depth, not loud colour. */
 .rowOn {
-  border-color: rgba(34, 197, 94, 0.35);
+  border-color: rgba(34, 197, 94, 0.3);
   box-shadow:
     var(--rim-top),
-    0 0 0 1px rgba(34, 197, 94, 0.14),
-    0 12px 30px rgba(0, 0, 0, 0.45);
+    0 0 0 1px rgba(34, 197, 94, 0.12);
 }
 
 /* The status control: a hollow ring by default; a filled green disc with a check when working. */
 .status {
   flex: none;
-  width: 28px;
-  height: 28px;
+  width: 20px;
+  height: 20px;
   display: grid;
   place-items: center;
   border-radius: var(--r-full);
@@ -85,7 +85,7 @@
 }
 
 .status:active {
-  transform: scale(0.9);
+  transform: scale(0.88);
 }
 
 .statusOn {
@@ -94,37 +94,41 @@
   color: #04210f;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    0 0 14px rgba(34, 197, 94, 0.55);
+    0 0 10px rgba(34, 197, 94, 0.45);
 }
 
 .statusOn:hover {
   border-color: rgba(46, 227, 106, 0.9);
 }
 
+/* Name + meta on a single line to keep rows short. */
 .main {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--s-5);
   min-width: 0;
   flex: 1;
   color: inherit;
 }
 
 .name {
-  font-size: var(--fs-base);
+  font-size: var(--fs-md);
   font-weight: var(--fw-medium);
   color: var(--c-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
+  min-width: 0;
 }
 
 .meta {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex: none;
   gap: var(--s-5);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-xs);
   color: var(--c-text-dim);
 }
 
@@ -138,9 +142,9 @@
 .working {
   display: inline-flex;
   align-items: center;
-  padding: 1px 9px;
+  padding: 0 7px;
   border-radius: var(--r-full);
-  font-size: var(--fs-xs);
+  font-size: 10.5px;
   font-weight: var(--fw-semibold);
   letter-spacing: 0.02em;
   color: #6ee7a0;
@@ -151,5 +155,12 @@
 @media (max-width: 899px) {
   .wrap {
     max-width: 100%;
+  }
+  /* Hide the lighter meta on phones so the name + status stay on one tight line. */
+  .meta {
+    gap: var(--s-4);
+  }
+  .metaTime {
+    display: none;
   }
 }

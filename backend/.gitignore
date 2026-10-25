@@ -1,0 +1,2 @@
+# Local Redis dump created when running redis-server from this directory during dev.
+*.rdb

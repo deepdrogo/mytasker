@@ -180,6 +180,9 @@ export interface Task {
   recurrence: RecurrenceRule | null;
   created_at: ISODateTime;
   updated_at: ISODateTime;
+  /** Reversible archive: set when the task was moved to the Archive section. */
+  archived_at: ISODateTime | null;
+  is_archived: boolean;
   can_edit: boolean;
   can_delete: boolean;
   /** Present when the list was requested with `include_subtasks=1` or on task detail. */

@@ -34,6 +34,8 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
   const [category, setCategory] = createSignal<ProjectCategory>('general');
   const [mode, setMode] = createSignal<ProjectMode>('private');
   const [status, setStatus] = createSignal<ProjectStatus>('active');
+  // Active (working on it) vs inactive — the Working projects page key. New projects default to Active.
+  const [working, setWorking] = createSignal(true);
   const [priority, setPriority] = createSignal<Priority>('normal');
   const [startDate, setStartDate] = createSignal('');
   const [deadline, setDeadline] = createSignal('');
@@ -54,6 +56,7 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
       setCategory(p?.category ?? props.defaultCategory ?? 'general');
       setMode(p?.mode ?? 'private');
       setStatus(p?.status ?? 'active');
+      setWorking(p?.is_working ?? true);
       setPriority(p?.priority ?? 'normal');
       setStartDate(p?.start_date ?? '');
       setDeadline(p?.deadline ?? '');
@@ -77,6 +80,7 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
       kind: kind(),
       category: category(),
       status: status(),
+      is_working: working(),
       priority: priority(),
       start_date: startDate() || null,
       deadline: deadline() || null,
@@ -160,6 +164,12 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
             <Select value={category()} onChange={(e) => setCategory(e.currentTarget.value as ProjectCategory)} disabled={!canManage()}>
               <option value="general">{t('Regular project')}</option>
               <option value="startup">{t('Startup')}</option>
+            </Select>
+          </Field>
+          <Field label={t('Activity')} hint={working() ? t('Shown as working on the Working projects page.') : t('Kept off the working set; still listed on the Working projects page.')}>
+            <Select value={working() ? 'active' : 'inactive'} onChange={(e) => setWorking(e.currentTarget.value === 'active')} disabled={!canManage()}>
+              <option value="active">{t('Active')}</option>
+              <option value="inactive">{t('Inactive')}</option>
             </Select>
           </Field>
           <Field label={t('Status')}>

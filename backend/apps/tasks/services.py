@@ -812,6 +812,73 @@ def delete_task(actor: Actor, task_id: int) -> None:
     )
 
 
+# --------------------------------------------------------------------------- archive / restore
+
+
+def _get_archived_task_for_owner(task_id: int, user) -> Task:
+    """Find an archived task the user owns (or acts for). Restore is an owner-side action."""
+    task = (
+        Task.all_objects.select_related("project", "owner", "parent")
+        .filter(pk=task_id, deleted_at__isnull=True, archived_at__isnull=False)
+        .first()
+    )
+    if task is None or not is_owner_side(task, user):
+        raise NotFound("Task not found.")
+    return task
+
+
+@transaction.atomic
+def archive_task(actor: Actor, task_id: int) -> Task:
+    """
+    Reversibly archive a task so it drops out of every default list, the dashboard, counts and search
+    while the row and its relations stay intact. Subtasks follow their parent, like complete / delete.
+    """
+    user = actor.user
+    task = get_task_for_user(task_id, user, for_update=True)
+    if not is_owner_side(task, user):
+        raise Forbidden("Only the owner can archive a task.")
+    if task.archived_at is not None:
+        return task
+    now = timezone.now()
+    if not task.is_subtask:
+        Task.objects.filter(parent=task).update(archived_at=now)
+    task.archived_at = now
+    task.save(update_fields=["archived_at"])
+    Reminder.objects.filter(task=task, status=Reminder.Status.PENDING).update(status=Reminder.Status.CANCELLED)
+    return task
+
+
+@transaction.atomic
+def unarchive_task(actor: Actor, task_id: int) -> Task:
+    """Bring an archived task (and the subtasks archived with it) back into the normal lists."""
+    user = actor.user
+    task = _get_archived_task_for_owner(task_id, user)
+    if not task.is_subtask:
+        Task.all_objects.filter(parent=task, deleted_at__isnull=True, archived_at__isnull=False).update(
+            archived_at=None
+        )
+    task.archived_at = None
+    task.save(update_fields=["archived_at"])
+    return task
+
+
+def archive_all_for_owner(user, *, include_completed: bool = True) -> int:
+    """
+    Archive the user's own, not-yet-archived tasks in one pass — the "clean my lists" action. By default
+    this takes everything; pass ``include_completed=False`` to keep done/cancelled tasks on the lists.
+    Returns the number archived.
+    """
+    qs = Task.objects.filter(owner=user)
+    if not include_completed:
+        qs = qs.exclude(status__in=[Task.Status.DONE, Task.Status.CANCELLED])
+    return qs.archive()
+
+
+def unarchive_all_for_owner(user) -> int:
+    """Restore every archived task the user owns. Returns the count."""
+    return Task.objects.with_archived().filter(owner=user).archived().unarchive()
+
+
 @transaction.atomic
 def duplicate_task(actor: Actor, task_id: int) -> Task:
     user = actor.user

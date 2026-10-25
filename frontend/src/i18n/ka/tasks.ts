@@ -1,5 +1,25 @@
 // Georgian UI strings — tasks feature (editor, list page). Keys are the English source strings.
 export const tasks: Record<string, string> = {
+  // Archive section
+  'Tasks you have put away. Nothing is deleted — restore anything, anytime.':
+    'დავალებები, რომლებიც გადადე. არაფერი იშლება — ნებისმიერ დროს აღადგენ.',
+  'Archive all tasks': 'ყველა დავალების დაარქივება',
+  'Restore all': 'ყველას აღდგენა',
+  'Restore {name}': '„{name}"-ის აღდგენა',
+  'Archived {date}': 'დაარქივდა {date}',
+  'Archive is empty': 'არქივი ცარიელია',
+  'Archived tasks will appear here, ready to restore.': 'დაარქივებული დავალებები აქ გამოჩნდება, აღსადგენად მზად.',
+  'Could not load the archive.': 'არქივის ჩატვირთვა ვერ მოხერხდა.',
+  'Could not restore the task.': 'დავალების აღდგენა ვერ მოხერხდა.',
+  'Could not restore your tasks.': 'დავალებების აღდგენა ვერ მოხერხდა.',
+  'Could not archive your tasks.': 'დავალებების დაარქივება ვერ მოხერხდა.',
+  'Restored {count} tasks': 'აღდგა {count} დავალება',
+  'Archived {count} tasks': 'დაარქივდა {count} დავალება',
+  'Archive all tasks?': 'ყველა დავალება დაარქივდეს?',
+  'Every task on your lists moves to the Archive. Your lists become empty, but nothing is deleted — you can restore everything from here.':
+    'ყველა დავალება გადადის არქივში. სიები იცლება, მაგრამ არაფერი იშლება — ყველაფრის აღდგენა აქედან შეგიძლია.',
+  'Archive all': 'ყველას დაარქივება',
+
   // Task editor drawer
   Task: 'დავალება',
   'Delete task': 'დავალების წაშლა',

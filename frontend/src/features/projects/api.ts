@@ -35,6 +35,8 @@ export interface ProjectInput {
   mode?: ProjectMode;
   status?: ProjectStatus;
   priority?: Priority;
+  /** Active (working on it) vs inactive — drives the Working projects page. */
+  is_working?: boolean;
   start_date?: string | null;
   deadline?: string | null;
   notes?: string;

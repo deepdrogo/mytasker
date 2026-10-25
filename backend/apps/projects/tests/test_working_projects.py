@@ -51,3 +51,22 @@ def test_default_manager_still_lists_working_projects(user, make_project):
     make_project(user, name="A", is_working=True)
     make_project(user, name="B", is_working=False)
     assert Project.objects.visible_to(user).count() == 2
+
+
+def test_create_project_as_inactive(client_for, user):
+    created = client_for(user).post("/api/v1/projects/", {"name": "Someday", "is_working": False}, format="json")
+    assert created.status_code == 201, created.data
+    assert created.data["is_working"] is False
+
+
+def test_create_project_as_active(client_for, user):
+    created = client_for(user).post("/api/v1/projects/", {"name": "Now", "is_working": True}, format="json")
+    assert created.status_code == 201, created.data
+    assert created.data["is_working"] is True
+
+
+def test_edit_project_working_via_update(client_for, user, make_project):
+    project = make_project(user, name="Edit me", is_working=False)
+    updated = client_for(user).patch(f"/api/v1/projects/{project.id}/", {"is_working": True}, format="json")
+    assert updated.status_code == 200, updated.data
+    assert updated.data["is_working"] is True

@@ -30,6 +30,7 @@ export const core: Record<string, string> = {
   'Main navigation': 'მთავარი ნავიგაცია',
   Primary: 'მთავარი',
   More: 'სხვა',
+  Workspace: 'სამუშაო სივრცე',
   Working: 'მიმდინარე',
   'MyTasker - Dashboard': 'MyTasker — დეშბორდი',
   'MyTasker - Home': 'MyTasker — მთავარი',
