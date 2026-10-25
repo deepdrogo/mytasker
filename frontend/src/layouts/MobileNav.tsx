@@ -1,5 +1,5 @@
 import { A, useLocation } from '@solidjs/router';
-import { Briefcase, FolderKanban, LayoutDashboard, ListTodo, Settings, Sparkles, Sun, TrendingUp, User } from 'lucide-solid';
+import { Briefcase, FolderKanban, ListTodo, Settings, Sparkles, Sun, TrendingUp, User } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For, onCleanup, onMount } from 'solid-js';
 import { t } from '~/i18n';
@@ -14,20 +14,20 @@ interface Item {
   icon: () => JSX.Element;
 }
 
+// Projects-first dock: the project list leads; the rest of the modules live in the drawer (the ☰ menu
+// opens the full, projects-first sidebar). Dashboard moved to the drawer since projects is now home.
 const BASE_ITEMS: Item[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: () => <LayoutDashboard size={18} /> },
+  { label: 'Projects', href: '/projects/all', match: '/projects', icon: () => <FolderKanban size={18} /> },
   { label: 'Today', href: '/today', match: ['/today', '/tomorrow'], icon: () => <Sun size={18} /> },
   { label: 'Tasks', href: '/tasks/all', match: '/tasks', icon: () => <ListTodo size={18} /> },
-  { label: 'Projects', href: '/projects/active', match: '/projects', icon: () => <FolderKanban size={18} /> },
-  // Prompts moved to the drawer to make room for Today; five slots is all a phone-width dock fits legibly.
 ];
 const AI_ITEM: Item = { label: 'AI', href: '/ai', icon: () => <Sparkles size={18} /> };
 const INSIGHTS_ITEM: Item = { label: 'Insights', href: '/insights/daily', match: '/insights', icon: () => <TrendingUp size={18} /> };
 
 const ASSISTANT_ITEMS: Item[] = [
+  { label: 'Projects', href: '/projects/all', match: '/projects', icon: () => <FolderKanban size={18} /> },
   { label: 'Personal', href: '/tasks/personal', icon: () => <User size={18} /> },
   { label: 'Business', href: '/tasks/business', icon: () => <Briefcase size={18} /> },
-  { label: 'Projects', href: '/projects/active', match: '/projects', icon: () => <FolderKanban size={18} /> },
   { label: 'Settings', href: '/settings', icon: () => <Settings size={18} /> },
 ];
 

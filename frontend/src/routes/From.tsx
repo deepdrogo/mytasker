@@ -4,6 +4,7 @@
 import { Navigate, useParams } from '@solidjs/router';
 import type { JSX } from 'solid-js';
 import { createMemo, createSignal, For, Show } from 'solid-js';
+import { HOME_ROUTE } from '~/app/home';
 import { Page } from '~/components/shared/Page';
 import { Skeleton } from '~/components/ui/Feedback';
 import { peopleApi } from '~/features/people/api';
@@ -44,7 +45,7 @@ export default function From(): JSX.Element {
   const refresh = () => query.refetch();
 
   return (
-    <Show when={!delegators.data() || giver()} fallback={<Navigate href="/dashboard" />}>
+    <Show when={!delegators.data() || giver()} fallback={<Navigate href={HOME_ROUTE} />}>
       <Page
         title={giver()?.user.display_name ?? t('From')}
         subtitle={t('Tasks {name} handed to you. Complete, comment and edit them - only {name} can delete.', {

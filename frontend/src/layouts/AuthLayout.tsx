@@ -2,6 +2,7 @@ import { A, Navigate, useSearchParams, type RouteSectionProps } from '@solidjs/r
 import { ArrowLeft, Bot, Clock3, ShieldCheck, Sparkles } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
+import { HOME_ROUTE } from '~/app/home';
 import { LanguageSwitch } from '~/components/shared/LanguageSwitch';
 import { Logo, LogoMark } from '~/components/shared/Logo';
 import { t } from '~/i18n';
@@ -20,7 +21,7 @@ export function AuthLayout(props: RouteSectionProps): JSX.Element {
   // Honour ?next= here as well: this redirect fires the instant the session appears, before Login's own navigate.
   const target = () => {
     const next = typeof params.next === 'string' ? params.next : '';
-    return next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard';
+    return next.startsWith('/') && !next.startsWith('//') ? next : HOME_ROUTE;
   };
   return (
     <Show when={!authStore.isAuthenticated()} fallback={<Navigate href={target()} />}>

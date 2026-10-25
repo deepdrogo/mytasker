@@ -2,6 +2,7 @@ import { A, useNavigate } from '@solidjs/router';
 import type { JSX } from 'solid-js';
 import { createSignal } from 'solid-js';
 import { ApiError } from '~/api/client';
+import { HOME_ROUTE } from '~/app/home';
 import { Button } from '~/components/ui/Button';
 import { ErrorNote } from '~/components/ui/Feedback';
 import { Field, Input, nextId } from '~/components/ui/Input';
@@ -33,7 +34,7 @@ export default function Register(): JSX.Element {
         full_name: fullName().trim(),
         timezone: guessTimezone(),
       });
-      navigate('/dashboard', { replace: true });
+      navigate(HOME_ROUTE, { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.isValidation ? t('Check the fields below.') : err.message);

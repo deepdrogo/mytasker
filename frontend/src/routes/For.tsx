@@ -4,6 +4,7 @@
 import { Navigate, useParams } from '@solidjs/router';
 import type { JSX } from 'solid-js';
 import { createMemo, createSignal, For as Each, Show } from 'solid-js';
+import { HOME_ROUTE } from '~/app/home';
 import { Page } from '~/components/shared/Page';
 import { Skeleton } from '~/components/ui/Feedback';
 import { assistantsApi } from '~/features/settings/api';
@@ -48,7 +49,7 @@ export default function For(): JSX.Element {
   };
 
   return (
-    <Show when={!helping.data() || principal()} fallback={<Navigate href="/dashboard" />}>
+    <Show when={!helping.data() || principal()} fallback={<Navigate href={HOME_ROUTE} />}>
       <Page
         title={t('For {name}', { name: name() })}
         subtitle={t('Tasks you write here go straight into {name}’s lists, marked as added by you. You see only these.', {

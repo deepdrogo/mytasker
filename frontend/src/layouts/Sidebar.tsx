@@ -7,6 +7,8 @@ import {
   CalendarOff,
   CalendarRange,
   CheckCircle2,
+  ChevronDown,
+  ChevronRight,
   CircleDashed,
   Columns3,
   Coins,
@@ -33,7 +35,8 @@ import {
   X,
 } from 'lucide-solid';
 import type { JSX } from 'solid-js';
-import { For, Show } from 'solid-js';
+import { createSignal, For, Show } from 'solid-js';
+import { HOME_ROUTE } from '~/app/home';
 import { LanguageSwitch } from '~/components/shared/LanguageSwitch';
 import { Logo } from '~/components/shared/Logo';
 import { peopleApi } from '~/features/people/api';
@@ -59,7 +62,21 @@ interface NavSection {
   links: NavLink[];
 }
 
-const SECTIONS: NavSection[] = [
+// Projects are the home of the app and always lead the navigation, expanded.
+const PROJECTS_SECTION: NavSection = {
+  label: 'Projects',
+  links: [
+    { label: 'All', href: '/projects/all', icon: () => <FolderKanban size={15} /> },
+    { label: 'Canvas', href: '/projects/canvas', icon: () => <Columns3 size={15} /> },
+    { label: 'Active', href: '/projects/active', icon: () => <CircleDashed size={15} /> },
+    { label: 'Startups', href: '/projects/startups', icon: () => <Rocket size={15} /> },
+    { label: 'Ideas', href: '/projects/ideas', icon: () => <Lightbulb size={15} /> },
+  ],
+};
+
+// Everything else is still available, just tucked under a collapsed "More" group so the owner's
+// day-to-day view stays "projects list → project detail". Nothing here is removed or disabled.
+const SECONDARY_SECTIONS: NavSection[] = [
   {
     links: [
       { label: 'Dashboard', href: '/dashboard', icon: () => <LayoutDashboard size={15} /> },
@@ -79,16 +96,6 @@ const SECTIONS: NavSection[] = [
       { label: 'Calendar', href: '/tasks/calendar', icon: () => <CalendarRange size={15} /> },
       { label: 'No date', href: '/tasks/no-date', icon: () => <CalendarOff size={15} /> },
       { label: 'Completed', href: '/tasks/completed', icon: () => <CheckCircle2 size={15} /> },
-    ],
-  },
-  {
-    label: 'Projects',
-    links: [
-      { label: 'All', href: '/projects/all', icon: () => <FolderKanban size={15} /> },
-      { label: 'Canvas', href: '/projects/canvas', icon: () => <Columns3 size={15} /> },
-      { label: 'Active', href: '/projects/active', icon: () => <CircleDashed size={15} /> },
-      { label: 'Startups', href: '/projects/startups', icon: () => <Rocket size={15} /> },
-      { label: 'Ideas', href: '/projects/ideas', icon: () => <Lightbulb size={15} /> },
     ],
   },
   {
@@ -113,8 +120,18 @@ const SECTIONS: NavSection[] = [
   },
 ];
 
-/** What an assistant login gets: the principal's task lists and projects, nothing else. */
-const ASSISTANT_SECTIONS: NavSection[] = [
+/** What an assistant login gets: the principal's projects first, then their task lists. */
+const ASSISTANT_PROJECTS_SECTION: NavSection = {
+  label: 'Projects',
+  links: [
+    { label: 'All', href: '/projects/all', icon: () => <FolderKanban size={15} /> },
+    { label: 'Canvas', href: '/projects/canvas', icon: () => <Columns3 size={15} /> },
+    { label: 'Active', href: '/projects/active', icon: () => <CircleDashed size={15} /> },
+    { label: 'Startups', href: '/projects/startups', icon: () => <Rocket size={15} /> },
+  ],
+};
+
+const ASSISTANT_SECONDARY: NavSection[] = [
   {
     label: 'Tasks',
     links: [
@@ -129,16 +146,17 @@ const ASSISTANT_SECTIONS: NavSection[] = [
       { label: 'Completed', href: '/tasks/completed', icon: () => <CheckCircle2 size={15} /> },
     ],
   },
-  {
-    label: 'Projects',
-    links: [
-      { label: 'All', href: '/projects/all', icon: () => <FolderKanban size={15} /> },
-      { label: 'Canvas', href: '/projects/canvas', icon: () => <Columns3 size={15} /> },
-      { label: 'Active', href: '/projects/active', icon: () => <CircleDashed size={15} /> },
-      { label: 'Startups', href: '/projects/startups', icon: () => <Rocket size={15} /> },
-    ],
-  },
 ];
+
+const MORE_STORAGE_KEY = 'mt_nav_show_more';
+
+function readShowMore(): boolean {
+  try {
+    return localStorage.getItem(MORE_STORAGE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
 
 const AI_LINK: NavLink = { label: 'AI', href: '/ai', icon: () => <Sparkles size={15} /> };
 const PEOPLE_LINK: NavLink = { label: 'People', href: '/people', icon: () => <Users size={15} /> };
@@ -163,8 +181,13 @@ export function Sidebar(props: {
     () => (authStore.isAssistant() ? Promise.resolve([]) : assistantsApi.helping()),
     { staleMs: 30_000 },
   );
-  const sections = (): NavSection[] => {
-    const out = authStore.isAssistant() ? [...ASSISTANT_SECTIONS] : [...SECTIONS];
+  const primarySections = (): NavSection[] =>
+    authStore.isAssistant() ? [ASSISTANT_PROJECTS_SECTION] : [PROJECTS_SECTION];
+
+  // Everything that is not projects, plus the contextual From / Writing-for / People links, lives under
+  // the collapsible "More" group so the primary experience stays focused on projects.
+  const secondarySections = (): NavSection[] => {
+    const out = authStore.isAssistant() ? [...ASSISTANT_SECONDARY] : [...SECONDARY_SECTIONS];
     let at = authStore.isAssistant() ? 1 : 2;
     const from = (delegators.data() ?? []).filter((row) => row.open_count + row.done_count > 0);
     if (from.length > 0) {
@@ -197,6 +220,46 @@ export function Sidebar(props: {
     if (authStore.isAdmin() && !authStore.isAssistant()) out.splice(at, 0, { links: [PEOPLE_LINK] });
     return out;
   };
+
+  const [showMore, setShowMore] = createSignal(readShowMore());
+  // Keep the other modules visible whenever the active route is one of them, so the current page is
+  // never hidden behind a collapsed group; the explicit toggle still works on projects pages.
+  const onSecondaryRoute = () => !(location.pathname === '/' || isActive('/projects'));
+  const moreOpen = () => showMore() || onSecondaryRoute();
+  const toggleMore = () => {
+    const next = !moreOpen();
+    setShowMore(next);
+    try {
+      localStorage.setItem(MORE_STORAGE_KEY, next ? '1' : '0');
+    } catch {
+      /* private mode */
+    }
+  };
+
+  const renderSection = (section: NavSection): JSX.Element => (
+    <div class={styles.section}>
+      <Show when={section.label}>
+        <p class={styles.sectionLabel}>{t(section.label!)}</p>
+      </Show>
+      <For each={section.links}>
+        {(link) => (
+          <A
+            href={link.href}
+            class={[styles.link, isActive(link.href) ? styles.linkActive : ''].filter(Boolean).join(' ')}
+            onClick={props.onNavigate}
+            aria-current={isActive(link.href) ? 'page' : undefined}
+          >
+            <span class={styles.linkIcon}>{link.icon()}</span>
+            <span class={styles.linkLabel}>{link.raw ? link.label : t(link.label)}</span>
+            <Show when={link.count}>
+              <span class={styles.linkCount}>{link.count}</span>
+            </Show>
+          </A>
+        )}
+      </For>
+    </div>
+  );
+
   const footerLinks = () => {
     if (authStore.isAssistant()) return [SETTINGS_LINK];
     return authStore.isAdmin() ? [AI_LINK, ...FOOTER_LINKS] : FOOTER_LINKS;
@@ -205,7 +268,7 @@ export function Sidebar(props: {
   return (
     <aside class={styles.sidebar} aria-label={t('Main navigation')}>
       <div class={styles.brand}>
-        <A href="/dashboard" class={styles.brandLink} onClick={props.onNavigate} aria-label={t('MyTasker - Dashboard')}>
+        <A href={HOME_ROUTE} class={styles.brandLink} onClick={props.onNavigate} aria-label={t('MyTasker - Projects')}>
           <Logo size={22} />
         </A>
         <div class={styles.brandActions}>
@@ -239,31 +302,26 @@ export function Sidebar(props: {
             </p>
           )}
         </Show>
-        <For each={sections()}>
-          {(section) => (
-            <div class={styles.section}>
-              <Show when={section.label}>
-                <p class={styles.sectionLabel}>{t(section.label!)}</p>
-              </Show>
-              <For each={section.links}>
-                {(link) => (
-                  <A
-                    href={link.href}
-                    class={[styles.link, isActive(link.href) ? styles.linkActive : ''].filter(Boolean).join(' ')}
-                    onClick={props.onNavigate}
-                    aria-current={isActive(link.href) ? 'page' : undefined}
-                  >
-                    <span class={styles.linkIcon}>{link.icon()}</span>
-                    <span class={styles.linkLabel}>{link.raw ? link.label : t(link.label)}</span>
-                    <Show when={link.count}>
-                      <span class={styles.linkCount}>{link.count}</span>
-                    </Show>
-                  </A>
-                )}
-              </For>
-            </div>
-          )}
-        </For>
+        <For each={primarySections()}>{(section) => renderSection(section)}</For>
+
+        <button
+          type="button"
+          class={styles.moreToggle}
+          onClick={toggleMore}
+          aria-expanded={moreOpen()}
+          aria-controls="sidebar-more"
+        >
+          <Show when={moreOpen()} fallback={<ChevronRight size={13} />}>
+            <ChevronDown size={13} />
+          </Show>
+          <span>{t('More')}</span>
+        </button>
+
+        <Show when={moreOpen()}>
+          <div id="sidebar-more">
+            <For each={secondarySections()}>{(section) => renderSection(section)}</For>
+          </div>
+        </Show>
       </nav>
 
       <div class={styles.footer}>

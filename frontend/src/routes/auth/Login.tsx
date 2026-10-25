@@ -2,6 +2,7 @@ import { A, useNavigate, useSearchParams } from '@solidjs/router';
 import type { JSX } from 'solid-js';
 import { createSignal } from 'solid-js';
 import { ApiError } from '~/api/client';
+import { HOME_ROUTE } from '~/app/home';
 import { Button } from '~/components/ui/Button';
 import { Field, Input, nextId } from '~/components/ui/Input';
 import { ErrorNote } from '~/components/ui/Feedback';
@@ -27,8 +28,8 @@ export default function Login(): JSX.Element {
     setBusy(true);
     try {
       await login(email().trim(), password());
-      const next = typeof params.next === 'string' ? params.next : '/dashboard';
-      navigate(next.startsWith('/') ? next : '/dashboard', { replace: true });
+      const next = typeof params.next === 'string' ? params.next : HOME_ROUTE;
+      navigate(next.startsWith('/') ? next : HOME_ROUTE, { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
