@@ -2,6 +2,8 @@
 export const settings: Record<string, string> = {
   // Preferences
   'Preferences saved': 'პრეფერენციები შენახულია',
+  'Home page': 'მთავარი გვერდი',
+  'Where you land after signing in.': 'სად აღმოჩნდები ავტორიზაციის შემდეგ.',
   'Targets feed the Today meters and Insights. Summary times are in your timezone.':
     'მიზნები კვებავს „დღეს“ გვერდის მზომებსა და ანალიტიკას. შეჯამებების დრო შენი დროის სარტყლით არის მითითებული.',
   'Business hours target / day': 'სამუშაო საათების მიზანი / დღე',

@@ -11,6 +11,18 @@ export const projects: Record<string, string> = {
   Member: 'წევრი',
   Viewer: 'მნახველი',
 
+  // Working projects catalog
+  'Working projects': 'მიმდინარე პროექტები',
+  'Everything you are building — and what you are working on right now.':
+    'ყველაფერი, რასაც ქმნი — და რაზეც ახლა მუშაობ.',
+  '{count} working': '{count} მიმდინარე',
+  'of {count} projects': '{count} პროექტიდან',
+  'Create a project to see it here.': 'შექმენი პროექტი, რომ აქ გამოჩნდეს.',
+  'Mark {name} as working': 'მონიშნე „{name}" მიმდინარედ',
+  'Stop working on {name}': 'შეწყვიტე „{name}"-ზე მუშაობა',
+  'Working — click to clear': 'მიმდინარე — დააჭირე მოსახსნელად',
+  'Not working — click to mark': 'არ მიმდინარეობს — დააჭირე მოსანიშნად',
+
   // Project card
   '{done}/{total} tasks': '{done}/{total} დავალება',
   '{count} open': '{count} ღია',

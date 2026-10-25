@@ -88,6 +88,12 @@ export const projectsApi = {
     invalidate('projects');
     return result.ids;
   },
+  /** Toggle whether the owner is actively working on this project (Working projects catalog). */
+  setWorking: async (id: ID, working: boolean) => {
+    const project = await api.post<Project>(`/projects/${id}/working/`, { working });
+    invalidate('projects', 'today');
+    return project;
+  },
   changeMode: async (id: ID, mode: ProjectMode) => {
     const project = await api.post<Project>(`/projects/${id}/mode/`, { mode });
     invalidate(...SCOPES, 'prompts');

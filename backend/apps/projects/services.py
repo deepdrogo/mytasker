@@ -211,6 +211,21 @@ def follow_calendar(user) -> int:
 
 
 @transaction.atomic
+def set_working(actor: Actor, project_id: int, *, working: bool) -> Project:
+    """
+    Flip the "I'm actively working on this" flag shown on the Working projects catalog. Deliberately a
+    light touch: it does not bump the project version or emit an activity event — it is a personal view
+    marker, not a content change.
+    """
+    project = get_project_for_user(project_id, actor.user, capability=Capability.MANAGE_PROJECT, for_update=True)
+    working = bool(working)
+    if project.is_working != working:
+        project.is_working = working
+        project.save(update_fields=["is_working", "updated_at"])
+    return project
+
+
+@transaction.atomic
 def delete_project(actor: Actor, project_id: int) -> None:
     project = get_project_for_user(project_id, actor.user, capability=Capability.DELETE_PROJECT, for_update=True)
     from apps.tasks.models import Task

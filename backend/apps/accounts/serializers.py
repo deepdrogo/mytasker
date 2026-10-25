@@ -30,6 +30,7 @@ class UserPreferenceSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserPreference
         fields = [
+            "home_view",
             "first_day_of_week",
             "time_format",
             "default_task_type",

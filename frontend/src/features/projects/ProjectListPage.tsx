@@ -23,6 +23,7 @@ const GROUP_ICON: Record<ProjectGroupKey, () => JSX.Element> = {
 };
 
 const PROJECT_TABS = [
+  { label: 'Working', href: '/projects/working' },
   { label: 'All', href: '/projects/all' },
   { label: 'Check-ins', href: '/projects/checkins' },
   { label: 'Canvas', href: '/projects/canvas' },

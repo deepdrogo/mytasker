@@ -88,7 +88,15 @@ class UserPreference(TimeStampedModel):
         H24 = "24h", "24-hour"
         H12 = "12h", "12-hour"
 
+    class HomeView(models.TextChoices):
+        DASHBOARD = "dashboard", "Dashboard"
+        PROJECTS = "projects", "Working projects"
+
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="preferences")
+
+    # Which page is "home" after login. `projects` lands on the Working projects catalog and keeps the
+    # rest of the modules out of the primary navigation; `dashboard` is the classic full experience.
+    home_view = models.CharField(max_length=12, choices=HomeView.choices, default=HomeView.DASHBOARD)
 
     first_day_of_week = models.PositiveSmallIntegerField(default=1)  # 0 = Sunday, 1 = Monday
     time_format = models.CharField(max_length=3, choices=TimeFormat.choices, default=TimeFormat.H24)

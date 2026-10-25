@@ -98,6 +98,9 @@ class Project(TimeStampedModel, SoftDeleteModel):
     start_date = models.DateField(null=True, blank=True)
     deadline = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True)
+    # Owner's "am I actively working on this right now?" flag, shown on the Working projects catalog.
+    # Orthogonal to status/kind: a planned or paused project can still be flagged as being worked on.
+    is_working = models.BooleanField(default=False, db_index=True)
     sort_order = models.IntegerField(default=0)
     version = models.PositiveIntegerField(default=1)
 
