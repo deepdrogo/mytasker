@@ -6,6 +6,7 @@ import { Check, Handshake, Pencil, Plus, Search, Trash2, UserPlus, Users, X } fr
 import type { JSX } from 'solid-js';
 import { createEffect, createMemo, createSignal, For, on, Show } from 'solid-js';
 import { ApiError } from '~/api/client';
+import { HOME_ROUTE } from '~/app/home';
 import { Page } from '~/components/shared/Page';
 import { Button } from '~/components/ui/Button';
 import { DateTimeInput } from '~/components/ui/DateTimeInput';
@@ -30,7 +31,7 @@ import styles from './People.module.css';
 type Filter = 'open' | 'done';
 
 export default function People(): JSX.Element {
-  if (!authStore.isAdmin()) return <Navigate href="/dashboard" />;
+  if (!authStore.isAdmin()) return <Navigate href={HOME_ROUTE} />;
 
   const people = createQuery(() => 'people:list', () => peopleApi.list());
   const [selectedId, setSelectedId] = createSignal<ID | null>(null);

@@ -21,6 +21,7 @@ import {
 } from 'lucide-solid';
 import type { Component, JSX } from 'solid-js';
 import { createSignal, For, onCleanup, onMount, Show } from 'solid-js';
+import { HOME_ROUTE } from '~/app/home';
 import { Logo, LogoMark } from '~/components/shared/Logo';
 import { authStore } from '~/stores/auth';
 import styles from './Landing.module.css';
@@ -58,7 +59,7 @@ const WEEK_BARS = [42, 70, 55, 88, 64, 30, 18];
 
 export default function Landing(): JSX.Element {
   return (
-    <Show when={!authStore.isAuthenticated()} fallback={<Navigate href="/dashboard" />}>
+    <Show when={!authStore.isAuthenticated()} fallback={<Navigate href={HOME_ROUTE} />}>
       <LandingView />
     </Show>
   );

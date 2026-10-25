@@ -82,6 +82,39 @@
   margin-top: var(--s-6);
 }
 
+/* "More" disclosure: folds every non-project module away so the owner's default view is projects only. */
+.moreToggle {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  margin-top: var(--s-6);
+  padding: var(--s-2) var(--s-5);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: var(--fw-semibold);
+  color: var(--c-text-faint);
+  transition:
+    background var(--t-fast),
+    color var(--t-fast);
+}
+
+.moreToggle:hover {
+  background: var(--c-hover);
+  color: var(--c-text-dim);
+}
+
+.moreToggle > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .sectionLabel {
   padding: 0 var(--s-5) var(--s-3);
   font-size: 10.5px;
