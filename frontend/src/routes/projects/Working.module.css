@@ -1,0 +1,155 @@
+/* Working projects catalog — monochrome + volumetric, with one deliberate green accent for "working". */
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+  max-width: 760px;
+}
+
+.summary {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-4);
+  font-size: var(--fs-md);
+}
+
+.summaryStrong {
+  color: var(--c-text);
+  font-weight: var(--fw-semibold);
+}
+
+.summaryDim {
+  color: var(--c-text-dim);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  padding: var(--s-5) var(--s-6);
+  border-radius: var(--r-lg);
+  background: var(--g-surface);
+  border: 1px solid var(--c-border);
+  box-shadow: var(--shadow-card);
+  transition:
+    border-color var(--t-fast),
+    transform var(--t-fast),
+    box-shadow var(--t-base);
+}
+
+.row:hover {
+  border-color: var(--c-border-strong);
+  transform: translateY(-1px);
+}
+
+/* A project in progress gets a quietly lit rim so the eye finds it first — depth, not loud colour. */
+.rowOn {
+  border-color: rgba(34, 197, 94, 0.35);
+  box-shadow:
+    var(--rim-top),
+    0 0 0 1px rgba(34, 197, 94, 0.14),
+    0 12px 30px rgba(0, 0, 0, 0.45);
+}
+
+/* The status control: a hollow ring by default; a filled green disc with a check when working. */
+.status {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-full);
+  border: 1.5px solid var(--c-border-strong);
+  background: var(--c-surface-2);
+  color: var(--c-invert-text);
+  cursor: pointer;
+  transition:
+    background var(--t-fast),
+    border-color var(--t-fast),
+    box-shadow var(--t-base),
+    transform var(--t-fast);
+}
+
+.status:hover {
+  border-color: var(--c-focus);
+}
+
+.status:active {
+  transform: scale(0.9);
+}
+
+.statusOn {
+  background: linear-gradient(180deg, #2ee36a 0%, #17a34a 100%);
+  border-color: rgba(46, 227, 106, 0.6);
+  color: #04210f;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 0 14px rgba(34, 197, 94, 0.55);
+}
+
+.statusOn:hover {
+  border-color: rgba(46, 227, 106, 0.9);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+  color: inherit;
+}
+
+.name {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+  color: var(--c-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-5);
+  font-size: var(--fs-sm);
+  color: var(--c-text-dim);
+}
+
+.metaTime {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+/* "Working" tag — a whisper of green, never a block of colour. */
+.working {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 9px;
+  border-radius: var(--r-full);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.02em;
+  color: #6ee7a0;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.28);
+}
+
+@media (max-width: 899px) {
+  .wrap {
+    max-width: 100%;
+  }
+}

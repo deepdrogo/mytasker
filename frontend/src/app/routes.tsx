@@ -21,6 +21,7 @@ const TasksClients = lazy(() => import('~/routes/tasks/Clients'));
 const People = lazy(() => import('~/routes/People'));
 const From = lazy(() => import('~/routes/From'));
 const ForPrincipal = lazy(() => import('~/routes/For'));
+const ProjectsWorking = lazy(() => import('~/routes/projects/Working'));
 const ProjectsActive = lazy(() => import('~/routes/projects/Active'));
 const ProjectsAll = lazy(() => import('~/routes/projects/All'));
 const ProjectsCanvas = lazy(() => import('~/routes/projects/Canvas'));
@@ -51,7 +52,7 @@ const Support = lazy(() => import('~/routes/Support'));
 const NotFound = lazy(() => import('~/routes/NotFound'));
 
 export const routes: RouteDefinition[] = [
-  // Public landing; signed-in users are bounced straight to the projects home inside the component.
+  // Public landing; signed-in users are bounced straight to /dashboard inside the component.
   { path: '/', component: Landing },
   // Public: donation addresses + author contact, reachable from the landing without an account.
   { path: '/support', component: Support },
@@ -78,8 +79,8 @@ export const routes: RouteDefinition[] = [
       { path: '/tasks/all', component: TasksAll },
       { path: '/tasks/no-date', component: TasksNoDate },
       { path: '/tasks/calendar', component: TasksCalendar },
-      // Projects are the home of the app: the project catalog is the full list, then project detail.
-      { path: '/projects', component: () => <Navigate href="/projects/all" /> },
+      { path: '/projects', component: () => <Navigate href="/projects/active" /> },
+      { path: '/projects/working', component: ProjectsWorking },
       { path: '/projects/active', component: ProjectsActive },
       { path: '/projects/startups', component: ProjectsStartups },
       { path: '/projects/all', component: ProjectsAll },

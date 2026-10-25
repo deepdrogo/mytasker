@@ -117,6 +117,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
         applied = services.reorder_projects(request.user, serializer.validated_data["ids"])
         return Response({"ids": applied})
 
+    @action(detail=True, methods=["post"])
+    def working(self, request, pk=None):
+        """Toggle whether the owner is actively working on this project (Working projects catalog)."""
+        working = bool(request.data.get("working", True))
+        project = services.set_working(self._actor(), int(pk), working=working)
+        return self._respond(project)
+
     @action(detail=False, methods=["post"], url_path="follow-calendar")
     def follow_calendar(self, request):
         """Forget the manual order: the dashboard goes back to the project calendar's order."""

@@ -82,7 +82,7 @@
   margin-top: var(--s-6);
 }
 
-/* "More" disclosure: folds every non-project module away so the owner's default view is projects only. */
+/* "More" disclosure: folds every non-project module away for projects-home users. */
 .moreToggle {
   display: flex;
   align-items: center;

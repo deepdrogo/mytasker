@@ -31,6 +31,7 @@ export default function PreferencesSection(): JSX.Element {
     weekly_review_enabled: initial?.weekly_review_enabled ?? true,
     monthly_review_enabled: initial?.monthly_review_enabled ?? true,
     routine_on_weekends: initial?.routine_on_weekends ?? false,
+    home_view: initial?.home_view ?? 'dashboard',
   });
   const [busy, setBusy] = createSignal(false);
   const set = <K extends keyof PreferencesForm>(key: K, value: PreferencesForm[K]) => setForm((f) => ({ ...f, [key]: value }));
@@ -97,6 +98,12 @@ export default function PreferencesSection(): JSX.Element {
           </Field>
           <Field label={t('Default reminder (minutes before)')}>
             <Input type="number" min={0} max={1440} value={form().default_reminder_minutes} onInput={(e) => set('default_reminder_minutes', Number(e.currentTarget.value))} />
+          </Field>
+          <Field label={t('Home page')} hint={t('Where you land after signing in.')}>
+            <Select value={form().home_view} onChange={(e) => set('home_view', e.currentTarget.value as UserPreferences['home_view'])}>
+              <option value="dashboard">{t('Dashboard')}</option>
+              <option value="projects">{t('Working projects')}</option>
+            </Select>
           </Field>
           <Field label={t('First day of week')}>
             <Select value={String(form().first_day_of_week)} onChange={(e) => set('first_day_of_week', Number(e.currentTarget.value))}>

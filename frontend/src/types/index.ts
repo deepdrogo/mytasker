@@ -25,7 +25,11 @@ export type Source =
   | 'ai_telegram'
   | 'system';
 
+export type HomeView = 'dashboard' | 'projects';
+
 export interface UserPreferences {
+  /** Which page is home after login: the classic dashboard, or the Working projects catalog. */
+  home_view: HomeView;
   first_day_of_week: number;
   time_format: '24h' | '12h';
   default_task_type: TaskKind;
@@ -200,6 +204,8 @@ export interface Project {
   mode: ProjectMode;
   status: ProjectStatus;
   priority: Priority;
+  /** Owner flag: are they actively working on this project right now? Shown on the Working projects page. */
+  is_working: boolean;
   start_date: ISODate | null;
   deadline: ISODate | null;
   notes: string;

@@ -1,6 +1,5 @@
 import { A } from '@solidjs/router';
 import type { JSX } from 'solid-js';
-import { HOME_ROUTE } from '~/app/home';
 import { t } from '~/i18n';
 
 export default function NotFound(): JSX.Element {
@@ -19,8 +18,8 @@ export default function NotFound(): JSX.Element {
     >
       <span style={{ 'font-family': 'var(--font-mono)', 'font-size': 'var(--fs-2xl)', color: 'var(--c-text)' }}>404</span>
       <p>{t('This page does not exist.')}</p>
-      <A href={HOME_ROUTE} style={{ color: 'var(--c-text)' }}>
-        {t('Back to Projects')}
+      <A href="/dashboard" style={{ color: 'var(--c-text)' }}>
+        {t('Back to Dashboard')}
       </A>
     </div>
   );

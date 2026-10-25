@@ -42,6 +42,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             "mode",
             "status",
             "priority",
+            "is_working",
             "start_date",
             "deadline",
             "notes",

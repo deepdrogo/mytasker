@@ -1,7 +1,8 @@
 import { A, useLocation } from '@solidjs/router';
-import { Briefcase, FolderKanban, ListTodo, Settings, Sparkles, Sun, TrendingUp, User } from 'lucide-solid';
+import { Briefcase, FolderKanban, LayoutDashboard, ListTodo, Settings, Sparkles, Sun, TrendingUp, User } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For, onCleanup, onMount } from 'solid-js';
+import { prefersProjectsHome } from '~/app/home';
 import { t } from '~/i18n';
 import { authStore } from '~/stores/auth';
 import styles from './MobileNav.module.css';
@@ -14,10 +15,17 @@ interface Item {
   icon: () => JSX.Element;
 }
 
-// Projects-first dock: the project list leads; the rest of the modules live in the drawer (the ☰ menu
-// opens the full, projects-first sidebar). Dashboard moved to the drawer since projects is now home.
 const BASE_ITEMS: Item[] = [
-  { label: 'Projects', href: '/projects/all', match: '/projects', icon: () => <FolderKanban size={18} /> },
+  { label: 'Dashboard', href: '/dashboard', icon: () => <LayoutDashboard size={18} /> },
+  { label: 'Today', href: '/today', match: ['/today', '/tomorrow'], icon: () => <Sun size={18} /> },
+  { label: 'Tasks', href: '/tasks/all', match: '/tasks', icon: () => <ListTodo size={18} /> },
+  { label: 'Projects', href: '/projects/active', match: '/projects', icon: () => <FolderKanban size={18} /> },
+  // Prompts moved to the drawer to make room for Today; five slots is all a phone-width dock fits legibly.
+];
+
+// Projects-home users lead with the Working projects catalog; the rest stays in the drawer (☰).
+const PROJECTS_HOME_ITEMS: Item[] = [
+  { label: 'Projects', href: '/projects/working', match: '/projects', icon: () => <FolderKanban size={18} /> },
   { label: 'Today', href: '/today', match: ['/today', '/tomorrow'], icon: () => <Sun size={18} /> },
   { label: 'Tasks', href: '/tasks/all', match: '/tasks', icon: () => <ListTodo size={18} /> },
 ];
@@ -25,9 +33,9 @@ const AI_ITEM: Item = { label: 'AI', href: '/ai', icon: () => <Sparkles size={18
 const INSIGHTS_ITEM: Item = { label: 'Insights', href: '/insights/daily', match: '/insights', icon: () => <TrendingUp size={18} /> };
 
 const ASSISTANT_ITEMS: Item[] = [
-  { label: 'Projects', href: '/projects/all', match: '/projects', icon: () => <FolderKanban size={18} /> },
   { label: 'Personal', href: '/tasks/personal', icon: () => <User size={18} /> },
   { label: 'Business', href: '/tasks/business', icon: () => <Briefcase size={18} /> },
+  { label: 'Projects', href: '/projects/active', match: '/projects', icon: () => <FolderKanban size={18} /> },
   { label: 'Settings', href: '/settings', icon: () => <Settings size={18} /> },
 ];
 
@@ -70,7 +78,8 @@ export function MobileNav(): JSX.Element {
   // The fifth slot is AI for administrators; everyone else gets Insights there.
   const items = () => {
     if (authStore.isAssistant()) return ASSISTANT_ITEMS;
-    return [...BASE_ITEMS, authStore.isAdmin() ? AI_ITEM : INSIGHTS_ITEM];
+    const base = prefersProjectsHome() ? PROJECTS_HOME_ITEMS : BASE_ITEMS;
+    return [...base, authStore.isAdmin() ? AI_ITEM : INSIGHTS_ITEM];
   };
   const isActive = (item: Item) => {
     const bases = item.match === undefined ? [item.href] : Array.isArray(item.match) ? item.match : [item.match];
