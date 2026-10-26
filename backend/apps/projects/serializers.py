@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from apps.projects.models import Idea, Project, ProjectMembership
+from apps.projects.models import Idea, Project, ProjectMembership, WorkGroup
 from common.models import Priority
 from common.permissions import CAPABILITY_MIN_ROLE, project_access
 
@@ -30,6 +30,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     prompt_count = serializers.IntegerField(read_only=True, default=0)
     tracked_seconds = serializers.IntegerField(read_only=True, default=0)
     capabilities = serializers.SerializerMethodField()
+    work_group_id = serializers.IntegerField(read_only=True, allow_null=True)
 
     class Meta:
         model = Project
@@ -43,6 +44,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             "status",
             "priority",
             "is_working",
+            "work_group_id",
             "start_date",
             "deadline",
             "notes",
@@ -113,6 +115,7 @@ class ProjectUpdateSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=Project.Status.choices, required=False)
     priority = serializers.ChoiceField(choices=Priority.choices, required=False)
     is_working = serializers.BooleanField(required=False)
+    work_group_id = serializers.IntegerField(required=False, allow_null=True)
     start_date = serializers.DateField(required=False, allow_null=True)
     deadline = serializers.DateField(required=False, allow_null=True)
     notes = serializers.CharField(required=False, allow_blank=True)
@@ -122,6 +125,17 @@ class ProjectUpdateSerializer(serializers.Serializer):
 
 class ModeChangeSerializer(serializers.Serializer):
     mode = serializers.ChoiceField(choices=Project.Mode.choices)
+
+
+class WorkGroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkGroup
+        fields = ["id", "name", "sort_order"]
+        read_only_fields = fields
+
+
+class WorkGroupInputSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=80)
 
 
 class ProjectReorderSerializer(serializers.Serializer):

@@ -28,6 +28,34 @@ export interface SortableOptions<T> {
   onReorder: (items: T[], keys: SortableKey[]) => void | Promise<void>;
   /** Set to false to render the list read-only (no handles react). */
   enabled?: Accessor<boolean>;
+  /**
+   * `grid` is a wrapping chip board: the pointer can move a chip sideways as well as up and down.
+   * Omitted means a single vertical list, measured with `offsetTop` so in-flight animations are ignored.
+   */
+  flow?: Accessor<'vertical' | 'grid'>;
+}
+
+export interface GridBox {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Where a dragged chip should sit in a wrapping grid. `x`/`y` are its centre, in the same coordinates as
+ * `boxes`. Boxes on an earlier row count first; on the same row, boxes whose centre is still to the left.
+ */
+export function gridSlot(boxes: readonly GridBox[], x: number, y: number, ignoreIndex: number): number {
+  let slot = 0;
+  boxes.forEach((box, index) => {
+    if (index === ignoreIndex) return;
+    const cy = box.top + box.height / 2;
+    const cx = box.left + box.width / 2;
+    const slack = box.height * 0.45;
+    if (cy < y - slack || (Math.abs(cy - y) <= slack && cx < x)) slot += 1;
+  });
+  return slot;
 }
 
 export interface Sortable<T> {
@@ -66,6 +94,7 @@ export function createSortable<T>(options: SortableOptions<T>): Sortable<T> {
   const [items, setItems] = createSignal<T[]>([...options.items()]);
   const [dragging, setDragging] = createSignal<SortableKey | null>(null);
   const [offset, setOffset] = createSignal(0);
+  const [offsetX, setOffsetX] = createSignal(0);
   let container: HTMLElement | undefined;
   let pendingSync: T[] | null = null;
   let abortDrag: (() => void) | null = null;
@@ -82,6 +111,7 @@ export function createSortable<T>(options: SortableOptions<T>): Sortable<T> {
   );
 
   const enabled = () => options.enabled?.() ?? true;
+  const usesGrid = () => options.flow?.() === 'grid';
   const keyOf = (item: T) => String(options.key(item));
   const rows = (): HTMLElement[] => (container ? Array.from(container.querySelectorAll<HTMLElement>(`:scope > [${ATTR}]`)) : []);
   const rowFor = (key: SortableKey) => rows().find((el) => el.getAttribute(ATTR) === String(key));
@@ -99,6 +129,32 @@ export function createSortable<T>(options: SortableOptions<T>): Sortable<T> {
 
   /** Reorder the DOM list and animate the untouched rows from their old slot to the new one. */
   const applyOrder = (next: T[], draggedKey: SortableKey | null) => {
+    if (usesGrid()) {
+      const before = new Map(
+        rows().map((el) => [el.getAttribute(ATTR) ?? '', { x: el.offsetLeft, y: el.offsetTop }] as const),
+      );
+      setItems(next);
+      for (const el of rows()) {
+        const k = el.getAttribute(ATTR) ?? '';
+        if (k === String(draggedKey)) continue;
+        const prev = before.get(k);
+        if (!prev) continue;
+        const dx = prev.x - el.offsetLeft;
+        const dy = prev.y - el.offsetTop;
+        if (dx === 0 && dy === 0) continue;
+        el.style.transition = 'none';
+        el.style.transform = `translate(${dx}px, ${dy}px)`;
+        void el.offsetHeight;
+        el.style.transition = `transform ${FLIP_MS}ms ease`;
+        el.style.transform = '';
+        const clear = () => {
+          el.style.transition = '';
+          el.removeEventListener('transitionend', clear);
+        };
+        el.addEventListener('transitionend', clear);
+      }
+      return;
+    }
     const before = new Map(rows().map((el) => [el.getAttribute(ATTR) ?? '', el.offsetTop]));
     setItems(next);
     for (const el of rows()) {
@@ -151,13 +207,16 @@ export function createSortable<T>(options: SortableOptions<T>): Sortable<T> {
     const startOrder = items();
     const containerTop = () => container!.getBoundingClientRect().top;
     const grabOffset = e.clientY - row.getBoundingClientRect().top;
+    const grabOffsetX = e.clientX - row.getBoundingClientRect().left;
     const scroller = scrollParent(container);
+    let lastX = e.clientX;
     let lastY = e.clientY;
     let frame = 0;
     let finished = false;
 
     setDragging(key);
     setOffset(0);
+    setOffsetX(0);
     container.dataset.sorting = 'true';
     document.body.style.userSelect = 'none';
     // Capture is best-effort. Reordering moves the dragged row in the DOM (remove + insert), and browsers drop
@@ -174,6 +233,32 @@ export function createSortable<T>(options: SortableOptions<T>): Sortable<T> {
 
     const update = () => {
       if (!container) return;
+      if (usesGrid()) {
+        const rect = container.getBoundingClientRect();
+        const x = lastX - rect.left + container.scrollLeft;
+        const y = lastY - rect.top + container.scrollTop;
+        const centreX = x - grabOffsetX + row.offsetWidth / 2;
+        const centreY = y - grabOffset + row.offsetHeight / 2;
+        const current = items();
+        const currentIndex = current.findIndex((item) => keyOf(item) === String(key));
+        const boxes = rows().map((el) => ({
+          left: el.offsetLeft,
+          top: el.offsetTop,
+          width: el.offsetWidth,
+          height: el.offsetHeight,
+        }));
+        const slot = gridSlot(boxes, centreX, centreY, rows().indexOf(row));
+        if (slot !== currentIndex && currentIndex >= 0) {
+          const next = [...current];
+          const [moved] = next.splice(currentIndex, 1);
+          next.splice(slot, 0, moved as T);
+          applyOrder(next, key);
+          capture();
+        }
+        setOffsetX(x - grabOffsetX - row.offsetLeft);
+        setOffset(y - grabOffset - row.offsetTop);
+        return;
+      }
       const localY = lastY - containerTop() - grabOffset; // pointer-driven top of the dragged row, container coords
       const centre = localY + row.offsetHeight / 2;
       const current = items();
@@ -217,6 +302,7 @@ export function createSortable<T>(options: SortableOptions<T>): Sortable<T> {
     };
 
     const onMove = (ev: PointerEvent) => {
+      lastX = ev.clientX;
       lastY = ev.clientY;
       update();
       if (!frame) frame = requestAnimationFrame(autoScroll);
@@ -238,6 +324,7 @@ export function createSortable<T>(options: SortableOptions<T>): Sortable<T> {
       document.body.style.userSelect = '';
       if (container) delete container.dataset.sorting;
       setOffset(0);
+      setOffsetX(0);
       setDragging(null);
       const final = items();
       commit(final, startOrder);
@@ -257,9 +344,10 @@ export function createSortable<T>(options: SortableOptions<T>): Sortable<T> {
 
   const onKeyDown = (item: T) => (e: KeyboardEvent) => {
     if (!enabled()) return;
-    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || (usesGrid() && (e.key === 'ArrowLeft' || e.key === 'ArrowRight'))) {
       e.preventDefault();
-      move(item, e.key === 'ArrowUp' ? -1 : 1);
+      const backward = e.key === 'ArrowUp' || e.key === 'ArrowLeft';
+      move(item, backward ? -1 : 1);
     } else if (e.key === 'Home' || e.key === 'End') {
       e.preventDefault();
       move(item, e.key === 'Home' ? -items().length : items().length);
@@ -274,10 +362,11 @@ export function createSortable<T>(options: SortableOptions<T>): Sortable<T> {
     },
     isDragging: (item) => dragging() !== null && String(dragging()) === keyOf(item),
     itemProps: (item) => ({ [ATTR]: keyOf(item) }),
-    itemStyle: (item) =>
-      dragging() !== null && String(dragging()) === keyOf(item)
-        ? { transform: `translateY(${offset()}px)`, transition: 'none', 'z-index': 2, position: 'relative' }
-        : undefined,
+    itemStyle: (item) => {
+      if (dragging() === null || String(dragging()) !== keyOf(item)) return undefined;
+      const shift = usesGrid() ? `translate(${offsetX()}px, ${offset()}px)` : `translateY(${offset()}px)`;
+      return { transform: shift, transition: 'none', 'z-index': 2, position: 'relative' };
+    },
     handleProps: (item) => ({
       onPointerDown: onPointerDown(item),
       onKeyDown: onKeyDown(item),

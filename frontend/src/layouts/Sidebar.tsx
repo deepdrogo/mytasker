@@ -148,7 +148,65 @@ const ASSISTANT_SECTIONS: NavSection[] = [
   },
 ];
 
-const MORE_STORAGE_KEY = 'mt_nav_show_more';
+const MORE_STORAGE_KEY = 'mt_nav_more_v2';
+
+/** Projects-home: Dashboard first, then the working board. Everything else folds under More. */
+const PRIMARY_SECTION: NavSection = {
+  links: [
+    { label: 'Dashboard', href: '/dashboard', icon: () => <LayoutDashboard size={15} /> },
+    { label: 'Working', href: '/projects/working', icon: () => <CircleDot size={15} /> },
+  ],
+};
+
+const PROJECT_SECTION: NavSection = {
+  label: 'Projects',
+  links: [
+    { label: 'All', href: '/projects/all', icon: () => <FolderKanban size={15} /> },
+    { label: 'Startups', href: '/projects/startups', icon: () => <Rocket size={15} /> },
+    { label: 'Ideas', href: '/projects/ideas', icon: () => <Lightbulb size={15} /> },
+  ],
+};
+
+const DAY_LINKS: NavLink[] = [
+  { label: 'Today', href: '/today', icon: () => <Sun size={15} /> },
+  { label: 'Tomorrow', href: '/tomorrow', icon: () => <Sunrise size={15} /> },
+];
+
+const TASK_LINKS: NavLink[] = [
+  { label: 'Clients', href: '/tasks/clients', icon: () => <Handshake size={15} /> },
+  { label: 'All', href: '/tasks/all', icon: () => <LayoutGrid size={15} /> },
+  { label: 'Personal', href: '/tasks/personal', icon: () => <User size={15} /> },
+  { label: 'Business', href: '/tasks/business', icon: () => <Briefcase size={15} /> },
+  { label: 'Crypto world', href: '/tasks/crypto', icon: () => <Bitcoin size={15} /> },
+  { label: 'Upcoming', href: '/tasks/upcoming', icon: () => <CalendarClock size={15} /> },
+  { label: 'Calendar', href: '/tasks/calendar', icon: () => <CalendarRange size={15} /> },
+  { label: 'No date', href: '/tasks/no-date', icon: () => <CalendarOff size={15} /> },
+  { label: 'Completed', href: '/tasks/completed', icon: () => <CheckCircle2 size={15} /> },
+  { label: 'Archive', href: '/tasks/archive', icon: () => <Archive size={15} /> },
+];
+
+const MORE_PROJECT_LINKS: NavLink[] = [
+  { label: 'Active', href: '/projects/active', icon: () => <CircleDashed size={15} /> },
+  { label: 'Canvas', href: '/projects/canvas', icon: () => <Columns3 size={15} /> },
+  { label: 'Check-ins', href: '/projects/checkins', icon: () => <ListChecks size={15} /> },
+];
+
+const ROUTINE_LINKS: NavLink[] = [
+  { label: 'Personal', href: '/routine/personal', icon: () => <Repeat size={15} /> },
+  { label: 'Business', href: '/routine/business', icon: () => <ListChecks size={15} /> },
+  { label: 'Rules', href: '/routine/rules', icon: () => <ScrollText size={15} /> },
+];
+
+const INSIGHT_LINKS: NavLink[] = [
+  { label: 'Daily', href: '/insights/daily', icon: () => <TrendingUp size={15} /> },
+  { label: 'Weekly', href: '/insights/weekly', icon: () => <TrendingUp size={15} /> },
+  { label: 'Monthly', href: '/insights/monthly', icon: () => <TrendingUp size={15} /> },
+  { label: 'Time', href: '/insights/time', icon: () => <CalendarClock size={15} /> },
+];
+
+const PROMPT_LINK: NavLink = { label: 'Prompts', href: '/prompts', icon: () => <BookText size={15} /> };
+
+const PRIMARY_HREFS = ['/dashboard', '/projects/working', '/projects/all', '/projects/startups', '/projects/ideas'];
 
 function readShowMore(): boolean {
   try {
@@ -216,26 +274,56 @@ export function Sidebar(props: {
     return out;
   };
 
-  // Projects-home users (e.g. the owner) get a focused nav: a single "Workspace" group holding Projects
-  // and Prompts together, with everything else folded under a collapsible "More". Everyone else keeps the
-  // full, flat navigation exactly as before.
+  // Projects-home users (the owner) see Dashboard, then Working. More opens as labeled shelves.
+  // Everyone else keeps the full, flat navigation.
   const projectsHome = () => prefersProjectsHome();
-  const isPromptsSection = (section: NavSection) =>
-    !section.label && section.links.length === 1 && section.links[0]?.href === '/prompts';
-  // Projects + Prompts in one group ("not scattered"), Projects links first, then Prompts.
-  const workspaceSection = (): NavSection => {
-    const all = sections();
-    const projectLinks = all.find((section) => section.label === 'Projects')?.links ?? [];
-    const promptLinks = all.find(isPromptsSection)?.links ?? [];
-    return { label: 'Workspace', links: [...projectLinks, ...promptLinks] };
+  const moreSections = (): NavSection[] => {
+    if (authStore.isAssistant()) {
+      return sections().filter((section) => section.label !== 'Projects');
+    }
+    const from = (delegators.data() ?? []).filter((row) => row.open_count + row.done_count > 0);
+    const writingFor = helping.data() ?? [];
+    const out: NavSection[] = [{ label: 'Day', links: DAY_LINKS }];
+    if (from.length > 0) {
+      out.push({
+        label: 'From',
+        links: from.map((row) => ({
+          label: row.user.display_name,
+          href: `/from/${row.user.id}`,
+          icon: () => <UserCheck size={15} />,
+          raw: true,
+          count: row.open_count,
+        })),
+      });
+    }
+    out.push({ label: 'Tasks', links: TASK_LINKS });
+    if (writingFor.length > 0) {
+      out.push({
+        label: 'Writing for',
+        links: writingFor.map((row) => ({
+          label: row.user.display_name,
+          href: `/for/${row.user.id}`,
+          icon: () => <PenLine size={15} />,
+          raw: true,
+          count: row.open_count,
+        })),
+      });
+    }
+    if (authStore.isAdmin()) out.push({ links: [PEOPLE_LINK] });
+    out.push(
+      { label: 'Projects', links: MORE_PROJECT_LINKS },
+      { links: [PROMPT_LINK] },
+      { label: 'Routine', links: ROUTINE_LINKS },
+      { label: 'Insights', links: INSIGHT_LINKS },
+    );
+    return out;
   };
-  const otherSections = () =>
-    sections().filter((section) => section.label !== 'Projects' && !isPromptsSection(section));
 
   const [showMore, setShowMore] = createSignal(readShowMore());
   // Keep "More" open whenever the active route lives there, so the current page is never hidden.
-  const onProjectsRoute = () => location.pathname === '/' || isActive('/projects');
-  const moreOpen = () => showMore() || !onProjectsRoute();
+  const onPrimaryRoute = () =>
+    location.pathname === '/' || PRIMARY_HREFS.some((href) => location.pathname === href || location.pathname.startsWith(`${href}/`));
+  const moreOpen = () => showMore() || !onPrimaryRoute();
   const toggleMore = () => {
     const next = !moreOpen();
     setShowMore(next);
@@ -313,7 +401,8 @@ export function Sidebar(props: {
           )}
         </Show>
         <Show when={projectsHome()} fallback={<For each={sections()}>{(section) => renderSection(section)}</For>}>
-          {renderSection(workspaceSection())}
+          {renderSection(PRIMARY_SECTION)}
+          {renderSection(PROJECT_SECTION)}
           <button
             type="button"
             class={styles.moreToggle}
@@ -327,8 +416,8 @@ export function Sidebar(props: {
             <span>{t('More')}</span>
           </button>
           <Show when={moreOpen()}>
-            <div id="sidebar-more">
-              <For each={otherSections()}>{(section) => renderSection(section)}</For>
+            <div id="sidebar-more" class={styles.morePanel}>
+              <For each={moreSections()}>{(section) => renderSection(section)}</For>
             </div>
           </Show>
         </Show>

@@ -9,7 +9,7 @@ from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 
 from apps.projects import checkins, selectors, services
-from apps.projects.models import Idea, Project, ProjectMembership
+from apps.projects.models import Idea, Project, ProjectMembership, WorkGroup
 from apps.projects.serializers import (
     DailyCheckinInputSerializer,
     IdeaInputSerializer,
@@ -22,6 +22,8 @@ from apps.projects.serializers import (
     ProjectSerializer,
     ProjectUpdateSerializer,
     RoleSerializer,
+    WorkGroupInputSerializer,
+    WorkGroupSerializer,
 )
 from common.actors import Actor
 from common.exceptions import ValidationFailed
@@ -226,6 +228,45 @@ def accept_invitation(request):
     membership = services.accept_invitation(Actor.from_request(request), token=token)
     project = selectors.base_queryset(request.user).filter(pk=membership.project_id).first()
     return Response(ProjectSerializer(project, context={"request": request}).data)
+
+
+class WorkGroupViewSet(viewsets.ModelViewSet):
+    """Shelves on the Working projects board. Owned by the signed-in account (or their principal)."""
+
+    serializer_class = WorkGroupSerializer
+    pagination_class = None
+    http_method_names = ["get", "post", "patch", "delete", "head", "options"]
+
+    def get_queryset(self):
+        return WorkGroup.objects.filter(owner=services.board_owner(self.request.user))
+
+    def create(self, request, *args, **kwargs):
+        serializer = WorkGroupInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        group = services.create_work_group(Actor.from_request(request), name=serializer.validated_data["name"])
+        return Response(WorkGroupSerializer(group).data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        serializer = WorkGroupInputSerializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        group = services.update_work_group(
+            Actor.from_request(request), int(kwargs["pk"]), name=serializer.validated_data.get("name", "")
+        )
+        return Response(WorkGroupSerializer(group).data)
+
+    def destroy(self, request, *args, **kwargs):
+        services.delete_work_group(Actor.from_request(request), int(kwargs["pk"]))
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=["post"])
+    def reorder(self, request):
+        serializer = ProjectReorderSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        applied = services.reorder_work_groups(request.user, serializer.validated_data["ids"])
+        return Response({"ids": applied})
 
 
 class IdeaViewSet(viewsets.ModelViewSet):

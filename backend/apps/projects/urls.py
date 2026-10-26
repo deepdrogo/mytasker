@@ -1,10 +1,18 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from apps.projects.views import IdeaViewSet, ProjectViewSet, accept_invitation, daily_checkin_history, daily_checkins
+from apps.projects.views import (
+    IdeaViewSet,
+    ProjectViewSet,
+    WorkGroupViewSet,
+    accept_invitation,
+    daily_checkin_history,
+    daily_checkins,
+)
 
 router = DefaultRouter()
 router.register("projects", ProjectViewSet, basename="project")
+router.register("work-groups", WorkGroupViewSet, basename="work-group")
 router.register("ideas", IdeaViewSet, basename="idea")
 
 urlpatterns = [

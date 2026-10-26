@@ -22,6 +22,14 @@ export const projects: Record<string, string> = {
   'Everything you are building — and what you are working on right now.':
     'ყველაფერი, რასაც ქმნი — და რაზეც ახლა მუშაობ.',
   '{count} working': '{count} მიმდინარე',
+  'Make a group, move projects into it, then drag to set the order.':
+    'შექმენი ჯგუფი, გადაიტანე პროექტები და გადაათრიე რიგის დასალაგებლად.',
+  'New group': 'ახალი ჯგუფი',
+  'No group': 'ჯგუფის გარეშე',
+  'Rename group': 'ჯგუფის გადარქმევა',
+  'Delete group': 'ჯგუფის წაშლა',
+  'Could not save the group.': 'ჯგუფის შენახვა ვერ მოხერხდა.',
+  'Projects in this group go back to No group.': 'ამ ჯგუფის პროექტები ჯგუფის გარეშე დარჩება.',
   'of {count} projects': '{count} პროექტიდან',
   'Create a project to see it here.': 'შექმენი პროექტი, რომ აქ გამოჩნდეს.',
   'Mark {name} as working': 'მონიშნე „{name}" მიმდინარედ',

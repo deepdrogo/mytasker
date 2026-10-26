@@ -115,6 +115,25 @@
   white-space: nowrap;
 }
 
+/* More opens as labeled shelves, tighter than the primary nav so it doesn't read as a second menu. */
+.morePanel {
+  margin-top: 6px;
+  padding: 8px 0 2px;
+  border-top: 1px solid var(--c-border);
+}
+
+.morePanel .section + .section {
+  margin-top: 12px;
+}
+
+.morePanel .link {
+  height: 32px;
+}
+
+.morePanel .sectionLabel {
+  padding-bottom: 4px;
+}
+
 .sectionLabel {
   padding: 0 var(--s-5) var(--s-3);
   font-size: 10.5px;

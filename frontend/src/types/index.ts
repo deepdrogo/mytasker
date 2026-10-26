@@ -209,6 +209,8 @@ export interface Project {
   priority: Priority;
   /** Owner flag: are they actively working on this project right now? Shown on the Working projects page. */
   is_working: boolean;
+  /** Shelf on the Working projects board. Null means the project is not in a group yet. */
+  work_group_id: number | null;
   start_date: ISODate | null;
   deadline: ISODate | null;
   notes: string;

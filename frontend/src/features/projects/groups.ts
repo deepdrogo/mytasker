@@ -3,7 +3,7 @@ import type { Priority, ProjectCategory } from '~/types';
 /** Projects are shelved in three groups everywhere they are listed: Important, Not important, Startups. */
 export type ProjectGroupKey = 'important' | 'normal' | 'startup';
 
-const ORDER: ProjectGroupKey[] = ['important', 'normal', 'startup'];
+export const GROUP_ORDER: ProjectGroupKey[] = ['important', 'normal', 'startup'];
 
 export const GROUP_LABEL: Record<ProjectGroupKey, string> = {
   important: 'Important',
@@ -36,7 +36,7 @@ export function groupProjects<T extends Groupable>(
     const key = groupOf(project, splitStartups);
     buckets.set(key, [...(buckets.get(key) ?? []), project]);
   }
-  return ORDER.filter((key) => buckets.has(key)).map((key) => ({ key, items: buckets.get(key) ?? [] }));
+  return GROUP_ORDER.filter((key) => buckets.has(key)).map((key) => ({ key, items: buckets.get(key) ?? [] }));
 }
 
 /** The priority a project gets when it is starred / unstarred. */

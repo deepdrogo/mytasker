@@ -1,166 +1,262 @@
-/* Working projects catalog — monochrome + volumetric, with one deliberate green accent for "working". */
+/* Working projects — a chip board. About a hundred names fit without a long scroll. */
 
-.wrap {
+.board {
   display: flex;
   flex-direction: column;
-  gap: var(--s-4);
-  max-width: 960px;
+  gap: 18px;
+  min-width: 0;
 }
 
-.summary {
+.hero {
   display: flex;
   align-items: baseline;
-  gap: var(--s-4);
-  font-size: var(--fs-sm);
+  flex-wrap: wrap;
+  gap: 8px 16px;
 }
 
-.summaryStrong {
+.total {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--c-text-faint);
+}
+
+.create {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  max-width: 280px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px dashed var(--c-border-strong);
+  color: var(--c-text-faint);
+}
+
+.createInput {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
   color: var(--c-text);
-  font-weight: var(--fw-semibold);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
 }
 
-.summaryDim {
-  color: var(--c-text-dim);
+.createInput::placeholder {
+  color: var(--c-text-faint);
 }
 
-/* Dense catalog: tight single-line rows so many projects fit on one screen at once. */
-.list {
+.shelves {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
+  gap: 16px;
 }
 
-.row {
+.groupDragging {
+  z-index: 2;
+}
+
+.groupHead {
   display: flex;
   align-items: center;
-  gap: var(--s-4);
-  padding: var(--s-2) var(--s-4);
-  min-height: 34px;
-  border-radius: var(--r-sm);
-  background: var(--g-glass);
-  border: 1px solid var(--c-border);
-  box-shadow: var(--rim-top);
-  transition:
-    border-color var(--t-fast),
-    background var(--t-fast);
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-text-faint);
 }
 
-.row:hover {
-  border-color: var(--c-border-strong);
-  background: var(--g-glass-hover);
+.groupName,
+.groupNameStatic {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: text;
 }
 
-/* A project in progress gets a quietly lit green rim so the eye finds it first — depth, not loud colour. */
-.rowOn {
-  border-color: rgba(34, 197, 94, 0.3);
-  box-shadow:
-    var(--rim-top),
-    0 0 0 1px rgba(34, 197, 94, 0.12);
+.groupName:hover {
+  color: var(--c-text);
 }
 
-/* The status control: a hollow ring by default; a filled green disc with a check when working. */
-.status {
-  flex: none;
-  width: 20px;
-  height: 20px;
+.rename {
+  height: 22px;
+  min-width: 0;
+  max-width: 220px;
+  padding: 0 6px;
+  border-radius: 6px;
+  border: 1px solid var(--c-border-strong);
+  background: var(--c-surface-2);
+  color: var(--c-text);
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.iconBtn {
   display: grid;
   place-items: center;
-  border-radius: var(--r-full);
-  border: 1.5px solid var(--c-border-strong);
-  background: var(--c-surface-2);
-  color: var(--c-invert-text);
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--c-text-faint);
   cursor: pointer;
-  transition:
-    background var(--t-fast),
-    border-color var(--t-fast),
-    box-shadow var(--t-base),
-    transform var(--t-fast);
 }
 
-.status:hover {
-  border-color: var(--c-focus);
+.iconBtn:hover {
+  color: var(--c-text);
+  background: var(--c-hover);
 }
 
-.status:active {
-  transform: scale(0.88);
+.count {
+  color: var(--c-text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
 }
 
-.statusOn {
-  background: linear-gradient(180deg, #2ee36a 0%, #17a34a 100%);
-  border-color: rgba(46, 227, 106, 0.6);
-  color: #04210f;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    0 0 10px rgba(34, 197, 94, 0.45);
+.countRest {
+  color: var(--c-text-faint);
+  font-weight: 500;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
 }
 
-.statusOn:hover {
-  border-color: rgba(46, 227, 106, 0.9);
+.empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--c-text-faint);
 }
 
-/* Name + meta on a single line to keep rows short. */
-.main {
+.list {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
   display: flex;
-  flex-direction: row;
   align-items: center;
-  gap: var(--s-5);
+  gap: 2px;
   min-width: 0;
-  flex: 1;
-  color: inherit;
+  height: 28px;
+  padding: 0 4px 0 1px;
+  border-radius: 8px;
+  border: 1px solid var(--c-border);
+  background: var(--g-glass);
+  box-shadow: var(--rim-top);
+}
+
+.chipOn {
+  border-color: rgba(34, 197, 94, 0.38);
+}
+
+.chipOff {
+  opacity: 0.55;
+}
+
+.chipOff:hover,
+.chipOff:focus-within {
+  opacity: 1;
+}
+
+.chipDragging {
+  opacity: 1;
+  z-index: 2;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
 }
 
 .name {
-  font-size: var(--fs-md);
-  font-weight: var(--fw-medium);
-  color: var(--c-text);
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  flex: 1;
-  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--c-text);
 }
 
-.meta {
-  display: flex;
-  align-items: center;
+.grip,
+.star {
   flex: none;
-  gap: var(--s-5);
-  font-size: var(--fs-xs);
-  color: var(--c-text-dim);
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--c-text-faint);
+  cursor: pointer;
 }
 
-.metaTime {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-2);
+.grip {
+  cursor: grab;
+  touch-action: none;
 }
 
-/* "Working" tag — a whisper of green, never a block of colour. */
-.working {
-  display: inline-flex;
-  align-items: center;
-  padding: 0 7px;
-  border-radius: var(--r-full);
-  font-size: 10.5px;
-  font-weight: var(--fw-semibold);
-  letter-spacing: 0.02em;
-  color: #6ee7a0;
-  background: rgba(34, 197, 94, 0.12);
-  border: 1px solid rgba(34, 197, 94, 0.28);
+.grip:hover,
+.star:hover {
+  color: var(--c-text);
+  background: var(--c-hover);
 }
 
-@media (max-width: 899px) {
-  .wrap {
-    max-width: 100%;
+.starOn {
+  color: #f5c451;
+}
+
+.dot {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  margin: 0 4px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--c-border-strong);
+  background: transparent;
+  cursor: pointer;
+}
+
+.dot:disabled {
+  cursor: default;
+}
+
+.dotOn {
+  border-color: rgba(46, 227, 106, 0.7);
+  background: linear-gradient(180deg, #2ee36a 0%, #17a34a 100%);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.45);
+}
+
+@media (max-width: 699px) {
+  .list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-  /* Hide the lighter meta on phones so the name + status stay on one tight line. */
-  .meta {
-    gap: var(--s-4);
-  }
-  .metaTime {
-    display: none;
+
+  .total {
+    font-size: 20px;
   }
 }

@@ -37,6 +37,8 @@ export interface ProjectInput {
   priority?: Priority;
   /** Active (working on it) vs inactive — drives the Working projects page. */
   is_working?: boolean;
+  /** Shelf on the Working projects board. `null` takes the project out of every group. */
+  work_group_id?: number | null;
   start_date?: string | null;
   deadline?: string | null;
   notes?: string;
@@ -150,6 +152,36 @@ export const ideasApi = {
     const project = await api.post<Project>(`/ideas/${id}/convert/`, { kind });
     invalidate('ideas', ...SCOPES);
     return project;
+  },
+};
+
+export interface WorkGroup {
+  id: ID;
+  name: string;
+  sort_order: number;
+}
+
+/** Shelves on the Working projects board. */
+export const workGroupsApi = {
+  list: () => api.get<WorkGroup[]>('/work-groups/'),
+  create: async (name: string) => {
+    const group = await api.post<WorkGroup>('/work-groups/', { name });
+    invalidate('work-groups');
+    return group;
+  },
+  rename: async (id: ID, name: string) => {
+    const group = await api.patch<WorkGroup>(`/work-groups/${id}/`, { name });
+    invalidate('work-groups');
+    return group;
+  },
+  remove: async (id: ID) => {
+    await api.delete(`/work-groups/${id}/`);
+    invalidate('work-groups', 'projects');
+  },
+  reorder: async (ids: ID[]) => {
+    const result = await api.post<{ ids: ID[] }>('/work-groups/reorder/', { ids });
+    invalidate('work-groups');
+    return result.ids;
   },
 };
 

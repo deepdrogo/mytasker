@@ -1,5 +1,5 @@
 import { A, useLocation } from '@solidjs/router';
-import { Briefcase, FolderKanban, LayoutDashboard, ListTodo, Settings, Sparkles, Sun, TrendingUp, User } from 'lucide-solid';
+import { Briefcase, CircleDot, FolderKanban, LayoutDashboard, ListTodo, Settings, Sparkles, Sun, TrendingUp, User } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For, onCleanup, onMount } from 'solid-js';
 import { prefersProjectsHome } from '~/app/home';
@@ -23,11 +23,16 @@ const BASE_ITEMS: Item[] = [
   // Prompts moved to the drawer to make room for Today; five slots is all a phone-width dock fits legibly.
 ];
 
-// Projects-home users lead with the Working projects catalog; the rest stays in the drawer (☰).
+// Projects-home users: the working board and the project shelves. Tasks stay in the drawer (☰).
 const PROJECTS_HOME_ITEMS: Item[] = [
-  { label: 'Projects', href: '/projects/working', match: '/projects', icon: () => <FolderKanban size={18} /> },
-  { label: 'Today', href: '/today', match: ['/today', '/tomorrow'], icon: () => <Sun size={18} /> },
-  { label: 'Tasks', href: '/tasks/all', match: '/tasks', icon: () => <ListTodo size={18} /> },
+  { label: 'Dashboard', href: '/dashboard', icon: () => <LayoutDashboard size={18} /> },
+  { label: 'Working', href: '/projects/working', match: '/projects/working', icon: () => <CircleDot size={18} /> },
+  {
+    label: 'Projects',
+    href: '/projects/all',
+    match: ['/projects/all', '/projects/active', '/projects/canvas', '/projects/checkins', '/projects/ideas'],
+    icon: () => <FolderKanban size={18} />,
+  },
 ];
 const AI_ITEM: Item = { label: 'AI', href: '/ai', icon: () => <Sparkles size={18} /> };
 const INSIGHTS_ITEM: Item = { label: 'Insights', href: '/insights/daily', match: '/insights', icon: () => <TrendingUp size={18} /> };

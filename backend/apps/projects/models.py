@@ -56,6 +56,22 @@ class ProjectQuerySet(SoftDeleteQuerySet):
         )
 
 
+class WorkGroup(TimeStampedModel):
+    """A shelf the owner creates on the Working projects board, then sorts projects into."""
+
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="work_groups")
+    name = models.CharField(max_length=80)
+    sort_order = models.IntegerField(default=0)
+
+    class Meta:
+        db_table = "projects_work_group"
+        ordering = ["sort_order", "id"]
+        indexes = [models.Index(fields=["owner", "sort_order"])]
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class ProjectManager(SoftDeleteManager):
     def get_queryset(self):
         return ProjectQuerySet(self.model, using=self._db).alive()
@@ -101,6 +117,10 @@ class Project(TimeStampedModel, SoftDeleteModel):
     # Owner's "am I actively working on this right now?" flag, shown on the Working projects catalog.
     # Orthogonal to status/kind: a planned or paused project can still be flagged as being worked on.
     is_working = models.BooleanField(default=False, db_index=True)
+    # Shelf on the Working projects board. Null means "no group".
+    work_group = models.ForeignKey(
+        WorkGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name="projects"
+    )
     sort_order = models.IntegerField(default=0)
     version = models.PositiveIntegerField(default=1)
 

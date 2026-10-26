@@ -10,7 +10,7 @@ from django.db import transaction
 from django.db.models import F, Max
 from django.utils import timezone
 
-from apps.projects.models import Idea, Project, ProjectMembership
+from apps.projects.models import Idea, Project, ProjectMembership, WorkGroup
 from common.actors import Actor
 from common.events import DomainEvent, EventName, emit
 from common.exceptions import Conflict, Forbidden, NotFound, ValidationFailed
@@ -27,6 +27,7 @@ PROJECT_FIELDS = {
     "status",
     "priority",
     "is_working",
+    "work_group_id",
     "start_date",
     "deadline",
     "notes",
@@ -103,6 +104,11 @@ def update_project(actor: Actor, project_id: int, *, expected_version: int | Non
             value = (value or "").strip()
             if not value:
                 raise ValidationFailed("Name is required.", fields={"name": ["This field is required."]})
+        if key == "work_group_id":
+            if value is not None and not WorkGroup.objects.filter(pk=value, owner_id=project.owner_id).exists():
+                raise ValidationFailed("Unknown group.", fields={"work_group": ["Unknown group."]})
+            if project.work_group_id == value:
+                continue
         setattr(project, key, value)
         changed.append(key)
     if not changed:
@@ -453,3 +459,59 @@ def convert_idea(actor: Actor, idea_id: int, *, kind: str = Project.Kind.PROJECT
         )
     )
     return project
+
+
+def board_owner(user):
+    """Shelves belong to the account whose projects they organise. An assistant uses the principal's."""
+    if getattr(user, "assistant_for_id", None):
+        return user.assistant_for
+    return user
+
+
+def _get_work_group(actor: Actor, group_id: int) -> WorkGroup:
+    group = WorkGroup.objects.filter(pk=group_id, owner=board_owner(actor.user)).first()
+    if group is None:
+        raise NotFound("Group not found.")
+    return group
+
+
+@transaction.atomic
+def create_work_group(actor: Actor, *, name: str) -> WorkGroup:
+    name = (name or "").strip()
+    if not name:
+        raise ValidationFailed("Name is required.", fields={"name": ["This field is required."]})
+    owner = board_owner(actor.user)
+    last = WorkGroup.objects.filter(owner=owner).aggregate(last=Max("sort_order"))["last"]
+    return WorkGroup.objects.create(owner=owner, name=name[:80], sort_order=(last or 0) + 1)
+
+
+@transaction.atomic
+def update_work_group(actor: Actor, group_id: int, *, name: str) -> WorkGroup:
+    group = _get_work_group(actor, group_id)
+    name = (name or "").strip()
+    if not name:
+        raise ValidationFailed("Name is required.", fields={"name": ["This field is required."]})
+    group.name = name[:80]
+    group.save(update_fields=["name", "updated_at"])
+    return group
+
+
+@transaction.atomic
+def delete_work_group(actor: Actor, group_id: int) -> None:
+    group = _get_work_group(actor, group_id)
+    group.delete()
+
+
+def reorder_work_groups(user, ordered_ids: list[int]) -> list[int]:
+    """Manual shelf order, first id on top. Ids that are not this owner's groups are ignored."""
+    owner = board_owner(user)
+    owned = set(WorkGroup.objects.filter(owner=owner).values_list("pk", flat=True))
+    applied: list[int] = []
+    for raw in ordered_ids:
+        if raw in owned and raw not in applied:
+            applied.append(raw)
+    WorkGroup.objects.bulk_update(
+        [WorkGroup(pk=pk, sort_order=index) for index, pk in enumerate(applied, start=1)],
+        ["sort_order"],
+    )
+    return applied
