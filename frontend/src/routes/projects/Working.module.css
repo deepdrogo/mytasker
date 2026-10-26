@@ -127,17 +127,57 @@
   background: var(--c-hover);
 }
 
-.count {
+/* Status colours: green = in the working process, yellow = waiting. */
+.key {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f5c451;
+  box-shadow: 0 0 6px rgba(245, 196, 81, 0.45);
+}
+
+.keyOn {
+  background: #2ee36a;
+  box-shadow: 0 0 6px rgba(46, 227, 106, 0.5);
+}
+
+.totalPart,
+.tally,
+.tallyPart {
+  display: inline-flex;
+  align-items: center;
+}
+
+.total {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+}
+
+.totalPart {
+  gap: 9px;
+}
+
+.totalPart .key {
+  width: 10px;
+  height: 10px;
+}
+
+.totalWaiting {
+  color: var(--c-text-dim);
+}
+
+.tally {
+  gap: 10px;
+  margin-left: 2px;
+}
+
+.tallyPart {
+  gap: 5px;
   color: var(--c-text);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
-}
-
-.countRest {
-  color: var(--c-text-faint);
-  font-weight: 500;
-  letter-spacing: 0;
-  font-variant-numeric: tabular-nums;
 }
 
 .empty {
@@ -170,16 +210,17 @@
 }
 
 .chipOn {
-  border-color: rgba(34, 197, 94, 0.38);
+  border-color: rgba(46, 227, 106, 0.4);
+  background:
+    linear-gradient(90deg, rgba(46, 227, 106, 0.07), transparent 70%),
+    var(--g-glass);
 }
 
 .chipOff {
-  opacity: 0.55;
-}
-
-.chipOff:hover,
-.chipOff:focus-within {
-  opacity: 1;
+  border-color: rgba(245, 196, 81, 0.34);
+  background:
+    linear-gradient(90deg, rgba(245, 196, 81, 0.06), transparent 70%),
+    var(--g-glass);
 }
 
 .chipDragging {
@@ -236,9 +277,17 @@
   margin: 0 4px;
   padding: 0;
   border-radius: 50%;
-  border: 1.5px solid var(--c-border-strong);
-  background: transparent;
+  border: 1.5px solid rgba(245, 196, 81, 0.75);
+  background: linear-gradient(180deg, #f8d26a 0%, #d99a1e 100%);
+  box-shadow: 0 0 7px rgba(245, 196, 81, 0.4);
   cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.dot:not(:disabled):hover {
+  transform: scale(1.18);
 }
 
 .dot:disabled {

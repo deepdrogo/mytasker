@@ -128,7 +128,16 @@ export default function Working(): JSX.Element {
           >
             <div class={styles.board}>
               <div class={styles.hero}>
-                <p class={styles.total}>{t('{count} working', { count: workingCount() })}</p>
+                <p class={styles.total}>
+                  <span class={styles.totalPart}>
+                    <i class={`${styles.key} ${styles.keyOn}`} />
+                    {t('{count} working', { count: workingCount() })}
+                  </span>
+                  <span class={`${styles.totalPart} ${styles.totalWaiting}`}>
+                    <i class={styles.key} />
+                    {t('{count} waiting', { count: visible().length - workingCount() })}
+                  </span>
+                </p>
                 <p class={styles.hint}>{t('Make a group, move projects into it, then drag to set the order.')}</p>
               </div>
 
@@ -198,7 +207,6 @@ function GroupShelf(props: {
   const [name, setName] = createSignal(props.group.name);
   const [confirming, setConfirming] = createSignal(false);
   createEffect(() => setName(props.group.name));
-  const working = () => props.projects.filter((project) => project.is_working).length;
 
   const rename = async () => {
     const next = name().trim();
@@ -268,10 +276,7 @@ function GroupShelf(props: {
             }}
           />
         </Show>
-        <b class={styles.count}>{working()}</b>
-        <Show when={working() !== props.projects.length}>
-          <span class={styles.countRest}>/ {props.projects.length}</span>
-        </Show>
+        <Tally projects={props.projects} />
         <button
           type="button"
           class={styles.iconBtn}
@@ -317,16 +322,12 @@ function ProjectGrid(props: {
     enabled: () => props.projects.length > 1 && props.projects.some((project) => project.capabilities.manage_project),
     onReorder: (projects) => props.onReorder(projects),
   });
-  const working = () => props.projects.filter((project) => project.is_working).length;
   return (
     <div>
       <Show when={props.label}>
         <div class={styles.groupHead}>
           <span class={styles.groupNameStatic}>{props.label}</span>
-          <b class={styles.count}>{working()}</b>
-          <Show when={working() !== props.projects.length}>
-            <span class={styles.countRest}>/ {props.projects.length}</span>
-          </Show>
+          <Tally projects={props.projects} />
         </div>
       </Show>
       <ul class={styles.list} ref={sortable.setContainer}>
@@ -343,6 +344,28 @@ function ProjectGrid(props: {
         </For>
       </ul>
     </div>
+  );
+}
+
+/** Green = in the working process, yellow = waiting. Zero counts are left out. */
+function Tally(props: { projects: Project[] }): JSX.Element {
+  const working = () => props.projects.filter((project) => project.is_working).length;
+  const waiting = () => props.projects.length - working();
+  return (
+    <span class={styles.tally}>
+      <Show when={working()}>
+        <span class={styles.tallyPart} title={t('Working')}>
+          <i class={`${styles.key} ${styles.keyOn}`} />
+          {working()}
+        </span>
+      </Show>
+      <Show when={waiting()}>
+        <span class={styles.tallyPart} title={t('Waiting')}>
+          <i class={styles.key} />
+          {waiting()}
+        </span>
+      </Show>
+    </span>
   );
 }
 
@@ -413,9 +436,9 @@ function ProjectChip(props: {
         onClick={() => props.onToggleWorking()}
         aria-pressed={props.project.is_working}
         aria-label={
-          props.project.is_working ? t('Stop working on {name}', { name: name() }) : t('Mark {name} as working', { name: name() })
+          props.project.is_working ? t('Set {name} to waiting', { name: name() }) : t('Mark {name} as working', { name: name() })
         }
-        title={props.project.is_working ? t('Working — click to clear') : t('Not working — click to mark')}
+        title={props.project.is_working ? t('Working — click to set waiting') : t('Waiting — click to mark working')}
       />
     </li>
   );

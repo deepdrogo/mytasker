@@ -166,10 +166,13 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
               <option value="startup">{t('Startup')}</option>
             </Select>
           </Field>
-          <Field label={t('Activity')} hint={working() ? t('Shown as working on the Working projects page.') : t('Kept off the working set; still listed on the Working projects page.')}>
-            <Select value={working() ? 'active' : 'inactive'} onChange={(e) => setWorking(e.currentTarget.value === 'active')} disabled={!canManage()}>
-              <option value="active">{t('Active')}</option>
-              <option value="inactive">{t('Inactive')}</option>
+          <Field
+            label={t('Activity')}
+            hint={working() ? t('Green on the Working projects page: in the working process.') : t('Yellow on the Working projects page: waiting.')}
+          >
+            <Select value={working() ? 'working' : 'waiting'} onChange={(e) => setWorking(e.currentTarget.value === 'working')} disabled={!canManage()}>
+              <option value="working">{t('Working')}</option>
+              <option value="waiting">{t('Waiting')}</option>
             </Select>
           </Field>
           <Field label={t('Status')}>

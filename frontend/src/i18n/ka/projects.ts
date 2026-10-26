@@ -13,9 +13,10 @@ export const projects: Record<string, string> = {
 
   // Project editor — activity (working) choice
   Inactive: 'არააქტიური',
-  'Shown as working on the Working projects page.': 'გამოჩნდება როგორც მიმდინარე „მიმდინარე პროექტების" გვერდზე.',
-  'Kept off the working set; still listed on the Working projects page.':
-    'არ ითვლება მიმდინარედ; თუმცა მაინც ჩანს „მიმდინარე პროექტების" გვერდზე.',
+  Waiting: 'ელოდება',
+  'Green on the Working projects page: in the working process.':
+    '„მიმდინარე პროექტების" გვერდზე მწვანეა — მუშაობის პროცესშია.',
+  'Yellow on the Working projects page: waiting.': '„მიმდინარე პროექტების" გვერდზე ყვითელია — ელოდება.',
 
   // Working projects catalog
   'Working projects': 'მიმდინარე პროექტები',
@@ -32,10 +33,11 @@ export const projects: Record<string, string> = {
   'Projects in this group go back to No group.': 'ამ ჯგუფის პროექტები ჯგუფის გარეშე დარჩება.',
   'of {count} projects': '{count} პროექტიდან',
   'Create a project to see it here.': 'შექმენი პროექტი, რომ აქ გამოჩნდეს.',
+  '{count} waiting': '{count} ელოდება',
   'Mark {name} as working': 'მონიშნე „{name}" მიმდინარედ',
-  'Stop working on {name}': 'შეწყვიტე „{name}"-ზე მუშაობა',
-  'Working — click to clear': 'მიმდინარე — დააჭირე მოსახსნელად',
-  'Not working — click to mark': 'არ მიმდინარეობს — დააჭირე მოსანიშნად',
+  'Set {name} to waiting': '„{name}" — ელოდებაზე გადაყვანა',
+  'Working — click to set waiting': 'მიმდინარე — დააჭირე „ელოდება"-ზე გადასაყვანად',
+  'Waiting — click to mark working': 'ელოდება — დააჭირე მიმდინარედ მოსანიშნად',
 
   // Project card
   '{done}/{total} tasks': '{done}/{total} დავალება',
