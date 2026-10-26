@@ -44,6 +44,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             "status",
             "priority",
             "is_working",
+            "work_state",
             "work_group_id",
             "start_date",
             "deadline",
@@ -102,6 +103,7 @@ class ProjectCreateSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=Project.Status.choices, required=False, default=Project.Status.ACTIVE)
     priority = serializers.ChoiceField(choices=Priority.choices, required=False, default=Priority.NORMAL)
     is_working = serializers.BooleanField(required=False)
+    work_state = serializers.ChoiceField(choices=Project.WorkState.choices, required=False)
     start_date = serializers.DateField(required=False, allow_null=True)
     deadline = serializers.DateField(required=False, allow_null=True)
     notes = serializers.CharField(required=False, allow_blank=True, default="")
@@ -115,6 +117,7 @@ class ProjectUpdateSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=Project.Status.choices, required=False)
     priority = serializers.ChoiceField(choices=Priority.choices, required=False)
     is_working = serializers.BooleanField(required=False)
+    work_state = serializers.ChoiceField(choices=Project.WorkState.choices, required=False)
     work_group_id = serializers.IntegerField(required=False, allow_null=True)
     start_date = serializers.DateField(required=False, allow_null=True)
     deadline = serializers.DateField(required=False, allow_null=True)

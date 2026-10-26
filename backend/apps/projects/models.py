@@ -114,8 +114,16 @@ class Project(TimeStampedModel, SoftDeleteModel):
     start_date = models.DateField(null=True, blank=True)
     deadline = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True)
-    # Owner's "am I actively working on this right now?" flag, shown on the Working projects catalog.
-    # Orthogonal to status/kind: a planned or paused project can still be flagged as being worked on.
+
+    class WorkState(models.TextChoices):
+        WAITING = "waiting", "Waiting"
+        ACTIVE = "active", "Active"
+        WORKING = "working", "Working"
+
+    # Where the owner stands with this project on the Working projects board (yellow / orange / green).
+    # Orthogonal to status/kind: a planned or paused project can still be in the working process.
+    work_state = models.CharField(max_length=8, choices=WorkState.choices, default=WorkState.WAITING, db_index=True)
+    # Kept equal to `work_state == "working"` for older clients that only know the on/off flag.
     is_working = models.BooleanField(default=False, db_index=True)
     # Shelf on the Working projects board. Null means "no group".
     work_group = models.ForeignKey(

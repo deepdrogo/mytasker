@@ -27,6 +27,7 @@ PROJECT_FIELDS = {
     "status",
     "priority",
     "is_working",
+    "work_state",
     "work_group_id",
     "start_date",
     "deadline",
@@ -74,12 +75,30 @@ def _assert_schedule(start_date, deadline) -> None:
         )
 
 
+def _with_work_state(fields: dict) -> dict:
+    """`work_state` wins; a bare `is_working` (older clients) maps to working / waiting. Both are always written."""
+    fields = dict(fields)
+    if fields.get("work_state") is not None:
+        state = fields["work_state"]
+        if state not in Project.WorkState.values:
+            raise ValidationFailed("Unknown work state.", fields={"work_state": ["Invalid."]})
+    elif fields.get("is_working") is not None:
+        state = Project.WorkState.WORKING if fields["is_working"] else Project.WorkState.WAITING
+    else:
+        fields.pop("work_state", None)
+        fields.pop("is_working", None)
+        return fields
+    fields["work_state"] = state
+    fields["is_working"] = state == Project.WorkState.WORKING
+    return fields
+
+
 @transaction.atomic
 def create_project(actor: Actor, *, name: str, mode: str = Project.Mode.PRIVATE, **fields) -> Project:
     name = (name or "").strip()
     if not name:
         raise ValidationFailed("Name is required.", fields={"name": ["This field is required."]})
-    payload = {k: v for k, v in fields.items() if k in PROJECT_FIELDS}
+    payload = {k: v for k, v in _with_work_state(fields).items() if k in PROJECT_FIELDS}
     _assert_schedule(payload.get("start_date"), payload.get("deadline"))
     payload.setdefault("sort_order", next_sort_order(actor.user))
     project = Project.objects.create(owner=actor.user, name=name, mode=mode, **payload)
@@ -97,7 +116,7 @@ def update_project(actor: Actor, project_id: int, *, expected_version: int | Non
         raise Conflict("Project changed elsewhere. Reload and try again.", code="version_conflict")
 
     changed = []
-    for key, value in fields.items():
+    for key, value in _with_work_state(fields).items():
         if key not in PROJECT_FIELDS:
             continue
         if key == "name":
@@ -218,18 +237,24 @@ def follow_calendar(user) -> int:
 
 
 @transaction.atomic
-def set_working(actor: Actor, project_id: int, *, working: bool) -> Project:
+def set_work_state(actor: Actor, project_id: int, *, state: str) -> Project:
     """
-    Flip the "I'm actively working on this" flag shown on the Working projects catalog. Deliberately a
-    light touch: it does not bump the project version or emit an activity event — it is a personal view
-    marker, not a content change.
+    Set waiting / active / working on the Working projects board. Deliberately a light touch: it does not
+    bump the project version or emit an activity event — it is a personal view marker, not a content change.
     """
     project = get_project_for_user(project_id, actor.user, capability=Capability.MANAGE_PROJECT, for_update=True)
-    working = bool(working)
-    if project.is_working != working:
-        project.is_working = working
-        project.save(update_fields=["is_working", "updated_at"])
+    fields = _with_work_state({"work_state": state})
+    if project.work_state != fields["work_state"]:
+        project.work_state = fields["work_state"]
+        project.is_working = fields["is_working"]
+        project.save(update_fields=["work_state", "is_working", "updated_at"])
     return project
+
+
+def set_working(actor: Actor, project_id: int, *, working: bool) -> Project:
+    return set_work_state(
+        actor, project_id, state=Project.WorkState.WORKING if working else Project.WorkState.WAITING
+    )
 
 
 @transaction.atomic

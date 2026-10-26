@@ -121,9 +121,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def working(self, request, pk=None):
-        """Toggle whether the owner is actively working on this project (Working projects catalog)."""
-        working = bool(request.data.get("working", True))
-        project = services.set_working(self._actor(), int(pk), working=working)
+        """Working projects board: `{"state": "waiting" | "active" | "working"}`, or the older `{"working": bool}`."""
+        state = request.data.get("state")
+        if state is not None:
+            project = services.set_work_state(self._actor(), int(pk), state=str(state))
+        else:
+            project = services.set_working(self._actor(), int(pk), working=bool(request.data.get("working", True)))
         return self._respond(project)
 
     @action(detail=False, methods=["post"], url_path="follow-calendar")

@@ -8,7 +8,7 @@ import { Field, Input, Select, Textarea } from '~/components/ui/Input';
 import { projectsApi, type ProjectInput } from '~/features/projects/api';
 import { t } from '~/i18n';
 import { toast } from '~/stores/ui';
-import type { Priority, Project, ProjectCategory, ProjectKind, ProjectMode, ProjectStatus } from '~/types';
+import type { Priority, Project, ProjectCategory, ProjectKind, ProjectMode, ProjectStatus, WorkState } from '~/types';
 import styles from './ProjectEditor.module.css';
 
 interface ProjectEditorProps {
@@ -27,6 +27,12 @@ const MODE_HINT: Record<ProjectMode, string> = {
   group_plus: 'Shared, but each member can keep private tasks and prompts inside the project.',
 };
 
+const WORK_STATE_HINT: Record<WorkState, string> = {
+  waiting: 'Yellow on the Working projects page: waiting.',
+  active: 'Orange on the Working projects page: active.',
+  working: 'Green on the Working projects page: in the working process.',
+};
+
 export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
   const [name, setName] = createSignal('');
   const [description, setDescription] = createSignal('');
@@ -34,8 +40,8 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
   const [category, setCategory] = createSignal<ProjectCategory>('general');
   const [mode, setMode] = createSignal<ProjectMode>('private');
   const [status, setStatus] = createSignal<ProjectStatus>('active');
-  // Active (working on it) vs inactive — the Working projects page key. New projects default to Active.
-  const [working, setWorking] = createSignal(true);
+  // Waiting / active / working on the Working projects page. New projects start as Active.
+  const [workState, setWorkState] = createSignal<WorkState>('active');
   const [priority, setPriority] = createSignal<Priority>('normal');
   const [startDate, setStartDate] = createSignal('');
   const [deadline, setDeadline] = createSignal('');
@@ -56,7 +62,7 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
       setCategory(p?.category ?? props.defaultCategory ?? 'general');
       setMode(p?.mode ?? 'private');
       setStatus(p?.status ?? 'active');
-      setWorking(p?.is_working ?? true);
+      setWorkState(p?.work_state ?? 'active');
       setPriority(p?.priority ?? 'normal');
       setStartDate(p?.start_date ?? '');
       setDeadline(p?.deadline ?? '');
@@ -80,7 +86,7 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
       kind: kind(),
       category: category(),
       status: status(),
-      is_working: working(),
+      work_state: workState(),
       priority: priority(),
       start_date: startDate() || null,
       deadline: deadline() || null,
@@ -166,13 +172,11 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
               <option value="startup">{t('Startup')}</option>
             </Select>
           </Field>
-          <Field
-            label={t('Activity')}
-            hint={working() ? t('Green on the Working projects page: in the working process.') : t('Yellow on the Working projects page: waiting.')}
-          >
-            <Select value={working() ? 'working' : 'waiting'} onChange={(e) => setWorking(e.currentTarget.value === 'working')} disabled={!canManage()}>
-              <option value="working">{t('Working')}</option>
+          <Field label={t('Activity')} hint={t(WORK_STATE_HINT[workState()])}>
+            <Select value={workState()} onChange={(e) => setWorkState(e.currentTarget.value as WorkState)} disabled={!canManage()}>
               <option value="waiting">{t('Waiting')}</option>
+              <option value="active">{t('Active')}</option>
+              <option value="working">{t('Working')}</option>
             </Select>
           </Field>
           <Field label={t('Status')}>

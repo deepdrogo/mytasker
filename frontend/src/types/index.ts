@@ -12,6 +12,8 @@ export type ProjectKind = 'project' | 'active';
 export type ProjectCategory = 'general' | 'startup';
 export type ProjectMode = 'private' | 'group' | 'group_plus';
 export type ProjectStatus = 'planned' | 'active' | 'paused' | 'completed' | 'archived';
+/** Working projects board: yellow waiting, orange active, green in the working process. */
+export type WorkState = 'waiting' | 'active' | 'working';
 export type Role = 'owner' | 'admin' | 'member' | 'viewer';
 export type RoutineKind = 'personal' | 'business';
 export type TimeCategory = 'personal' | 'business';
@@ -207,7 +209,8 @@ export interface Project {
   mode: ProjectMode;
   status: ProjectStatus;
   priority: Priority;
-  /** Owner flag: are they actively working on this project right now? Shown on the Working projects page. */
+  work_state: WorkState;
+  /** Same as `work_state === 'working'`. */
   is_working: boolean;
   /** Shelf on the Working projects board. Null means the project is not in a group yet. */
   work_group_id: number | null;

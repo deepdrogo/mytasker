@@ -137,9 +137,14 @@
   box-shadow: 0 0 6px rgba(245, 196, 81, 0.45);
 }
 
-.keyOn {
+.keyWorking {
   background: #2ee36a;
   box-shadow: 0 0 6px rgba(46, 227, 106, 0.5);
+}
+
+.keyActive {
+  background: #ff8a3d;
+  box-shadow: 0 0 6px rgba(255, 138, 61, 0.5);
 }
 
 .totalPart,
@@ -164,7 +169,7 @@
   height: 10px;
 }
 
-.totalWaiting {
+.totalQuiet {
   color: var(--c-text-dim);
 }
 
@@ -209,14 +214,21 @@
   box-shadow: var(--rim-top);
 }
 
-.chipOn {
+.chipWorking {
   border-color: rgba(46, 227, 106, 0.4);
   background:
     linear-gradient(90deg, rgba(46, 227, 106, 0.07), transparent 70%),
     var(--g-glass);
 }
 
-.chipOff {
+.chipActive {
+  border-color: rgba(255, 138, 61, 0.42);
+  background:
+    linear-gradient(90deg, rgba(255, 138, 61, 0.08), transparent 70%),
+    var(--g-glass);
+}
+
+.chipWaiting {
   border-color: rgba(245, 196, 81, 0.34);
   background:
     linear-gradient(90deg, rgba(245, 196, 81, 0.06), transparent 70%),
@@ -294,7 +306,13 @@
   cursor: default;
 }
 
-.dotOn {
+.dotActive {
+  border-color: rgba(255, 138, 61, 0.75);
+  background: linear-gradient(180deg, #ffa25c 0%, #e8621c 100%);
+  box-shadow: 0 0 8px rgba(255, 138, 61, 0.45);
+}
+
+.dotWorking {
   border-color: rgba(46, 227, 106, 0.7);
   background: linear-gradient(180deg, #2ee36a 0%, #17a34a 100%);
   box-shadow: 0 0 8px rgba(34, 197, 94, 0.45);

@@ -17,6 +17,7 @@ export const projects: Record<string, string> = {
   'Green on the Working projects page: in the working process.':
     '„მიმდინარე პროექტების" გვერდზე მწვანეა — მუშაობის პროცესშია.',
   'Yellow on the Working projects page: waiting.': '„მიმდინარე პროექტების" გვერდზე ყვითელია — ელოდება.',
+  'Orange on the Working projects page: active.': '„მიმდინარე პროექტების" გვერდზე სტაფილოსფერია — აქტიური.',
 
   // Working projects catalog
   'Working projects': 'მიმდინარე პროექტები',
@@ -34,10 +35,11 @@ export const projects: Record<string, string> = {
   'of {count} projects': '{count} პროექტიდან',
   'Create a project to see it here.': 'შექმენი პროექტი, რომ აქ გამოჩნდეს.',
   '{count} waiting': '{count} ელოდება',
-  'Mark {name} as working': 'მონიშნე „{name}" მიმდინარედ',
-  'Set {name} to waiting': '„{name}" — ელოდებაზე გადაყვანა',
-  'Working — click to set waiting': 'მიმდინარე — დააჭირე „ელოდება"-ზე გადასაყვანად',
-  'Waiting — click to mark working': 'ელოდება — დააჭირე მიმდინარედ მოსანიშნად',
+  '{count} active': '{count} აქტიური',
+  'Waiting — click for Active': 'ელოდება — დააჭირე „აქტიურზე" გადასართავად',
+  'Active — click for Working': 'აქტიური — დააჭირე „მიმდინარეზე" გადასართავად',
+  'Working — click for Waiting': 'მიმდინარე — დააჭირე „ელოდებაზე" გადასართავად',
+  '{name}: {state}. Click to switch to {next}.': '„{name}": {state}. დააჭირე „{next}"-ზე გადასართავად.',
 
   // Project card
   '{done}/{total} tasks': '{done}/{total} დავალება',

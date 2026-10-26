@@ -13,8 +13,24 @@ import { createSortable, type Sortable } from '~/hooks/createSortable';
 import { t } from '~/i18n';
 import { tx } from '~/stores/translations';
 import { toast } from '~/stores/ui';
-import type { ID, Project } from '~/types';
+import type { ID, Project, WorkState } from '~/types';
 import styles from './Working.module.css';
+
+/** Tapping the dot walks the cycle: waiting (yellow) → active (orange) → working (green) → waiting. */
+const NEXT_STATE: Record<WorkState, WorkState> = { waiting: 'active', active: 'working', working: 'waiting' };
+const STATE_ORDER: WorkState[] = ['working', 'active', 'waiting'];
+const STATE_LABEL: Record<WorkState, string> = { working: 'Working', active: 'Active', waiting: 'Waiting' };
+const STATE_COUNT: Record<WorkState, string> = { working: '{count} working', active: '{count} active', waiting: '{count} waiting' };
+const STATE_KEY: Record<WorkState, string> = { working: styles.keyWorking!, active: styles.keyActive!, waiting: '' };
+const STATE_CHIP: Record<WorkState, string> = { working: styles.chipWorking!, active: styles.chipActive!, waiting: styles.chipWaiting! };
+const STATE_DOT: Record<WorkState, string> = { working: styles.dotWorking!, active: styles.dotActive!, waiting: '' };
+const STATE_TITLE: Record<WorkState, string> = {
+  waiting: 'Waiting — click for Active',
+  active: 'Active — click for Working',
+  working: 'Working — click for Waiting',
+};
+
+const countIn = (projects: Project[], state: WorkState) => projects.filter((project) => project.work_state === state).length;
 
 export default function Working(): JSX.Element {
   const projectsQuery = createQuery(
@@ -26,7 +42,6 @@ export default function Working(): JSX.Element {
   const projects = () => projectsQuery.data()?.results ?? [];
   /** Archived and finished projects stay on All. This board is the live shelf. */
   const visible = createMemo(() => projects().filter((project) => project.status !== 'archived' && project.status !== 'completed'));
-  const workingCount = createMemo(() => visible().filter((project) => project.is_working).length);
   const groups = () => groupsQuery.data() ?? [];
   const inGroup = (id: ID) => visible().filter((project) => project.work_group_id === id);
   const ungrouped = createMemo(() => visible().filter((project) => project.work_group_id == null));
@@ -40,14 +55,15 @@ export default function Working(): JSX.Element {
     );
   };
 
-  const toggleWorking = async (project: Project) => {
+  const cycleState = async (project: Project) => {
     if (!project.capabilities.manage_project) return;
-    const next = !project.is_working;
-    patch(project.id, { is_working: next });
+    const previous = project.work_state;
+    const next = NEXT_STATE[previous];
+    patch(project.id, { work_state: next, is_working: next === 'working' });
     try {
-      await projectsApi.setWorking(project.id, next);
+      await projectsApi.setWorkState(project.id, next);
     } catch {
-      patch(project.id, { is_working: !next });
+      patch(project.id, { work_state: previous, is_working: previous === 'working' });
       toast(t('Could not update the project.'));
     }
   };
@@ -129,14 +145,14 @@ export default function Working(): JSX.Element {
             <div class={styles.board}>
               <div class={styles.hero}>
                 <p class={styles.total}>
-                  <span class={styles.totalPart}>
-                    <i class={`${styles.key} ${styles.keyOn}`} />
-                    {t('{count} working', { count: workingCount() })}
-                  </span>
-                  <span class={`${styles.totalPart} ${styles.totalWaiting}`}>
-                    <i class={styles.key} />
-                    {t('{count} waiting', { count: visible().length - workingCount() })}
-                  </span>
+                  <For each={STATE_ORDER}>
+                    {(state) => (
+                      <span class={[styles.totalPart, state === 'working' ? '' : styles.totalQuiet].filter(Boolean).join(' ')}>
+                        <i class={[styles.key, STATE_KEY[state]].filter(Boolean).join(' ')} />
+                        {t(STATE_COUNT[state], { count: countIn(visible(), state) })}
+                      </span>
+                    )}
+                  </For>
                 </p>
                 <p class={styles.hint}>{t('Make a group, move projects into it, then drag to set the order.')}</p>
               </div>
@@ -162,7 +178,7 @@ export default function Working(): JSX.Element {
                       groups={groups()}
                       sortable={groupSortable}
                       onReorder={saveOrder}
-                      onToggleWorking={toggleWorking}
+                      onCycleState={cycleState}
                       onMove={moveTo}
                       onRenamed={() => groupsQuery.refetch()}
                       onDeleted={() => {
@@ -180,7 +196,7 @@ export default function Working(): JSX.Element {
                   projects={ungrouped()}
                   groups={groups()}
                   onReorder={saveOrder}
-                  onToggleWorking={toggleWorking}
+                  onCycleState={cycleState}
                   onMove={moveTo}
                 />
               </Show>
@@ -198,7 +214,7 @@ function GroupShelf(props: {
   groups: WorkGroup[];
   sortable: Sortable<WorkGroup>;
   onReorder: (projects: Project[]) => void;
-  onToggleWorking: (project: Project) => void;
+  onCycleState: (project: Project) => void;
   onMove: (project: Project, groupId: ID | null) => void;
   onRenamed: () => void;
   onDeleted: () => void;
@@ -291,7 +307,7 @@ function GroupShelf(props: {
         projects={props.projects}
         groups={props.groups}
         onReorder={props.onReorder}
-        onToggleWorking={props.onToggleWorking}
+        onCycleState={props.onCycleState}
         onMove={props.onMove}
       />
       <ConfirmDialog
@@ -312,7 +328,7 @@ function ProjectGrid(props: {
   projects: Project[];
   groups: WorkGroup[];
   onReorder: (projects: Project[]) => void;
-  onToggleWorking: (project: Project) => void;
+  onCycleState: (project: Project) => void;
   onMove: (project: Project, groupId: ID | null) => void;
 }): JSX.Element {
   const sortable = createSortable<Project>({
@@ -337,7 +353,7 @@ function ProjectGrid(props: {
               project={project}
               groups={props.groups}
               sortable={sortable}
-              onToggleWorking={() => props.onToggleWorking(project)}
+              onCycleState={() => props.onCycleState(project)}
               onMove={(groupId) => props.onMove(project, groupId)}
             />
           )}
@@ -347,24 +363,20 @@ function ProjectGrid(props: {
   );
 }
 
-/** Green = in the working process, yellow = waiting. Zero counts are left out. */
+/** Green working, orange active, yellow waiting. Zero counts are left out. */
 function Tally(props: { projects: Project[] }): JSX.Element {
-  const working = () => props.projects.filter((project) => project.is_working).length;
-  const waiting = () => props.projects.length - working();
   return (
     <span class={styles.tally}>
-      <Show when={working()}>
-        <span class={styles.tallyPart} title={t('Working')}>
-          <i class={`${styles.key} ${styles.keyOn}`} />
-          {working()}
-        </span>
-      </Show>
-      <Show when={waiting()}>
-        <span class={styles.tallyPart} title={t('Waiting')}>
-          <i class={styles.key} />
-          {waiting()}
-        </span>
-      </Show>
+      <For each={STATE_ORDER}>
+        {(state) => (
+          <Show when={countIn(props.projects, state)}>
+            <span class={styles.tallyPart} title={t(STATE_LABEL[state])}>
+              <i class={[styles.key, STATE_KEY[state]].filter(Boolean).join(' ')} />
+              {countIn(props.projects, state)}
+            </span>
+          </Show>
+        )}
+      </For>
     </span>
   );
 }
@@ -373,7 +385,7 @@ function ProjectChip(props: {
   project: Project;
   groups: WorkGroup[];
   sortable: Sortable<Project>;
-  onToggleWorking: () => void;
+  onCycleState: () => void;
   onMove: (groupId: ID | null) => void;
 }): JSX.Element {
   const name = () => tx('project', props.project.id, 'name', props.project.name);
@@ -395,7 +407,7 @@ function ProjectChip(props: {
     <li
       class={[
         styles.chip,
-        props.project.is_working ? styles.chipOn : styles.chipOff,
+        STATE_CHIP[props.project.work_state],
         props.sortable.isDragging(props.project) ? styles.chipDragging : '',
       ]
         .filter(Boolean)
@@ -431,14 +443,15 @@ function ProjectChip(props: {
       </Show>
       <button
         type="button"
-        class={[styles.dot, props.project.is_working ? styles.dotOn : ''].filter(Boolean).join(' ')}
+        class={[styles.dot, STATE_DOT[props.project.work_state]].filter(Boolean).join(' ')}
         disabled={!canManage()}
-        onClick={() => props.onToggleWorking()}
-        aria-pressed={props.project.is_working}
-        aria-label={
-          props.project.is_working ? t('Set {name} to waiting', { name: name() }) : t('Mark {name} as working', { name: name() })
-        }
-        title={props.project.is_working ? t('Working — click to set waiting') : t('Waiting — click to mark working')}
+        onClick={() => props.onCycleState()}
+        aria-label={t('{name}: {state}. Click to switch to {next}.', {
+          name: name(),
+          state: t(STATE_LABEL[props.project.work_state]),
+          next: t(STATE_LABEL[NEXT_STATE[props.project.work_state]]),
+        })}
+        title={t(STATE_TITLE[props.project.work_state])}
       />
     </li>
   );

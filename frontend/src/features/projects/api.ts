@@ -12,6 +12,7 @@ import type {
   ProjectStatus,
   Role,
   Task,
+  WorkState,
 } from '~/types';
 
 export interface ProjectListParams extends QueryParams {
@@ -35,8 +36,8 @@ export interface ProjectInput {
   mode?: ProjectMode;
   status?: ProjectStatus;
   priority?: Priority;
-  /** Active (working on it) vs inactive — drives the Working projects page. */
-  is_working?: boolean;
+  /** Waiting / active / working on the Working projects page. */
+  work_state?: WorkState;
   /** Shelf on the Working projects board. `null` takes the project out of every group. */
   work_group_id?: number | null;
   start_date?: string | null;
@@ -92,9 +93,9 @@ export const projectsApi = {
     invalidate('projects');
     return result.ids;
   },
-  /** Toggle whether the owner is actively working on this project (Working projects catalog). */
-  setWorking: async (id: ID, working: boolean) => {
-    const project = await api.post<Project>(`/projects/${id}/working/`, { working });
+  /** Waiting / active / working on the Working projects board. */
+  setWorkState: async (id: ID, state: WorkState) => {
+    const project = await api.post<Project>(`/projects/${id}/working/`, { state });
     invalidate('projects', 'today');
     return project;
   },
