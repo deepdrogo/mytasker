@@ -28,6 +28,8 @@ export const projects: Record<string, string> = {
     'შექმენი ჯგუფი, გადაიტანე პროექტები და გადაათრიე რიგის დასალაგებლად.',
   'New group': 'ახალი ჯგუფი',
   'No group': 'ჯგუფის გარეშე',
+  'No project is in work right now. Turn a dot green on Working projects.':
+    'ახლა არცერთი პროექტი არ არის მუშაობის პროცესში. „მიმდინარე პროექტებზე" წერტილი მწვანედ გადართე.',
   'Rename group': 'ჯგუფის გადარქმევა',
   'Delete group': 'ჯგუფის წაშლა',
   'Could not save the group.': 'ჯგუფის შენახვა ვერ მოხერხდა.',

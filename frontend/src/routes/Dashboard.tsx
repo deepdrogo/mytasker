@@ -1,79 +1,27 @@
-// MyTasker — the Dashboard. The whole day on one page: dated work, the week ahead, active projects, timers, routine.
+// MyTasker — the Dashboard. The Working projects board next to the day's timers, numbers, routine and rules.
 // Built by drogoz · https://github.com/deepdrogo/mytasker
 
 import { A } from '@solidjs/router';
-import { CalendarOff, CalendarRange, Check, Circle, CircleDot, Flame, GripVertical, Handshake, Moon, Play, Rocket, ScrollText, Square, Star, Undo2, UserCheck, X } from 'lucide-solid';
+import { CalendarOff, Check, Circle, Flame, Moon, Play, ScrollText, Square, X } from 'lucide-solid';
 import type { JSX } from 'solid-js';
-import { For, Show, createMemo, createSignal, onCleanup } from 'solid-js';
+import { For, Show, createSignal, onCleanup } from 'solid-js';
 import { Page } from '~/components/shared/Page';
-import { PriorityMark } from '~/components/shared/Indicators';
 import { ErrorNote, Skeleton } from '~/components/ui/Feedback';
-import { Button } from '~/components/ui/Button';
-import { DailyCheckinList, NoCheckinsToday } from '~/features/checkins/DailyCheckinList';
 import { dashboardApi } from '~/features/dashboard/api';
-import { projectsApi } from '~/features/projects/api';
-import { GROUP_LABEL, groupProjects, isImportant, toggledPriority, type ProjectGroupKey } from '~/features/projects/groups';
+import { WorkingBoard } from '~/features/projects/WorkingBoard';
 import { routinesApi, rulesApi } from '~/features/routines/api';
-import { ShareDialog } from '~/features/sharing/ShareDialog';
-import { tasksApi } from '~/features/tasks/api';
-import { TaskComposer } from '~/features/tasks/TaskComposer';
-import { TaskEditor } from '~/features/tasks/TaskEditor';
-import { TaskList } from '~/features/tasks/TaskList';
-import { createQuery, invalidate } from '~/hooks/createQuery';
-import { createSortable, type Sortable } from '~/hooks/createSortable';
-import { intlLocale, t, tn } from '~/i18n';
-import { authStore } from '~/stores/auth';
+import { createQuery } from '~/hooks/createQuery';
+import { t, tn } from '~/i18n';
 import { tx } from '~/stores/translations';
 import { startSleep, stopSleep, timerStore, toggleTimer } from '~/stores/timer';
 import { toast } from '~/stores/ui';
-import type { RoutineItem, Rule, Task, TodayData, TodayProject } from '~/types';
-import { endOfDay, formatClock, formatDate, formatDateFull, formatDueDate, formatMinutes, percent } from '~/utils/format';
+import type { RoutineItem, Rule, TodayData } from '~/types';
+import { formatClock, formatDateFull, formatMinutes, percent } from '~/utils/format';
 import styles from './Dashboard.module.css';
 import { cx } from '~/utils/cx';
 
 export default function Dashboard(): JSX.Element {
   const query = createQuery<TodayData>(() => 'today', () => dashboardApi.snapshot());
-  const [activeTask, setActiveTask] = createSignal<Task | null>(null);
-  const [shareTasks, setShareTasks] = createSignal<Task[] | null>(null);
-  const [aligningProjects, setAligningProjects] = createSignal(false);
-
-  const activeProjects = () => query.data()?.active_projects ?? [];
-  const projectGroups = createMemo(() => groupProjects(activeProjects()));
-
-  /**
-   * One group was dragged into a new order. Only that group is sent: its projects swap among the places they
-   * hold in the shared order, so the calendar rows of every other project stay where the user put them.
-   */
-  const saveProjectOrder = async (key: ProjectGroupKey, arranged: TodayProject[]) => {
-    const projects = projectGroups().flatMap((group) => (group.key === key ? arranged : group.items));
-    // Keep the snapshot in step so any re-render shows the arranged order before the refetch lands.
-    query.mutate((current) => (current ? { ...current, active_projects: projects } : current));
-    try {
-      await projectsApi.reorder(arranged.map((project) => project.id));
-    } catch {
-      toast(t('Could not save the order.'));
-      query.refetch();
-    }
-  };
-
-  /** Star / unstar: moves the project between Important and Not important everywhere. */
-  const toggleImportant = async (project: TodayProject) => {
-    const priority = toggledPriority(project);
-    query.mutate((current) =>
-      current
-        ? { ...current, active_projects: current.active_projects.map((p) => (p.id === project.id ? { ...p, priority } : p)) }
-        : current,
-    );
-    try {
-      await projectsApi.update(project.id, { priority });
-      toast(isImportant({ priority }) ? t('Marked important') : t('Moved to Not important'));
-    } catch {
-      toast(t('Could not update the project.'));
-    } finally {
-      query.refetch();
-    }
-  };
-
   // Live clock so elapsed timers tick without refetching.
   const [tick, setTick] = createSignal(0);
   const interval = setInterval(() => setTick((t) => t + 1), 1000);
@@ -81,39 +29,6 @@ export default function Dashboard(): JSX.Element {
 
   const data = () => query.data();
   const refresh = () => query.refetch();
-
-  const alignProjectsWithCalendar = async () => {
-    const projects = [...activeProjects()].sort((a, b) => {
-      if (a.start_date && b.start_date) {
-        if (a.start_date !== b.start_date) return a.start_date < b.start_date ? -1 : 1;
-        return a.name.localeCompare(b.name);
-      }
-      if (a.start_date) return -1;
-      if (b.start_date) return 1;
-      return a.name.localeCompare(b.name);
-    });
-    setAligningProjects(true);
-    query.mutate((current) => (current ? { ...current, active_projects: projects } : current));
-    try {
-      await projectsApi.followCalendar();
-      toast(t('Sorted by dates'));
-    } catch {
-      toast(t('Could not save the order.'));
-    } finally {
-      query.refetch();
-      setAligningProjects(false);
-    }
-  };
-
-  const undo = async (task: Task) => {
-    try {
-      await tasksApi.reopen(task.id);
-      toast(t('Reopened'));
-      refresh();
-    } catch {
-      toast(t('Could not reopen.'));
-    }
-  };
 
   const businessSeconds = () => {
     tick();
@@ -127,269 +42,18 @@ export default function Dashboard(): JSX.Element {
     return running?.note || t('Running');
   };
 
-  const use12h = () => authStore.user()?.preferences.time_format === '12h';
-
-  /** Upcoming (next 7 days) grouped by local day, in order. */
-  const upcomingGroups = createMemo(() => {
-    const groups = new Map<string, { label: string; tasks: Task[] }>();
-    for (const task of data()?.tasks.upcoming ?? []) {
-      if (!task.due_at) continue;
-      const date = new Date(task.due_at);
-      const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-      const group = groups.get(key) ?? {
-        label: date.toLocaleDateString(intlLocale(), { weekday: 'short', day: 'numeric', month: 'short' }),
-        tasks: [],
-      };
-      group.tasks.push(task);
-      groups.set(key, group);
-    }
-    return [...groups.values()];
-  });
-
-  const share = (task: Task) => setShareTasks([task]);
-
-  /** Work other people handed to me, one block per giver (server orders by giver). */
-  const delegatedGroups = createMemo(() => {
-    const groups = new Map<number, { label: string; href: string; tasks: Task[] }>();
-    for (const task of data()?.tasks.delegated ?? []) {
-      const group = groups.get(task.owner.id) ?? { label: task.owner.display_name, href: `/from/${task.owner.id}`, tasks: [] };
-      group.tasks.push(task);
-      groups.set(task.owner.id, group);
-    }
-    return [...groups.values()];
-  });
-
-  /** Client work grouped by project (server already orders by project name); loose tasks last. */
-  const clientGroups = createMemo(() => {
-    const groups = new Map<string, { label: string; href?: string; tasks: Task[] }>();
-    for (const task of data()?.tasks.clients ?? []) {
-      const key = task.project ? `p${task.project.id}` : 'loose';
-      const group = groups.get(key) ?? {
-        label: task.project ? tx('project', task.project.id, 'name', task.project.name) : t('Without a project'),
-        href: task.project ? `/projects/${task.project.id}/tasks` : '/tasks/clients',
-        tasks: [],
-      };
-      group.tasks.push(task);
-      groups.set(key, group);
-    }
-    return [...groups.values()];
-  });
-
   return (
     <Page title={t('Dashboard')} subtitle={formatDateFull(new Date().toISOString())}>
       <Show when={!query.error()} fallback={<ErrorNote message={t('Could not load the dashboard.')} onRetry={refresh} />}>
         <Show when={data()} fallback={<Skeleton rows={8} height={40} />}>
           {(d) => (
             <div class={styles.grid}>
-              {/* Column 1: the plate - dated work, daily check-ins, personal / business, the week ahead */}
+              {/* Main column: the Working projects board, the same as on its own page */}
               <section class={styles.col}>
-                <TaskComposer
-                  defaults={{ due_at: endOfDay(0), due_has_time: false }}
-                  placeholder={t('Add a task for today…')}
-                  onCreated={() => {
-                    refresh();
-                    invalidate('tasks');
-                  }}
-                />
-
-                <Show when={(d().tasks.delegated?.length ?? 0) > 0}>
-                  <Section title={t('Handed to you')} count={d().tasks.delegated.length} tone="strong" hint={t('by other people')}>
-                    <div class={styles.clientGroups}>
-                      <For each={delegatedGroups()}>
-                        {(group) => (
-                          <div class={styles.clientGroup}>
-                            <A href={group.href} class={styles.clientGroupLabel}>
-                              <UserCheck size={11} />
-                              <span>{t('From {name}', { name: group.label })}</span>
-                              <span class={styles.count}>{group.tasks.length}</span>
-                            </A>
-                            <TaskList tasks={group.tasks} compact showProject showKind onOpen={setActiveTask} onChanged={refresh} onShare={share} />
-                          </div>
-                        )}
-                      </For>
-                    </div>
-                  </Section>
-                </Show>
-
-                <Show when={d().tasks.clients.length > 0}>
-                  <Section
-                    title={t('Clients')}
-                    count={d().tasks.clients.length}
-                    tone="strong"
-                    hint={t('promised to someone')}
-                    link={{ href: '/tasks/clients', label: t('All') }}
-                  >
-                    <div class={styles.clientGroups}>
-                      <For each={clientGroups()}>
-                        {(group) => (
-                          <div class={styles.clientGroup}>
-                            <A href={group.href ?? '/tasks/clients'} class={styles.clientGroupLabel}>
-                              <Handshake size={11} />
-                              <span>{group.label}</span>
-                              <span class={styles.count}>{group.tasks.length}</span>
-                            </A>
-                            <TaskList tasks={group.tasks} compact showProject={false} onOpen={setActiveTask} onChanged={refresh} onShare={share} />
-                          </div>
-                        )}
-                      </For>
-                    </div>
-                  </Section>
-                </Show>
-
-                <Show when={d().tasks.overdue.length > 0}>
-                  <Section title={t('Overdue')} count={d().tasks.overdue.length} tone="strong">
-                    <TaskList tasks={d().tasks.overdue} compact showProject onOpen={setActiveTask} onChanged={refresh} onShare={share} />
-                  </Section>
-                </Show>
-
-                <Show when={d().tasks.focus.length > 0}>
-                  <Section title={t('Focus')} hint={t('High priority, no date')}>
-                    <TaskList tasks={d().tasks.focus} compact showProject onOpen={setActiveTask} onChanged={refresh} onShare={share} />
-                  </Section>
-                </Show>
-
-                <div class={styles.plate}>
-                  <Section title={t('Personal')} count={d().tasks.personal.length} link={{ href: '/tasks/personal', label: t('All') }}>
-                    <TaskList
-                      tasks={d().tasks.personal}
-                      compact
-                      dense
-                      showProject={false}
-                      emptyTitle={t('Nothing personal pending.')}
-                      onOpen={setActiveTask}
-                      onChanged={refresh}
-                      onShare={share}
-                    />
-                  </Section>
-                  <Section title={t('Business')} count={d().tasks.business.length} link={{ href: '/tasks/business', label: t('All') }}>
-                    <TaskList
-                      tasks={d().tasks.business}
-                      compact
-                      dense
-                      showProject={false}
-                      emptyTitle={t('No business tasks pending.')}
-                      onOpen={setActiveTask}
-                      onChanged={refresh}
-                      onShare={share}
-                    />
-                  </Section>
-                </div>
-
-                <Section
-                  title={t('Daily check-ins')}
-                  count={d().daily_checkins.length || undefined}
-                  hint={t('from the project calendar')}
-                  link={{ href: '/projects/checkins', label: t('History') }}
-                >
-                  <Show when={d().daily_checkins.length > 0} fallback={<NoCheckinsToday />}>
-                    <DailyCheckinList items={d().daily_checkins} onChanged={refresh} />
-                  </Show>
-                </Section>
-
-                <Section title={t('Next 7 days')} count={d().tasks.upcoming.length} link={{ href: '/tasks/upcoming', label: t('Upcoming') }}>
-                  <Show when={upcomingGroups().length > 0} fallback={<p class={styles.dim}>{t('Nothing scheduled ahead.')}</p>}>
-                    <div class={styles.calendar}>
-                      <For each={upcomingGroups()}>
-                        {(group) => (
-                          <div class={styles.calDay}>
-                            <div class={styles.calDayLabel}>
-                              <span>{group.label}</span>
-                              <span class={styles.count}>{group.tasks.length}</span>
-                            </div>
-                            <ul class={styles.calList}>
-                              <For each={group.tasks}>
-                                {(task) => (
-                                  <li>
-                                    <button type="button" class={styles.calTask} onClick={() => setActiveTask(task)}>
-                                      <PriorityMark priority={task.priority} />
-                                      <span class={styles.calTitle}>{tx('task', task.id, 'title', task.title)}</span>
-                                      <Show when={task.project}>
-                                        {(project) => <span class={styles.calProject}>{tx('project', project().id, 'name', project().name)}</span>}
-                                      </Show>
-                                      <Show when={task.due_has_time}>
-                                        <span class={styles.mono}>{formatDueDate(task.due_at, true, use12h()).split(' ').pop()}</span>
-                                      </Show>
-                                    </button>
-                                  </li>
-                                )}
-                              </For>
-                            </ul>
-                          </div>
-                        )}
-                      </For>
-                    </div>
-                  </Show>
-                </Section>
-
-                <Section title={t('Completed today')} count={d().tasks.completed.length}>
-                  <Show when={d().tasks.completed.length > 0} fallback={<p class={styles.dim}>{t('Nothing yet - the day is young.')}</p>}>
-                    <ul class={styles.completed}>
-                      <For each={d().tasks.completed}>
-                        {(task) => (
-                          <li class={styles.completedRow}>
-                            <Check size={14} />
-                            <button type="button" class={styles.completedTitle} onClick={() => setActiveTask(task)}>
-                              {tx('task', task.id, 'title', task.title)}
-                            </button>
-                            <Show when={task.completed_by_name && task.completed_by?.id !== authStore.user()?.id}>
-                              <span class={styles.by}>{t('by {name}', { name: task.completed_by_name ?? '' })}</span>
-                            </Show>
-                            <button type="button" class={styles.undo} onClick={() => void undo(task)} aria-label={t('Undo')}>
-                              <Undo2 size={13} /> {t('Undo')}
-                            </button>
-                          </li>
-                        )}
-                      </For>
-                    </ul>
-                  </Show>
-                </Section>
+                <WorkingBoard />
               </section>
 
-              {/* Column 2: active projects, expanded vertically, in the user's own order */}
-              <section class={styles.col}>
-                <Section
-                  title={t('Active projects')}
-                  count={activeProjects().length}
-                  hint={activeProjects().length > 1 ? t('Same order as the project calendar · drag to change') : undefined}
-                  action={
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      loading={aligningProjects()}
-                      onClick={() => void alignProjectsWithCalendar()}
-                      title={t('Drop the hand-made order and list projects by their start date')}
-                    >
-                      <CalendarRange size={13} />
-                      {t('Sort by dates')}
-                    </Button>
-                  }
-                  link={{ href: '/projects/canvas', label: t('Canvas') }}
-                >
-                  <Show
-                    when={activeProjects().length > 0}
-                    fallback={<p class={styles.dim}>{t('No project has open tasks or a place on the calendar right now.')}</p>}
-                  >
-                    <div class={styles.projectGroups}>
-                      {/* Keyed by group name, so a refetch updates a group in place instead of remounting it. */}
-                      <For each={projectGroups().map((group) => group.key)}>
-                        {(key) => (
-                          <ProjectGroupBlock
-                            group={key}
-                            projects={projectGroups().find((group) => group.key === key)?.items ?? []}
-                            minutes={d().metrics.project_minutes}
-                            onReorder={(items) => void saveProjectOrder(key, items)}
-                            onToggleImportant={(project) => void toggleImportant(project)}
-                            onOpenTask={(id) => void tasksApi.get(id).then(setActiveTask)}
-                            onTasksReordered={refresh}
-                          />
-                        )}
-                      </For>
-                    </div>
-                  </Show>
-                </Section>
-              </section>
-
-              {/* Column 3: timers, numbers, routine, rules - compact. On narrow screens the column dissolves
+              {/* Side column: timers, numbers, routine, rules - compact. On narrow screens the column dissolves
                   (display: contents): timers + stats jump to the top, routine + rules sink to the very bottom. */}
               <section class={cx(styles.col, styles.side)}>
                 <div class={cx(styles.sideGroup, styles.sideTop)}>
@@ -487,19 +151,6 @@ export default function Dashboard(): JSX.Element {
         </Show>
       </Show>
 
-      <TaskEditor
-        task={activeTask()}
-        open={activeTask() !== null}
-        onClose={() => setActiveTask(null)}
-        onChanged={() => {
-          refresh();
-          const current = activeTask();
-          if (current) void tasksApi.get(current.id).then(setActiveTask).catch(() => setActiveTask(null));
-        }}
-        onShare={(task) => setShareTasks([task])}
-        onOpenTask={(task) => void tasksApi.get(task.id).then(setActiveTask).catch(() => setActiveTask(task))}
-      />
-      <ShareDialog tasks={shareTasks()} open={shareTasks() !== null} onClose={() => setShareTasks(null)} />
     </Page>
   );
 }
@@ -702,193 +353,5 @@ function RulesBlock(props: { rules: Rule[]; onChanged: () => void }): JSX.Elemen
         </Show>
       </Section>
     </Show>
-  );
-}
-
-/** The top three slots carry a faint colour so the day's order reads at a glance: 1 red, 2 amber, 3 green. */
-const RANK_CLASS: Record<number, string> = { 1: 'rank1', 2: 'rank2', 3: 'rank3' };
-const GROUP_ICON: Record<ProjectGroupKey, () => JSX.Element> = {
-  important: () => <Star size={12} />,
-  normal: () => <CircleDot size={12} />,
-  startup: () => <Rocket size={12} />,
-};
-
-/** One shelf of the Active projects list (Important / Not important / Startups), arranged by drag inside it. */
-function ProjectGroupBlock(props: {
-  group: ProjectGroupKey;
-  projects: TodayProject[];
-  minutes: Record<string, number>;
-  onReorder: (projects: TodayProject[]) => void;
-  onToggleImportant: (project: TodayProject) => void;
-  onOpenTask: (id: number) => void;
-  onTasksReordered: () => void;
-}): JSX.Element {
-  const sortable = createSortable<TodayProject>({
-    items: () => props.projects,
-    key: (project) => project.id,
-    onReorder: (projects) => props.onReorder(projects),
-  });
-  return (
-    <div class={cx(styles.projectGroup, styles[`group-${props.group}`])}>
-      <div class={styles.projectGroupHead}>
-        {GROUP_ICON[props.group]()}
-        <span>{t(GROUP_LABEL[props.group])}</span>
-        <span class={styles.count}>{props.projects.length}</span>
-      </div>
-      {/* The wrapper scrolls, not the list itself: the drag hook measures rows against the list and
-          auto-scrolls the nearest scrolling ancestor. */}
-      <div class={cx(props.projects.length > 4 && styles.projectsScroll)}>
-        <ul class={styles.projects} ref={sortable.setContainer}>
-          <For each={sortable.items()}>
-            {(project, index) => (
-              <ProjectCardMini
-                project={project}
-                minutes={props.minutes[String(project.id)] ?? 0}
-                onOpenTask={props.onOpenTask}
-                onToggleImportant={() => props.onToggleImportant(project)}
-                onTasksReordered={props.onTasksReordered}
-                sortable={sortable}
-                position={index() + 1}
-                total={sortable.items().length}
-              />
-            )}
-          </For>
-        </ul>
-      </div>
-    </div>
-  );
-}
-
-type NextTask = TodayProject['next_tasks'][number];
-
-/**
- * Compact project card for the dashboard: progress, the next open tasks in the project's own order (drag them
- * here or on the project page - it is one order), tracked minutes, a star for Important, a grip to reorder.
- */
-function ProjectCardMini(props: {
-  project: TodayProject;
-  minutes: number;
-  onOpenTask: (id: number) => void;
-  onToggleImportant: () => void;
-  onTasksReordered: () => void;
-  sortable: Sortable<TodayProject>;
-  position: number;
-  total: number;
-}): JSX.Element {
-  const total = () => props.project.task_total ?? 0;
-  const done = () => props.project.task_done ?? 0;
-  const use12h = () => authStore.user()?.preferences.time_format === '12h';
-  const name = () => tx('project', props.project.id, 'name', props.project.name);
-  const important = () => isImportant(props.project);
-  const rankClass = () => {
-    const key = RANK_CLASS[props.position];
-    return key ? styles[key] : undefined;
-  };
-  const taskOrder = createSortable<NextTask>({
-    items: () => props.project.next_tasks,
-    key: (task) => task.id,
-    onReorder: async (tasks) => {
-      try {
-        await tasksApi.reorder(tasks.map((task) => task.id));
-      } catch {
-        toast(t('Could not save the order.'));
-      } finally {
-        props.onTasksReordered();
-      }
-    },
-  });
-  return (
-    <li
-      class={cx(styles.projectCard, rankClass(), props.sortable.isDragging(props.project) && styles.projectDragging)}
-      {...props.sortable.itemProps(props.project)}
-      style={props.sortable.itemStyle(props.project)}
-    >
-      <div class={styles.projectHeadRow}>
-        <Show when={props.total > 1}>
-          <button
-            type="button"
-            class={styles.grip}
-            {...props.sortable.handleProps(props.project)}
-            aria-label={t('Reorder {name} ({position} of {total})', { name: name(), position: props.position, total: props.total })}
-            title={t('Drag to reorder · arrow keys to move')}
-          >
-            <GripVertical size={14} />
-          </button>
-        </Show>
-        <span class={styles.rank} aria-label={t('Position {position}', { position: props.position })}>
-          {props.position}
-        </span>
-        <A href={`/projects/${props.project.id}/tasks`} class={styles.projectHead}>
-          <span class={styles.projectName}>
-            <Show when={props.project.category === 'startup'}>
-              <Rocket size={12} />
-            </Show>
-            {name()}
-          </span>
-          <span class={styles.mono}>
-            {t('{count} open', { count: props.project.task_open ?? 0 })}
-            <Show when={props.minutes > 0}> · {formatMinutes(props.minutes)}</Show>
-          </span>
-        </A>
-        <button
-          type="button"
-          class={cx(styles.starBtn, important() && styles.starOn)}
-          onClick={() => props.onToggleImportant()}
-          aria-pressed={important()}
-          aria-label={important() ? t('Move {name} to Not important', { name: name() }) : t('Mark {name} important', { name: name() })}
-          title={important() ? t('Important - click to move to Not important') : t('Mark important')}
-        >
-          <Star size={14} />
-        </button>
-      </div>
-      <Show when={total() > 0}>
-        <div class={styles.miniBar}>
-          <div class={styles.miniBarFill} style={{ width: `${percent(done(), total())}%` }} />
-        </div>
-      </Show>
-      <Show when={props.project.start_date && !props.project.task_open}>
-        <p class={styles.projectSchedule}>
-          <CalendarRange size={11} />
-          {props.project.deadline
-            ? `${formatDate(props.project.start_date)} – ${formatDate(props.project.deadline)}`
-            : t('from {date}', { date: formatDate(props.project.start_date) })}
-          <span>· {t('No tasks yet')}</span>
-        </p>
-      </Show>
-      <ul class={styles.nextTasks} ref={taskOrder.setContainer}>
-        <For each={taskOrder.items()}>
-          {(task, index) => (
-            <li
-              class={cx(styles.nextTaskRow, taskOrder.isDragging(task) && styles.nextTaskDragging)}
-              {...taskOrder.itemProps(task)}
-              style={taskOrder.itemStyle(task)}
-            >
-              <Show when={taskOrder.items().length > 1}>
-                <button
-                  type="button"
-                  class={styles.taskGrip}
-                  {...taskOrder.handleProps(task)}
-                  aria-label={t('Reorder {name} ({position} of {total})', {
-                    name: tx('task', task.id, 'title', task.title),
-                    position: index() + 1,
-                    total: taskOrder.items().length,
-                  })}
-                  title={t('Drag to reorder · arrow keys to move')}
-                >
-                  <GripVertical size={12} />
-                </button>
-              </Show>
-              <button type="button" class={styles.nextTask} onClick={() => props.onOpenTask(task.id)}>
-                <PriorityMark priority={task.priority} />
-                <span class={styles.nextTaskTitle}>{tx('task', task.id, 'title', task.title)}</span>
-                <Show when={task.due_at}>
-                  <span class={styles.mono}>{formatDueDate(task.due_at, false, use12h())}</span>
-                </Show>
-              </button>
-            </li>
-          )}
-        </For>
-      </ul>
-    </li>
   );
 }
