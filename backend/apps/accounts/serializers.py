@@ -37,6 +37,8 @@ class UserPreferenceSerializer(serializers.ModelSerializer):
             "default_reminder_minutes",
             "business_hours_target_minutes",
             "sleep_target_minutes",
+            "fun_target_minutes",
+            "exercise_target_minutes",
             "planned_bedtime",
             "planned_wake_time",
             "morning_summary_enabled",
@@ -54,6 +56,24 @@ class UserPreferenceSerializer(serializers.ModelSerializer):
         if value not in (0, 1):
             raise serializers.ValidationError("Use 0 for Sunday or 1 for Monday.")
         return value
+
+    @staticmethod
+    def _within_a_day(value: int) -> int:
+        if value > 24 * 60:
+            raise serializers.ValidationError("A day has 24 hours.")
+        return value
+
+    def validate_business_hours_target_minutes(self, value: int) -> int:
+        return self._within_a_day(value)
+
+    def validate_sleep_target_minutes(self, value: int) -> int:
+        return self._within_a_day(value)
+
+    def validate_fun_target_minutes(self, value: int) -> int:
+        return self._within_a_day(value)
+
+    def validate_exercise_target_minutes(self, value: int) -> int:
+        return self._within_a_day(value)
 
     def validate(self, attrs):
         # Taking Crypto world off the calendar clears both ends, so a leftover end date leaves no ghost bar.

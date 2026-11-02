@@ -32,6 +32,8 @@ class TimeEntry(TimeStampedModel):
     class Category(models.TextChoices):
         PERSONAL = "personal", "Personal"
         BUSINESS = "business", "Business"
+        FUN = "fun", "Fun"
+        EXERCISE = "exercise", "Exercise"
 
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="time_entries")
     category = models.CharField(max_length=10, choices=Category.choices, default=Category.BUSINESS)

@@ -16,7 +16,27 @@ export type ProjectStatus = 'planned' | 'active' | 'paused' | 'completed' | 'arc
 export type WorkState = 'waiting' | 'active' | 'working';
 export type Role = 'owner' | 'admin' | 'member' | 'viewer';
 export type RoutineKind = 'personal' | 'business';
-export type TimeCategory = 'personal' | 'business';
+export type TimeCategory = 'personal' | 'business' | 'fun' | 'exercise';
+/** What a minute of the 24-hour cycle was spent on: a timer category, or sleep. */
+export type CycleKind = TimeCategory | 'sleep';
+
+export interface CycleSegment {
+  kind: CycleKind;
+  start: ISODateTime;
+  end: ISODateTime;
+}
+
+/** The last 24 hours, rolling: split or shifted sleep still adds up. */
+export interface CycleData {
+  window_start: ISODateTime;
+  window_end: ISODateTime;
+  seconds: Record<CycleKind, number>;
+  target_minutes: Record<'sleep' | 'business' | 'fun' | 'exercise', number>;
+  tracked_seconds: number;
+  free_seconds: number;
+  running: { kind: CycleKind; started_at: ISODateTime } | null;
+  segments: CycleSegment[];
+}
 export type Source =
   | 'web'
   | 'mobile_web'
@@ -38,6 +58,8 @@ export interface UserPreferences {
   default_reminder_minutes: number;
   business_hours_target_minutes: number;
   sleep_target_minutes: number;
+  fun_target_minutes: number;
+  exercise_target_minutes: number;
   planned_bedtime: string | null;
   planned_wake_time: string | null;
   morning_summary_enabled: boolean;
@@ -203,6 +225,10 @@ export interface RecurrenceRule {
 export interface Project {
   id: ID;
   name: string;
+  /** The project's own site; its favicon is the project's icon. */
+  website: string;
+  /** Same-origin URL of the stored favicon, or null: then the UI draws a generated avatar. */
+  icon_url: string | null;
   description: string;
   kind: ProjectKind;
   category: ProjectCategory;
@@ -268,6 +294,9 @@ export interface PromptListItem {
   visibility: Visibility;
   is_favorite: boolean;
   is_archived: boolean;
+  /** Used up: lives in the Done list instead of the library. */
+  is_done: boolean;
+  done_at: ISODateTime | null;
   body_length: number;
   version: number;
   updated_at: ISODateTime;

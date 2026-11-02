@@ -70,7 +70,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   font-size: 11px;
   font-weight: 650;
   letter-spacing: 0.08em;
@@ -157,11 +157,20 @@
 .total {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 18px;
+  gap: 6px 8px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .totalPart {
-  gap: 9px;
+  gap: 8px;
+  height: 32px;
+  padding: 0 14px 0 12px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--c-border);
+  background: var(--g-glass);
+  box-shadow: var(--rim-top);
 }
 
 .totalPart .key {
@@ -194,62 +203,160 @@
 .list {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
-  gap: 4px;
+  grid-template-columns: repeat(auto-fill, minmax(214px, 1fr));
+  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+/* A project card: avatar (drag handle), name + state line, move menu, state dot; progress as a hairline. */
 .chip {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 10px;
   min-width: 0;
-  height: 28px;
-  padding: 0 4px 0 1px;
-  border-radius: 8px;
+  height: 52px;
+  padding: 0 8px 0 10px;
+  border-radius: 13px;
   border: 1px solid var(--c-border);
-  background: var(--g-glass);
-  box-shadow: var(--rim-top);
+  background: var(--g-surface);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition:
+    transform var(--t-base),
+    border-color var(--t-base),
+    box-shadow var(--t-base);
 }
 
+.chip:hover {
+  transform: translateY(-1px);
+  border-color: var(--c-border-strong);
+  box-shadow:
+    var(--rim-top),
+    0 10px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* Only the dot carries the state colour; the card stays monochrome. Working reads a touch brighter. */
 .chipWorking {
-  border-color: rgba(46, 227, 106, 0.4);
-  background:
-    linear-gradient(90deg, rgba(46, 227, 106, 0.07), transparent 70%),
-    var(--g-glass);
+  border-color: rgba(255, 255, 255, 0.14);
+  background: var(--g-surface-raised);
 }
 
-.chipActive {
-  border-color: rgba(255, 138, 61, 0.42);
-  background:
-    linear-gradient(90deg, rgba(255, 138, 61, 0.08), transparent 70%),
-    var(--g-glass);
-}
-
+.chipActive,
 .chipWaiting {
-  border-color: rgba(245, 196, 81, 0.34);
-  background:
-    linear-gradient(90deg, rgba(245, 196, 81, 0.06), transparent 70%),
-    var(--g-glass);
+  background: var(--g-surface);
 }
 
 .chipDragging {
   opacity: 1;
   z-index: 2;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.55);
+}
+
+.avatarGrip {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  cursor: grab;
+  touch-action: none;
+}
+
+.avatarGrip:focus-visible {
+  outline: 1.5px solid var(--c-text);
+  outline-offset: 2px;
+}
+
+.gripMark {
+  position: absolute;
+  right: -5px;
+  bottom: -4px;
+  padding: 1px;
+  border-radius: 4px;
+  background: var(--c-surface-3);
+  color: var(--c-text-dim);
+  opacity: 0;
+  transition: opacity var(--t-fast);
+}
+
+.chip:hover .gripMark,
+.avatarGrip:focus-visible .gripMark {
+  opacity: 1;
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: inherit;
+  text-decoration: none;
 }
 
 .name {
-  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12.5px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--c-text);
+}
+
+.body:hover .name {
+  text-decoration: underline;
+  text-decoration-color: var(--c-border-strong);
+  text-underline-offset: 3px;
+}
+
+.meta {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 10.5px;
+  color: var(--c-text-faint);
+}
+
+.stateWord {
+  color: var(--c-text-dim);
+  font-weight: 500;
+}
+
+.progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  border-radius: 0 2px 2px 0;
+  background: var(--g-ink);
+  pointer-events: none;
+}
+
+.moveBtn {
+  opacity: 0;
+  transition: opacity var(--t-fast);
+}
+
+.chip:hover .moveBtn,
+.moveBtn:focus-visible,
+.moveBtn[aria-expanded='true'] {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .moveBtn {
+    opacity: 1;
+  }
 }
 
 .grip,
@@ -284,8 +391,8 @@
 
 .dot {
   flex: none;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   margin: 0 4px;
   padding: 0;
   border-radius: 50%;
@@ -320,10 +427,21 @@
 
 @media (max-width: 699px) {
   .list {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .chip {
+    gap: 8px;
+    height: 48px;
+    padding: 0 6px 0 8px;
+  }
+
+  .meta {
+    display: none;
   }
 
   .total {
-    font-size: 20px;
+    font-size: 13px;
   }
 }

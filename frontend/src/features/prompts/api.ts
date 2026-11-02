@@ -10,6 +10,8 @@ export interface PromptListParams extends QueryParams {
   has_project?: boolean;
   favorite?: boolean;
   archived?: boolean;
+  /** Without it the list leaves done prompts out; `true` lists only them. */
+  done?: boolean;
   owned?: boolean;
   ordering?: string;
   page?: number;
@@ -32,6 +34,7 @@ export interface PromptInput {
 export interface PromptFacets {
   categories: Array<{ category: string; count: number }>;
   tags: Array<{ name: string; slug: string; count: number }>;
+  counts: { open: number; done: number };
 }
 
 export interface PromptVersionDetail extends PromptVersion {
@@ -69,6 +72,11 @@ export const promptsApi = {
   },
   toggleFavorite: async (id: ID) => {
     const prompt = await api.post<Prompt>(`/prompts/${id}/favorite/`);
+    invalidate('prompts');
+    return prompt;
+  },
+  setDone: async (id: ID, done: boolean) => {
+    const prompt = await api.post<Prompt>(`/prompts/${id}/done/`, { done });
     invalidate('prompts');
     return prompt;
   },

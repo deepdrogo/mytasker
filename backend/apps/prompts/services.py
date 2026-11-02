@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.postgres.search import SearchVector
 from django.db import transaction
 from django.db.models import F
+from django.utils import timezone
 from django.utils.text import slugify
 
 from apps.projects.models import Project
@@ -232,6 +233,18 @@ def update_prompt(
         _emit(prompt, EventName.PROMPT_VISIBILITY_CHANGED, actor)
     elif content_changed:
         _emit(prompt, EventName.PROMPT_UPDATED, actor, version=prompt.version)
+    return prompt
+
+
+@transaction.atomic
+def set_done(actor: Actor, prompt_id: int, *, done: bool) -> Prompt:
+    """Mark a prompt done (or open again). Not a content edit: no version, no snapshot."""
+    prompt = get_prompt_for_user(prompt_id, actor.user, for_update=True)
+    _assert_edit(prompt, actor.user)
+    if prompt.is_done != done:
+        prompt.is_done = done
+        prompt.done_at = timezone.now() if done else None
+        prompt.save(update_fields=["is_done", "done_at", "updated_at"])
     return prompt
 
 

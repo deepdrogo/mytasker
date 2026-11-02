@@ -28,7 +28,8 @@ const WINDOWS: Window[] = ['today', 'week', 'month'];
 const secondsFmt = (s: number) => formatDuration(s);
 
 const windowLabel = (w: Window): string => (w === 'today' ? t('Day') : w === 'week' ? t('Week') : t('Month'));
-const categoryLabel = (c: TimeCategory): string => (c === 'business' ? t('Business') : t('Personal'));
+const CATEGORY_LABEL: Record<TimeCategory, string> = { business: 'Business', personal: 'Personal', fun: 'Fun', exercise: 'Exercise' };
+const categoryLabel = (c: TimeCategory): string => t(CATEGORY_LABEL[c]);
 
 /** What the entry was spent on, in the current UI language. */
 function entryLabel(e: TimeEntry): string {
@@ -249,6 +250,8 @@ function ManualEntryDialog(props: { open: boolean; onClose: () => void }): JSX.E
             <Select value={category()} onChange={(ev) => setCategory(ev.currentTarget.value as TimeCategory)}>
               <option value="business">{t('Business')}</option>
               <option value="personal">{t('Personal')}</option>
+              <option value="fun">{t('Fun')}</option>
+              <option value="exercise">{t('Exercise')}</option>
             </Select>
           </Field>
           <Field label={t('Project')}>

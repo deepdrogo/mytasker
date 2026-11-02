@@ -1,5 +1,5 @@
 import { A, useNavigate, useParams, useSearchParams } from '@solidjs/router';
-import { ArrowLeft, Copy, History, Maximize2, Minimize2, Save, Sparkles, Star, Trash2 } from 'lucide-solid';
+import { ArrowLeft, Check, Copy, History, Maximize2, Minimize2, RotateCcw, Save, Sparkles, Star, Trash2 } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { batch, createEffect, createSignal, For, onCleanup, Show } from 'solid-js';
 import { ApiError } from '~/api/client';
@@ -202,6 +202,28 @@ export default function PromptDetail(): JSX.Element {
               aria-label={t('Title')}
             />
             <div class={styles.barActions}>
+              <Show when={!isNew() && canEdit()}>
+                <Button
+                  variant={loaded()?.is_done ? 'ghost' : 'secondary'}
+                  size="sm"
+                  aria-pressed={loaded()?.is_done ?? false}
+                  title={loaded()?.is_done ? t('Reopen - back to the library') : t('Done - move to Done prompts')}
+                  onClick={() =>
+                    void promptsApi
+                      .setDone(id(), !loaded()?.is_done)
+                      .then((saved) => {
+                        toast(saved.is_done ? t('Moved to Done') : t('Back in the library'));
+                        prompt.refetch();
+                      })
+                      .catch(() => toast(t('Action failed.')))
+                  }
+                >
+                  <Show when={loaded()?.is_done} fallback={<Check size={14} />}>
+                    <RotateCcw size={13} />
+                  </Show>
+                  {loaded()?.is_done ? t('Reopen') : t('Done')}
+                </Button>
+              </Show>
               <Show when={!isNew()}>
                 <Button
                   variant="ghost"

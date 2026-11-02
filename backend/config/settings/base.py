@@ -291,6 +291,10 @@ ANTHROPIC_TIMEOUT_SECONDS = env("ANTHROPIC_TIMEOUT_SECONDS")
 # Optional cheaper/faster model for background translations; falls back to ANTHROPIC_MODEL.
 TRANSLATION_MODEL = env("TRANSLATION_MODEL")
 TRANSLATIONS_ENABLED = env("TRANSLATIONS_ENABLED")
+# Fetch project favicons from their websites (outbound HTTP from the worker).
+PROJECT_ICONS_ENABLED = env.bool("PROJECT_ICONS_ENABLED", default=True)
+# Catalog page whose project cards (name, link, logo) the "Find logo" button searches first.
+PROJECT_LOGO_CATALOG = env.str("PROJECT_LOGO_CATALOG", default="https://drogoz.network")
 TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN")
 TELEGRAM_BOT_USERNAME = env("TELEGRAM_BOT_USERNAME")
 TELEGRAM_WEBHOOK_SECRET = env("TELEGRAM_WEBHOOK_SECRET")

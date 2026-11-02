@@ -106,6 +106,10 @@ class UserPreference(TimeStampedModel):
     # Daily targets
     business_hours_target_minutes = models.PositiveIntegerField(default=600)
     sleep_target_minutes = models.PositiveIntegerField(default=480)
+    # The 24-hour cycle: sleep and work above, plus fun and exercise. Counted over the last 24 hours, not the
+    # calendar day, so split or shifted sleep still adds up.
+    fun_target_minutes = models.PositiveIntegerField(default=240)
+    exercise_target_minutes = models.PositiveIntegerField(default=120)
     planned_bedtime = models.TimeField(null=True, blank=True)
     planned_wake_time = models.TimeField(null=True, blank=True)
 

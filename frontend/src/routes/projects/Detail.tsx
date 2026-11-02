@@ -13,6 +13,7 @@ import { PolishButton } from '~/features/ai/PolishButton';
 import { ActivityFeed } from '~/features/collab/ActivityFeed';
 import { Comments } from '~/features/collab/Comments';
 import { projectsApi } from '~/features/projects/api';
+import { ProjectAvatar } from '~/features/projects/ProjectAvatar';
 import { ProjectEditor } from '~/features/projects/ProjectEditor';
 import { promptListKey, promptsApi } from '~/features/prompts/api';
 import { PromptList } from '~/features/prompts/PromptList';
@@ -94,6 +95,7 @@ export default function ProjectDetail(): JSX.Element {
         {(p) => (
           <>
             <Page
+              icon={<ProjectAvatar project={p()} size={40} />}
               title={tx('project', p().id, 'name', p().name)}
               subtitle={tx('project', p().id, 'description', p().description) || undefined}
               tabs={tabs()}

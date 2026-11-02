@@ -120,6 +120,10 @@ def start_timer(
         if not stop_running:
             raise Conflict("A timer is already running.", code="timer_running")
         _finish(current, actor)
+    # Starting anything means you are awake: the sleep ends here, so no minute counts twice in the 24h cycle.
+    asleep = SleepSession.objects.select_for_update().filter(owner=user, ended_at__isnull=True).first()
+    if asleep is not None:
+        _finish_sleep(asleep)
 
     entry = TimeEntry(
         owner=user,
@@ -283,7 +287,13 @@ def totals_for_window(user, start: datetime, end: datetime) -> dict:
     """Aggregated seconds in [start, end), clipping entries to the window boundaries."""
     entries = TimeEntry.objects.filter(owner=user).in_window(start, end).select_related("task", "project")
     now = timezone.now()
-    totals = {"business": 0, "personal": 0, "total": 0, "by_project": {}, "by_task": {}, "by_routine_item": {}}
+    totals = {
+        **dict.fromkeys(TimeEntry.Category.values, 0),
+        "total": 0,
+        "by_project": {},
+        "by_task": {},
+        "by_routine_item": {},
+    }
     for entry in entries:
         entry_end = entry.ended_at or now
         clipped = (min(entry_end, end) - max(entry.started_at, start)).total_seconds()
@@ -343,6 +353,10 @@ def stop_sleep(actor: Actor) -> SleepSession:
     session = SleepSession.objects.select_for_update().filter(owner=actor.user, ended_at__isnull=True).first()
     if session is None:
         raise NotFound("No sleep session running.")
+    return _finish_sleep(session)
+
+
+def _finish_sleep(session: SleepSession) -> SleepSession:
     session.ended_at = timezone.now()
     session.duration_seconds = min(int((session.ended_at - session.started_at).total_seconds()), MAX_ENTRY_SECONDS)
     session.save(update_fields=["ended_at", "duration_seconds", "updated_at"])
@@ -383,3 +397,109 @@ def sleep_seconds_for_window(user, start: datetime, end: datetime) -> int:
         if clipped > 0:
             total += int(clipped)
     return total
+
+
+# ---------------------------------------------------------------------------------- 24h cycle
+
+CYCLE = timedelta(hours=24)
+SLEEP = "sleep"
+CYCLE_KINDS = (SLEEP, *TimeEntry.Category.values)
+
+Interval = tuple[datetime, datetime]
+
+
+def _subtract(piece: Interval, taken: list[Interval]) -> list[Interval]:
+    """`piece` minus every interval in `taken` (sorted, non-overlapping)."""
+    start, end = piece
+    left: list[Interval] = []
+    for a, b in taken:
+        if b <= start or a >= end:
+            continue
+        if a > start:
+            left.append((start, a))
+        start = max(start, b)
+        if start >= end:
+            return left
+    left.append((start, end))
+    return left
+
+
+def _claim(taken: list[Interval], pieces: list[Interval]) -> list[Interval]:
+    merged: list[Interval] = []
+    for a, b in sorted([*taken, *pieces]):
+        if merged and a <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], b))
+        else:
+            merged.append((a, b))
+    return merged
+
+
+def cycle(user, now: datetime | None = None) -> dict:
+    """
+    The last 24 hours, whatever the clock says: sleep, work (business), fun, exercise and personal time.
+
+    Sleep is irregular - split nights, a nap, a late morning - so a calendar day would cut it in half. A rolling
+    window ending now counts every session in full once. Overlaps never count twice: sleep wins, then earlier
+    timers, and only the rest of a later entry is kept.
+    """
+    now = now or timezone.now()
+    start = now - CYCLE
+    claimed: list[Interval] = []
+    segments: list[dict] = []
+    seconds = dict.fromkeys(CYCLE_KINDS, 0)
+
+    def take(kind: str, a: datetime, b: datetime) -> None:
+        nonlocal claimed
+        a, b = max(a, start), min(b, now)
+        if b <= a:
+            return
+        pieces = _subtract((a, b), claimed)
+        claimed = _claim(claimed, pieces)
+        for p_start, p_end in pieces:
+            seconds[kind] += int((p_end - p_start).total_seconds())
+            segments.append({"kind": kind, "start": p_start, "end": p_end})
+
+    sessions = SleepSession.objects.filter(owner=user, started_at__lt=now).exclude(ended_at__lte=start)
+    for session in sessions.order_by("started_at"):
+        take(SLEEP, session.started_at, session.ended_at or now)
+    for entry in TimeEntry.objects.filter(owner=user).in_window(start, now).order_by("started_at"):
+        take(entry.category, entry.started_at, entry.ended_at or now)
+
+    segments.sort(key=lambda segment: segment["start"])
+    joined: list[dict] = []
+    for segment in segments:
+        last = joined[-1] if joined else None
+        if last and last["kind"] == segment["kind"] and last["end"] >= segment["start"]:
+            last["end"] = max(last["end"], segment["end"])
+        else:
+            joined.append(dict(segment))
+
+    running = None
+    asleep = running_sleep(user)
+    if asleep is not None:
+        running = {"kind": SLEEP, "started_at": asleep.started_at}
+    else:
+        entry = TimeEntry.objects.running().filter(owner=user).first()
+        if entry is not None:
+            running = {"kind": entry.category, "started_at": entry.started_at}
+
+    from apps.accounts.models import UserPreference
+
+    prefs = UserPreference.objects.filter(user=user).first()
+    targets = {
+        SLEEP: int(getattr(prefs, "sleep_target_minutes", 480) or 0),
+        "business": int(getattr(prefs, "business_hours_target_minutes", 600) or 0),
+        "fun": int(getattr(prefs, "fun_target_minutes", 240) or 0),
+        "exercise": int(getattr(prefs, "exercise_target_minutes", 120) or 0),
+    }
+    tracked = sum(seconds.values())
+    return {
+        "window_start": start,
+        "window_end": now,
+        "seconds": seconds,
+        "target_minutes": targets,
+        "tracked_seconds": tracked,
+        "free_seconds": max(0, int(CYCLE.total_seconds()) - tracked),
+        "running": running,
+        "segments": joined,
+    }

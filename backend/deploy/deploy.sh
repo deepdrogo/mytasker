@@ -45,6 +45,8 @@ log "Permissions"
 chown -R "$APP_USER:$APP_USER" "$ROOT"
 chmod 640 "$BACKEND/.env"
 chmod -R o+rX "$FRONTEND/dist" "$BACKEND/staticfiles"
+mkdir -p "$BACKEND/media/project-icons" && chown -R "$APP_USER:$APP_USER" "$BACKEND/media"
+chmod o+x "$BACKEND" && chmod -R o+rX "$BACKEND/media"
 
 if [[ $DO_BACKEND == 1 ]]; then
   log "Services"

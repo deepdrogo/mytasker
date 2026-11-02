@@ -1,3 +1,4 @@
+import { Search } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { batch, createEffect, createSignal, Show } from 'solid-js';
 import { ApiError } from '~/api/client';
@@ -5,7 +6,8 @@ import { Button } from '~/components/ui/Button';
 import { Drawer } from '~/components/ui/Drawer';
 import { ConfirmDialog } from '~/components/ui/Feedback';
 import { Field, Input, Select, Textarea } from '~/components/ui/Input';
-import { projectsApi, type ProjectInput } from '~/features/projects/api';
+import { projectsApi, type LogoSource, type ProjectInput } from '~/features/projects/api';
+import { ProjectAvatar } from '~/features/projects/ProjectAvatar';
 import { t } from '~/i18n';
 import { toast } from '~/stores/ui';
 import type { Priority, Project, ProjectCategory, ProjectKind, ProjectMode, ProjectStatus, WorkState } from '~/types';
@@ -46,6 +48,9 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
   const [startDate, setStartDate] = createSignal('');
   const [deadline, setDeadline] = createSignal('');
   const [notes, setNotes] = createSignal('');
+  const [website, setWebsite] = createSignal('');
+  const [iconUrl, setIconUrl] = createSignal<string | null>(null);
+  const [finding, setFinding] = createSignal(false);
   const [saving, setSaving] = createSignal(false);
   const [error, setError] = createSignal('');
   const [confirmDelete, setConfirmDelete] = createSignal(false);
@@ -67,6 +72,8 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
       setStartDate(p?.start_date ?? '');
       setDeadline(p?.deadline ?? '');
       setNotes(p?.notes ?? '');
+      setWebsite(p?.website ?? '');
+      setIconUrl(p?.icon_url ?? null);
       setError('');
     });
   });
@@ -91,6 +98,7 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
       start_date: startDate() || null,
       deadline: deadline() || null,
       notes: notes(),
+      website: website().trim(),
     };
     try {
       let saved: Project;
@@ -101,6 +109,8 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
       } else {
         saved = await projectsApi.create({ ...payload, mode: mode() });
         toast(t('Project created'));
+        // A new project looks for its logo straight away (drogoz.network by name, or the site typed in).
+        void projectsApi.findLogo(saved.id).catch(() => undefined);
       }
       props.onSaved?.(saved);
       props.onClose();
@@ -108,6 +118,31 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
       setError(err instanceof ApiError ? err.message : t('Could not save the project.'));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const LOGO_FOUND: Record<LogoSource, string> = {
+    catalog: 'Logo found on Drogoz Network',
+    website: "Logo taken from the project's website",
+    '': 'No logo found - the generated one stays',
+  };
+
+  /** One button: search drogoz.network and the typed site, save the logo (and the site) at once. */
+  const findLogo = async () => {
+    if (!props.project || finding()) return;
+    setFinding(true);
+    setError('');
+    try {
+      const found = await projectsApi.findLogo(props.project.id, website().trim());
+      batch(() => {
+        setIconUrl(found.icon_url);
+        setWebsite(found.website);
+      });
+      toast(t(LOGO_FOUND[found.found_in]));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : t('Could not look for a logo.'));
+    } finally {
+      setFinding(false);
     }
   };
 
@@ -157,6 +192,39 @@ export function ProjectEditor(props: ProjectEditorProps): JSX.Element {
         </Field>
         <Field label={t('Description')}>
           <Textarea rows={2} value={description()} onInput={(e) => setDescription(e.currentTarget.value)} disabled={!canManage()} />
+        </Field>
+        <Field
+          label={t('Website')}
+          hint={
+            isEdit()
+              ? t('Type the site, or leave it empty, and press Find logo: Drogoz Network is searched first, then the site itself.')
+              : t('After saving, the logo is looked up on Drogoz Network and the site by itself.')
+          }
+        >
+          <div class={styles.websiteRow}>
+            <ProjectAvatar project={{ id: props.project?.id ?? 0, name: name() || '?', icon_url: iconUrl() }} size={36} />
+            <Input
+              value={website()}
+              onInput={(e) => setWebsite(e.currentTarget.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && isEdit()) {
+                  e.preventDefault();
+                  void findLogo();
+                }
+              }}
+              placeholder="example.com · drogoz.network"
+              inputmode="url"
+              autocomplete="url"
+              maxLength={300}
+              disabled={!canManage()}
+            />
+            <Show when={isEdit() && canManage()}>
+              <Button type="button" size="sm" loading={finding()} onClick={() => void findLogo()}>
+                <Search size={13} />
+                {t('Find logo')}
+              </Button>
+            </Show>
+          </div>
         </Field>
 
         <div class={styles.grid}>

@@ -2,45 +2,29 @@
 // Built by drogoz · https://github.com/deepdrogo/mytasker
 
 import { A } from '@solidjs/router';
-import { CalendarOff, Check, Circle, Flame, Moon, Play, ScrollText, Square, X } from 'lucide-solid';
+import { CalendarOff, Check, Circle, Flame, ScrollText, X } from 'lucide-solid';
 import type { JSX } from 'solid-js';
-import { For, Show, createSignal, onCleanup } from 'solid-js';
+import { For, Show, createSignal } from 'solid-js';
 import { Page } from '~/components/shared/Page';
 import { ErrorNote, Skeleton } from '~/components/ui/Feedback';
 import { dashboardApi } from '~/features/dashboard/api';
 import { WorkingBoard } from '~/features/projects/WorkingBoard';
 import { routinesApi, rulesApi } from '~/features/routines/api';
+import { CycleCard } from '~/features/timer/CycleCard';
 import { createQuery } from '~/hooks/createQuery';
 import { t, tn } from '~/i18n';
 import { tx } from '~/stores/translations';
-import { startSleep, stopSleep, timerStore, toggleTimer } from '~/stores/timer';
 import { toast } from '~/stores/ui';
 import type { RoutineItem, Rule, TodayData } from '~/types';
-import { formatClock, formatDateFull, formatMinutes, percent } from '~/utils/format';
+import { formatDateFull, formatMinutes, percent } from '~/utils/format';
 import styles from './Dashboard.module.css';
 import { cx } from '~/utils/cx';
 
 export default function Dashboard(): JSX.Element {
   const query = createQuery<TodayData>(() => 'today', () => dashboardApi.snapshot());
-  // Live clock so elapsed timers tick without refetching.
-  const [tick, setTick] = createSignal(0);
-  const interval = setInterval(() => setTick((t) => t + 1), 1000);
-  onCleanup(() => clearInterval(interval));
 
   const data = () => query.data();
   const refresh = () => query.refetch();
-
-  const businessSeconds = () => {
-    tick();
-    return timerStore.businessSecondsToday();
-  };
-
-  const runningLabel = () => {
-    const running = timerStore.running();
-    if (running?.task) return tx('task', running.task.id, 'title', running.task.title);
-    if (running?.routine_item) return tx('routine_item', running.routine_item.id, 'name', running.routine_item.name);
-    return running?.note || t('Running');
-  };
 
   return (
     <Page title={t('Dashboard')} subtitle={formatDateFull(new Date().toISOString())}>
@@ -57,60 +41,7 @@ export default function Dashboard(): JSX.Element {
                   (display: contents): timers + stats jump to the top, routine + rules sink to the very bottom. */}
               <section class={cx(styles.col, styles.side)}>
                 <div class={cx(styles.sideGroup, styles.sideTop)}>
-                <div class={styles.timers}>
-                  <div class={styles.tile}>
-                    <div class={styles.tileHead}>
-                      <span>{t('Business time')}</span>
-                      <span class={styles.tileTarget}>/ {formatMinutes(d().metrics.business_target_minutes)}</span>
-                    </div>
-                    <div class={styles.tileRow}>
-                      <span class={styles.tileValue}>{formatClock(businessSeconds())}</span>
-                      <button
-                        type="button"
-                        class={cx(styles.tileBtn, timerStore.running() && styles.tileBtnActive)}
-                        disabled={timerStore.busy()}
-                        onClick={() => void toggleTimer({ category: 'business' })}
-                        aria-label={timerStore.running() ? t('Stop') : t('Start')}
-                        title={timerStore.running() ? runningLabel() : t('Start')}
-                      >
-                        <Show when={timerStore.running()} fallback={<Play size={13} />}>
-                          <Square size={12} />
-                        </Show>
-                      </button>
-                    </div>
-                    <Bar value={percent(businessSeconds() / 60, d().metrics.business_target_minutes)} />
-                    <Show when={timerStore.running()}>
-                      <span class={styles.runningLabel}>{runningLabel()}</span>
-                    </Show>
-                  </div>
-                  <div class={styles.tile}>
-                    <div class={styles.tileHead}>
-                      <span>
-                        <Moon size={11} /> {t('Sleep')}
-                      </span>
-                      <span class={styles.tileTarget}>/ {formatMinutes(d().metrics.sleep_target_minutes)}</span>
-                    </div>
-                    <div class={styles.tileRow}>
-                      <span class={styles.tileValue}>
-                        <Show when={timerStore.sleep()} fallback={formatMinutes(d().metrics.sleep_minutes)}>
-                          {(tick(), formatClock(timerStore.sleepElapsedSeconds()))}
-                        </Show>
-                      </span>
-                      <button
-                        type="button"
-                        class={cx(styles.tileBtn, timerStore.sleep() && styles.tileBtnActive)}
-                        disabled={timerStore.busy()}
-                        onClick={() => void (timerStore.sleep() ? stopSleep() : startSleep())}
-                        aria-label={timerStore.sleep() ? t('Wake up') : t('Going to sleep')}
-                        title={timerStore.sleep() ? t('Wake up') : t('Going to sleep')}
-                      >
-                        <Show when={timerStore.sleep()} fallback={<Moon size={13} />}>
-                          <Square size={12} />
-                        </Show>
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <CycleCard />
 
                 <div class={styles.stats}>
                   <Stat label={t('Done')} value={String(d().metrics.tasks_completed)} />
@@ -195,14 +126,6 @@ function Stat(props: { label: string; value: JSX.Element }): JSX.Element {
     <div class={styles.stat}>
       <span class={styles.statValue}>{props.value}</span>
       <span class={styles.statLabel}>{props.label}</span>
-    </div>
-  );
-}
-
-function Bar(props: { value: number }): JSX.Element {
-  return (
-    <div class={styles.bar} role="progressbar" aria-valuenow={props.value} aria-valuemin={0} aria-valuemax={100}>
-      <div class={styles.barFill} style={{ width: `${Math.min(100, props.value)}%` }} />
     </div>
   );
 }

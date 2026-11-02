@@ -30,6 +30,8 @@ class PromptListSerializer(serializers.ModelSerializer):
             "visibility",
             "is_favorite",
             "is_archived",
+            "is_done",
+            "done_at",
             "body_length",
             "version",
             "updated_at",

@@ -13,6 +13,7 @@ SESSION_ENGINE = "django.contrib.sessions.backends.db"
 STORAGES["staticfiles"] = {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"}  # noqa: F405
 REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = dict.fromkeys(REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"], "10000/min")  # noqa: F405
 TRANSLATIONS_ENABLED = False  # opt in per test; never let a test hit the real translator
+PROJECT_ICONS_ENABLED = False  # same for favicon fetching: no network in tests
 TELEGRAM_BOT_TOKEN = "test-token"
 TELEGRAM_WEBHOOK_SECRET = "test-webhook-secret"
 LOGGING["handlers"]["console"]["formatter"] = "plain"  # noqa: F405

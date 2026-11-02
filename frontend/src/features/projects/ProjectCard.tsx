@@ -1,16 +1,17 @@
 import { A } from '@solidjs/router';
-import { Clock, Star, Users } from 'lucide-solid';
+import { Clock, Globe, Star, Users } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { createSignal, Show } from 'solid-js';
 import { Badge, Meta, PriorityMark, ProgressBar, VisibilityMark } from '~/components/shared/Indicators';
 import { projectsApi } from '~/features/projects/api';
 import { isImportant, toggledPriority } from '~/features/projects/groups';
+import { ProjectAvatar } from '~/features/projects/ProjectAvatar';
 import { t } from '~/i18n';
 import { tx } from '~/stores/translations';
 import { toast } from '~/stores/ui';
 import type { Project, Role } from '~/types';
 import { cx } from '~/utils/cx';
-import { formatDate, formatDuration } from '~/utils/format';
+import { formatDate, formatDuration, formatRelative } from '~/utils/format';
 import styles from './ProjectCard.module.css';
 
 const STATUS_LABEL: Record<Project['status'], string> = {
@@ -22,6 +23,16 @@ const STATUS_LABEL: Record<Project['status'], string> = {
 };
 
 const ROLE_LABEL: Record<Role, string> = { owner: 'Owner', admin: 'Admin', member: 'Member', viewer: 'Viewer' };
+
+/** "https://www.mytasker.io/x" → "mytasker.io". */
+export function websiteHost(website: string | undefined): string {
+  if (!website) return '';
+  try {
+    return new URL(website).hostname.replace(/^www\./, '');
+  } catch {
+    return '';
+  }
+}
 
 export function ProjectCard(props: { project: Project }): JSX.Element {
   const p = () => props.project;
@@ -47,24 +58,35 @@ export function ProjectCard(props: { project: Project }): JSX.Element {
     }
   };
 
+  const host = () => websiteHost(p().website);
   return (
     <A href={`/projects/${p().id}/tasks`} class={styles.card}>
       <div class={styles.head}>
         <div class={styles.titleRow}>
-          <Show when={p().capabilities.manage_project} fallback={<PriorityMark priority={p().priority} />}>
-            <button
-              type="button"
-              class={cx(styles.star, important() && styles.starOn)}
-              onClick={(event) => void toggleImportant(event)}
-              disabled={busy()}
-              aria-pressed={important()}
-              aria-label={important() ? t('Move {name} to Not important', { name: p().name }) : t('Mark {name} important', { name: p().name })}
-              title={important() ? t('Important - click to move to Not important') : t('Mark important')}
-            >
-              <Star size={14} />
-            </button>
-          </Show>
-          <span class={styles.name}>{tx('project', p().id, 'name', p().name)}</span>
+          <ProjectAvatar project={p()} size={40} />
+          <div class={styles.titleText}>
+            <div class={styles.nameLine}>
+              <span class={styles.name}>{tx('project', p().id, 'name', p().name)}</span>
+              <Show when={p().capabilities.manage_project} fallback={<PriorityMark priority={p().priority} />}>
+                <button
+                  type="button"
+                  class={cx(styles.star, important() && styles.starOn)}
+                  onClick={(event) => void toggleImportant(event)}
+                  disabled={busy()}
+                  aria-pressed={important()}
+                  aria-label={important() ? t('Move {name} to Not important', { name: p().name }) : t('Mark {name} important', { name: p().name })}
+                  title={important() ? t('Important - click to move to Not important') : t('Mark important')}
+                >
+                  <Star size={13} />
+                </button>
+              </Show>
+            </div>
+            <span class={styles.site}>
+              <Show when={host()} fallback={t('Updated {when}', { when: formatRelative(p().updated_at) })}>
+                <Globe size={10} /> {host()}
+              </Show>
+            </span>
+          </div>
         </div>
         <div class={styles.badges}>
           <Show when={p().kind === 'active'}>

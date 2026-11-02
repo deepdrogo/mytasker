@@ -21,7 +21,19 @@
 }
 
 .titleBlock {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
   min-width: 0;
+}
+
+.titleText {
+  min-width: 0;
+}
+
+.icon {
+  flex: none;
+  display: flex;
 }
 
 .title {

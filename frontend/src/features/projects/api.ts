@@ -28,6 +28,8 @@ export interface ProjectListParams extends QueryParams {
   page_size?: number;
 }
 
+export type LogoSource = 'catalog' | 'website' | '';
+
 export interface ProjectInput {
   name?: string;
   description?: string;
@@ -43,6 +45,8 @@ export interface ProjectInput {
   start_date?: string | null;
   deadline?: string | null;
   notes?: string;
+  /** `example.com` is enough; the server adds https:// and fetches the favicon. */
+  website?: string;
   sort_order?: number;
   version?: number;
 }
@@ -79,6 +83,18 @@ export const projectsApi = {
   update: async (id: ID, input: ProjectInput) => {
     const project = await api.patch<Project>(`/projects/${id}/`, input);
     invalidate(...SCOPES);
+    return project;
+  },
+  /**
+   * One-button logo search: drogoz.network first, then the site's favicon. `website` is optional; leave it out to
+   * search by the project's name. `found_in` is "catalog", "website" or "" (nothing found).
+   */
+  findLogo: async (id: ID, website?: string) => {
+    const project = await api.post<Project & { found_in: LogoSource }>(
+      `/projects/${id}/find-logo/`,
+      website === undefined ? {} : { website },
+    );
+    invalidate('projects');
     return project;
   },
   /** Drop the hand-made order; the calendar and the dashboard list projects by start date again. */

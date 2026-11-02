@@ -1,6 +1,6 @@
 import { api, type Paginated, type QueryParams } from '~/api/client';
 import { invalidate } from '~/hooks/createQuery';
-import type { ID, RoutineItem, RoutineKind, Rule, SleepSession, TimeEntry, TimeTotals } from '~/types';
+import type { ID, RoutineItem, RoutineKind, Rule, SleepSession, TimeCategory, TimeEntry, TimeTotals } from '~/types';
 
 export interface RoutineItemInput {
   name?: string;
@@ -94,7 +94,7 @@ export type { TimeTotals } from '~/types';
 export interface ManualEntryInput {
   started_at: string;
   ended_at: string;
-  category?: 'business' | 'personal';
+  category?: TimeCategory;
   task_id?: ID | null;
   project_id?: ID | null;
   routine_item_id?: ID | null;

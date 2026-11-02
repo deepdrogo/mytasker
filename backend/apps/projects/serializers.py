@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
+from apps.projects.icons import icon_url
 from apps.projects.models import Idea, Project, ProjectMembership, WorkGroup
 from common.models import Priority
 from common.permissions import CAPABILITY_MIN_ROLE, project_access
@@ -31,12 +32,15 @@ class ProjectSerializer(serializers.ModelSerializer):
     tracked_seconds = serializers.IntegerField(read_only=True, default=0)
     capabilities = serializers.SerializerMethodField()
     work_group_id = serializers.IntegerField(read_only=True, allow_null=True)
+    icon_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
         fields = [
             "id",
             "name",
+            "website",
+            "icon_url",
             "description",
             "kind",
             "category",
@@ -73,6 +77,9 @@ class ProjectSerializer(serializers.ModelSerializer):
     def get_role(self, obj) -> str | None:
         return self._access(obj).role
 
+    def get_icon_url(self, obj) -> str | None:
+        return icon_url(obj.icon_file)
+
     def get_task_total(self, obj) -> int:
         return int(getattr(obj, "task_total", 0) or 0)
 
@@ -107,6 +114,7 @@ class ProjectCreateSerializer(serializers.Serializer):
     start_date = serializers.DateField(required=False, allow_null=True)
     deadline = serializers.DateField(required=False, allow_null=True)
     notes = serializers.CharField(required=False, allow_blank=True, default="")
+    website = serializers.CharField(max_length=300, required=False, allow_blank=True)
 
 
 class ProjectUpdateSerializer(serializers.Serializer):
@@ -122,6 +130,7 @@ class ProjectUpdateSerializer(serializers.Serializer):
     start_date = serializers.DateField(required=False, allow_null=True)
     deadline = serializers.DateField(required=False, allow_null=True)
     notes = serializers.CharField(required=False, allow_blank=True)
+    website = serializers.CharField(max_length=300, required=False, allow_blank=True)
     sort_order = serializers.IntegerField(required=False)
     version = serializers.IntegerField(required=False, write_only=True)
 

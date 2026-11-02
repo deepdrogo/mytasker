@@ -27,6 +27,7 @@ class PromptFilter(filters.FilterSet):
     has_project = filters.BooleanFilter(method="filter_has_project")
     favorite = filters.BooleanFilter(field_name="is_favorite")
     archived = filters.BooleanFilter(field_name="is_archived")
+    done = filters.BooleanFilter(field_name="is_done")
     visibility = filters.CharFilter(field_name="visibility")
     owned = filters.BooleanFilter(method="filter_owned")
 
@@ -64,6 +65,7 @@ class PromptViewSet(viewsets.ModelViewSet):
         "title": ["title"],
         "favorite": ["is_favorite", "-updated_at"],
         "length": ["body_length"],
+        "done": ["done_at"],
     }
     ordering = ["-updated"]
 
@@ -75,6 +77,8 @@ class PromptViewSet(viewsets.ModelViewSet):
         )
         if self.action == "list" and self.request.query_params.get("archived") is None:
             qs = qs.filter(is_archived=False)
+        if self.action == "list" and self.request.query_params.get("done") is None:
+            qs = qs.filter(is_done=False)
         if self.action == "list":
             # Never load the full body for list views.
             qs = qs.defer("body", "search_vector")
@@ -147,6 +151,15 @@ class PromptViewSet(viewsets.ModelViewSet):
         return self._respond(prompt)
 
     @action(detail=True, methods=["post"])
+    def done(self, request, pk=None):
+        """`{"done": true|false}`; without a body it flips the current state."""
+        prompt = services.get_prompt_for_user(int(pk), request.user)
+        wanted = request.data.get("done") if hasattr(request.data, "get") else None
+        done = not prompt.is_done if wanted is None else wanted in (True, 1, "1", "true")
+        prompt = services.set_done(self._actor(), prompt.pk, done=done)
+        return self._respond(prompt)
+
+    @action(detail=True, methods=["post"])
     def archive(self, request, pk=None):
         prompt = services.get_prompt_for_user(int(pk), request.user)
         prompt = services.update_prompt(self._actor(), prompt.pk, is_archived=not prompt.is_archived)
@@ -174,7 +187,9 @@ class PromptViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def facets(self, request):
         """Categories and tags for filter chips."""
-        visible = Prompt.objects.visible_to(request.user).filter(is_archived=False)
+        live = Prompt.objects.visible_to(request.user).filter(is_archived=False)
+        counts = {"open": live.filter(is_done=False).count(), "done": live.filter(is_done=True).count()}
+        visible = live.filter(is_done=False)
         categories = (
             visible.exclude(category="").values("category").annotate(count=Count("id")).order_by("-count", "category")
         )
@@ -184,4 +199,4 @@ class PromptViewSet(viewsets.ModelViewSet):
             .annotate(count=Count("prompts", distinct=True))
             .order_by("-count", "name")[:50]
         )
-        return Response({"categories": list(categories), "tags": list(tags)})
+        return Response({"categories": list(categories), "tags": list(tags), "counts": counts})

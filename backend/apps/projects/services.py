@@ -10,6 +10,7 @@ from django.db import transaction
 from django.db.models import F, Max
 from django.utils import timezone
 
+from apps.projects.icons import find_logo, normalize_website, request_icon
 from apps.projects.models import Idea, Project, ProjectMembership, WorkGroup
 from common.actors import Actor
 from common.events import DomainEvent, EventName, emit
@@ -32,8 +33,16 @@ PROJECT_FIELDS = {
     "start_date",
     "deadline",
     "notes",
+    "website",
     "sort_order",
 }
+
+
+def _clean_website(value: str | None) -> str:
+    try:
+        return normalize_website(value or "")
+    except ValueError as exc:
+        raise ValidationFailed(str(exc), fields={"website": [str(exc)]}) from exc
 
 
 def get_project_for_user(project_id: int, user, *, capability: str = Capability.VIEW, for_update: bool = False):
@@ -99,12 +108,16 @@ def create_project(actor: Actor, *, name: str, mode: str = Project.Mode.PRIVATE,
     if not name:
         raise ValidationFailed("Name is required.", fields={"name": ["This field is required."]})
     payload = {k: v for k, v in _with_work_state(fields).items() if k in PROJECT_FIELDS}
+    if "website" in payload:
+        payload["website"] = _clean_website(payload["website"])
     _assert_schedule(payload.get("start_date"), payload.get("deadline"))
     payload.setdefault("sort_order", next_sort_order(actor.user))
     project = Project.objects.create(owner=actor.user, name=name, mode=mode, **payload)
     ProjectMembership.objects.create(
         project=project, user=actor.user, role=ProjectMembership.Role.OWNER, accepted_at=timezone.now()
     )
+    if project.website:
+        request_icon(project.pk)
     _event(project, EventName.PROJECT_CREATED, actor, mode=mode)
     return project
 
@@ -128,6 +141,13 @@ def update_project(actor: Actor, project_id: int, *, expected_version: int | Non
                 raise ValidationFailed("Unknown group.", fields={"work_group": ["Unknown group."]})
             if project.work_group_id == value:
                 continue
+        if key == "website":
+            value = _clean_website(value)
+            if value == project.website:
+                continue
+            # The old site's icon must not linger under the new address; the worker fetches the new one.
+            project.icon_file = ""
+            changed.append("icon_file")
         setattr(project, key, value)
         changed.append(key)
     if not changed:
@@ -136,12 +156,37 @@ def update_project(actor: Actor, project_id: int, *, expected_version: int | Non
     project.version = F("version") + 1
     project.save(update_fields=[*changed, "version", "updated_at"])
     project.refresh_from_db()
+    if "website" in changed and (project.website or project.icon_source):
+        request_icon(project.pk)
     if "start_date" in changed or "deadline" in changed:
         from apps.tasks.project_dates import sync_project_tasks
 
         sync_project_tasks(project)
     _event(project, EventName.PROJECT_UPDATED, actor, fields=sorted(changed))
     return project
+
+
+def find_project_logo(actor: Actor, project_id: int, *, website: str | None = None) -> tuple[Project, str]:
+    """
+    The one-button logo search: the logo catalog (drogoz.network) first, then the site's favicon. Saves the
+    logo - and the site, when one was typed or the catalog knows it. Returns the project and where the logo
+    came from: "catalog", "website" or "" (nothing found; the generated avatar stays).
+    """
+    project = get_project_for_user(project_id, actor.user, capability=Capability.MANAGE_PROJECT)
+    site = _clean_website(project.website if website is None else website)
+    result = find_logo(project, site)  # network: outside any transaction, no row is locked meanwhile
+
+    fields: dict = {"icon_checked_at": timezone.now()}
+    if result["icon"]:
+        fields.update(icon_file=result["icon"], icon_source=result["icon_source"])
+    site_changed = result["website"] != project.website
+    if site_changed:
+        fields.update(website=result["website"], version=F("version") + 1, updated_at=timezone.now())
+    Project.objects.filter(pk=project.pk).update(**fields)
+    project.refresh_from_db()
+    if site_changed:
+        _event(project, EventName.PROJECT_UPDATED, actor, fields=["website"])
+    return project, result["found_in"]
 
 
 @transaction.atomic

@@ -83,6 +83,9 @@ class Prompt(TimeStampedModel, SoftDeleteModel):
     visibility = models.CharField(max_length=10, choices=Visibility.choices, default=Visibility.PRIVATE)
     is_favorite = models.BooleanField(default=False)
     is_archived = models.BooleanField(default=False)
+    # Used up: the prompt did its job. Done prompts leave the main library for the Done list.
+    is_done = models.BooleanField(default=False)
+    done_at = models.DateTimeField(null=True, blank=True)
 
     version = models.PositiveIntegerField(default=1)
     body_length = models.PositiveIntegerField(default=0)

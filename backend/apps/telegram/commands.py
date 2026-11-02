@@ -195,8 +195,9 @@ def cmd_timer(user, arg: str) -> tuple[str, dict | None]:
     if arg in ("stop", "off") and running:
         entry = time_services.stop_timer(actor)
         return f"■ Stopped · {_hm(entry.duration_seconds)} logged", keyboards.timer_keyboard(False)
-    if arg in ("business", "personal", "start", "on"):
-        category = arg if arg in ("business", "personal") else "business"
+    categories = ("business", "personal", "fun", "exercise")
+    if arg in (*categories, "start", "on"):
+        category = arg if arg in categories else "business"
         entry = time_services.start_timer(actor, category=category)
         return f"▶ {category.title()} timer started", keyboards.timer_keyboard(True)
     if running:

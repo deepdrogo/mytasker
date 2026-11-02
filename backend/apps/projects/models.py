@@ -114,6 +114,13 @@ class Project(TimeStampedModel, SoftDeleteModel):
     start_date = models.DateField(null=True, blank=True)
     deadline = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True)
+    # The project's own site. Its favicon becomes the project's icon; without one the UI draws an avatar.
+    website = models.CharField(max_length=300, blank=True)
+    # File name under MEDIA_ROOT/project-icons/ (content hash, so it is immutable and cache-friendly).
+    icon_file = models.CharField(max_length=80, blank=True)
+    # A logo image picked on purpose (e.g. from a project catalog). Wins over the website's favicon on refresh.
+    icon_source = models.CharField(max_length=500, blank=True)
+    icon_checked_at = models.DateTimeField(null=True, blank=True)
 
     class WorkState(models.TextChoices):
         WAITING = "waiting", "Waiting"

@@ -1,0 +1,414 @@
+/* The 24-hour cycle card: a 24h dial with goal rings, then one row per activity. */
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  padding: var(--s-6);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
+  background: var(--g-surface);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+/* Monochrome like the rest of the app: each activity is a shade of white, never a hue. */
+.kSleep {
+  --k: #ffffff;
+  --k2: #9a9a9a;
+}
+.kWork {
+  --k: #c4c4c4;
+  --k2: #6e6e6e;
+}
+.kFun {
+  --k: #8f8f8f;
+  --k2: #4f4f4f;
+}
+.kExercise {
+  --k: #626262;
+  --k2: #383838;
+}
+.kOther {
+  --k: #3d3d3d;
+  --k2: #2a2a2a;
+}
+.kFree {
+  --k: rgba(255, 255, 255, 0.1);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.title {
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-text);
+}
+
+.sub {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--c-text-faint);
+}
+
+/* Dial above the rows in the side column; side by side when the card is wide (one-column layouts). */
+.card {
+  container-type: inline-size;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+@container (min-width: 560px) {
+  .main {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--s-8);
+  }
+
+  .main .dial {
+    flex: none;
+    width: 230px;
+    margin: 0;
+  }
+
+  .main .rows {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+/* Dial */
+.dial {
+  position: relative;
+  width: min(100%, 248px);
+  margin: 0 auto;
+  aspect-ratio: 1;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.05);
+  stroke-width: 12;
+}
+
+.tick {
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 1;
+}
+
+.tickMajor {
+  stroke: rgba(255, 255, 255, 0.3);
+  stroke-width: 1.4;
+}
+
+.hourLabel {
+  fill: var(--c-text-faint);
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+}
+
+.segment {
+  fill: none;
+  stroke: var(--k);
+  stroke-width: 12;
+  stroke-linecap: butt;
+  transition: stroke-width var(--t-fast);
+}
+
+.segment.kSleep {
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.45));
+}
+
+/* Untagged personal time: dashed, so it reads as "other" without a colour. */
+.segment.kOther {
+  stroke: #555;
+  stroke-dasharray: 2 2;
+}
+
+.segment:hover {
+  stroke-width: 15;
+}
+
+.hand {
+  stroke: #fff;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.handDot {
+  fill: #fff;
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.9));
+}
+
+.ringTrack {
+  fill: none;
+  stroke: #fff;
+  stroke-opacity: 0.06;
+  stroke-width: 8;
+}
+
+.ring {
+  fill: none;
+  stroke: var(--k);
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset var(--t-slow);
+}
+
+.ringFull {
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+}
+
+.center {
+  position: absolute;
+  inset: 34%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.centerLabel {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-text-dim);
+}
+
+.centerValue {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: var(--fw-medium);
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text);
+  white-space: nowrap;
+}
+
+.centerLive {
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.45);
+}
+
+.centerSub {
+  font-size: 8.5px;
+  color: var(--c-text-faint);
+  white-space: nowrap;
+}
+
+/* Rows */
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4);
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  transition:
+    background var(--t-fast),
+    border-color var(--t-fast);
+}
+
+.row:hover {
+  background: var(--c-hover);
+}
+
+.rowActive {
+  border-color: var(--c-border-strong);
+  background: var(--g-glass);
+  box-shadow: var(--rim-top);
+}
+
+/* The icon carries the activity's shade as a small swatch, so the row matches its arc on the dial. */
+.rowIcon {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  color: var(--c-text);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px var(--c-border);
+}
+
+.rowIcon::after {
+  content: '';
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--k);
+  box-shadow: 0 0 0 2px var(--c-surface);
+}
+
+.rowBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.rowLine {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.rowName {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+}
+
+.rowValue {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rowTarget {
+  color: var(--c-text-faint);
+}
+
+.rowBar {
+  height: 3px;
+  border-radius: var(--r-full);
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.rowFill {
+  height: 100%;
+  border-radius: var(--r-full);
+  background: linear-gradient(90deg, var(--k2), var(--k));
+  transition: width var(--t-slow);
+}
+
+.rowHint {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 12px;
+  font-size: 10px;
+  color: var(--c-text-faint);
+}
+
+.rowHint svg {
+  color: var(--c-text);
+}
+
+.rowBtn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--c-border-strong);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--c-text);
+  cursor: pointer;
+  transition:
+    background var(--t-fast),
+    transform var(--t-fast),
+    box-shadow var(--t-fast);
+}
+
+.rowBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.rowBtn:active {
+  transform: scale(0.92);
+}
+
+.rowBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.rowBtnActive,
+.rowBtnActive:hover {
+  background: var(--g-primary);
+  border-color: transparent;
+  color: var(--c-invert-text);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3) var(--s-6);
+  margin: 0;
+  padding: 0 var(--s-2);
+  font-size: var(--fs-xs);
+  color: var(--c-text-dim);
+}
+
+.foot span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.foot b {
+  font-family: var(--font-mono);
+  font-weight: var(--fw-medium);
+  color: var(--c-text);
+}
+
+.key {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--k);
+}
+
+@media (hover: none) {
+  .rowBtn {
+    width: 36px;
+    height: 36px;
+  }
+}

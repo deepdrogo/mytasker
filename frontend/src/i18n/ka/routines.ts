@@ -83,4 +83,20 @@ export const routines: Record<string, string> = {
   'Weekend - the routine takes the day off.': 'შაბათ-კვირაა - რუტინა ისვენებს.',
   'Rules still count. Turn on "Routine on weekends" in Preferences to run the routine on Saturday and Sunday.':
     'წესები მაინც ითვლება. რუტინა შაბათ-კვირასაც რომ მუშაობდეს, პარამეტრებში ჩართე „რუტინა შაბათ-კვირას“.',
+
+  // 24-hour cycle
+  '24-hour cycle': '24-საათიანი ციკლი',
+  'Last 24 hours': 'ბოლო 24 საათი',
+  Work: 'მუშაობა',
+  Fun: 'გართობა',
+  Exercise: 'ვარჯიში',
+  Other: 'სხვა',
+  Free: 'თავისუფალი',
+  running: 'მიმდინარეობს',
+  'of 24h tracked': '24 საათიდან აღრიცხული',
+  '{time} left': 'დარჩა {time}',
+  'Goal met': 'მიზანი შესრულდა',
+  'Start {name}': '{name} — დაწყება',
+  'Stop {name}': '{name} — გაჩერება',
+  'Could not switch the timer.': 'ტაიმერის გადართვა ვერ მოხერხდა.',
 };

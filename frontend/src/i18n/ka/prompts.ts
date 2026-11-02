@@ -98,4 +98,16 @@ export const prompts: Record<string, string> = {
   'Version {number}': 'ვერსია {number}',
   Copy: 'კოპირება',
   Copied: 'დაკოპირდა',
+
+  // Done prompts
+  'Open prompts': 'აქტიური',
+  'Done prompts': 'დასრულებული',
+  'Moved to Done': 'გადავიდა დასრულებულებში',
+  'Back in the library': 'დაბრუნდა ბიბლიოთეკაში',
+  'Done {when}': 'დასრულდა {when}',
+  'Reopen - back to the library': 'დაბრუნება — ისევ ბიბლიოთეკაში',
+  'Done - move to Done prompts': 'დასრულება — გადავა დასრულებულ პრომპტებში',
+  'Nothing done yet': 'ჯერ არაფერი დასრულებულა',
+  'Press Done on a prompt once it has done its job - it moves here.':
+    'როცა პრომპტი თავის საქმეს გააკეთებს, დააჭირე „შესრულდა“ — აქ გადმოვა.',
 };

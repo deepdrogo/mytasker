@@ -99,6 +99,76 @@
   flex: none;
 }
 
+.leaving {
+  opacity: 0.35;
+  transform: translateX(6px);
+  transition:
+    opacity var(--t-base),
+    transform var(--t-base);
+  pointer-events: none;
+}
+
+.done .title {
+  color: var(--c-text-dim);
+}
+
+.doneAt {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--c-text-dim);
+}
+
+/* Done: a real, labelled button - the one action a prompt row exists for once it has been used. */
+.doneBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  margin-right: var(--s-2);
+  padding: 0 11px 0 9px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--c-border-strong);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--c-text);
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background var(--t-fast),
+    border-color var(--t-fast),
+    transform var(--t-fast);
+}
+
+.doneBtn:hover {
+  background: var(--g-primary);
+  border-color: transparent;
+  color: var(--c-invert-text);
+}
+
+.doneBtn:active {
+  transform: scale(0.95);
+}
+
+.doneBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.doneBtnOn {
+  border-color: var(--c-border-strong);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--c-text-dim);
+}
+
+.doneBtnOn:hover {
+  background: var(--c-hover);
+  border-color: #fff;
+  color: var(--c-text);
+}
+
 @media (max-width: 599px) {
   .spacer {
     display: none;

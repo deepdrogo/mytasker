@@ -1,19 +1,18 @@
-// MyTasker — where a signed-in person lands after login.
-// Most users keep the classic dashboard. A user whose preference is `projects` (set per-account, e.g.
-// the owner) instead lands on the Working projects catalog and gets a projects-focused navigation.
+// MyTasker — where a signed-in person lands after login: always the Dashboard.
+// A user whose preference is `projects` (set per-account, e.g. the owner) gets a projects-focused
+// navigation; the Dashboard already carries the Working projects board, so it is home for them too.
 // Nothing is removed for anyone — every module stays reachable by URL and in the drawer.
 
 import { authStore } from '~/stores/auth';
 
 export const DASHBOARD_HOME = '/dashboard';
-export const WORKING_PROJECTS_HOME = '/projects/working';
 
-/** True when the current user has opted into the projects-first home experience. */
+/** True when the current user has opted into the projects-first navigation. */
 export function prefersProjectsHome(): boolean {
   return authStore.user()?.preferences?.home_view === 'projects';
 }
 
-/** The route a signed-in user should land on, honouring their per-account home preference. */
+/** The route a signed-in user should land on. */
 export function homeRoute(): string {
-  return prefersProjectsHome() ? WORKING_PROJECTS_HOME : DASHBOARD_HOME;
+  return DASHBOARD_HOME;
 }

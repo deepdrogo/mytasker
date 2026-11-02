@@ -1,20 +1,37 @@
 .card {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--s-4);
-  padding: var(--s-5);
+  gap: var(--s-5);
+  padding: var(--s-6);
   border: 1px solid var(--c-border);
-  border-radius: var(--r-lg);
+  border-radius: var(--r-xl);
   background: var(--g-surface);
   box-shadow: var(--shadow-card);
   color: inherit;
   text-decoration: none;
-  transition: border-color var(--t-fast), background var(--t-fast);
+  overflow: hidden;
+  transition:
+    transform var(--t-base),
+    border-color var(--t-base),
+    box-shadow var(--t-base);
+}
+
+/* A light rim along the top edge. */
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.35), transparent 70%);
 }
 
 .card:hover {
+  transform: translateY(-2px);
   border-color: var(--c-border-strong);
-  background: var(--c-surface-2);
+  box-shadow:
+    var(--rim-top),
+    0 18px 40px rgba(0, 0, 0, 0.55);
 }
 
 .card:focus-visible {
@@ -32,22 +49,52 @@
 .titleRow {
   display: flex;
   align-items: center;
-  gap: var(--s-3);
+  gap: var(--s-5);
+  min-width: 0;
+}
+
+.titleText {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.nameLine {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
   min-width: 0;
 }
 
 .name {
-  font-weight: var(--fw-medium);
-  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-base);
+  letter-spacing: -0.01em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.site {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: var(--fs-xs);
+  color: var(--c-text-dim);
+}
+
 .badges {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: var(--s-2);
   flex: none;
+  max-width: 45%;
 }
 
 .description {
@@ -63,6 +110,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--s-4);
+  margin-top: auto;
   font-size: var(--fs-xs);
   color: var(--c-text-dim);
 }
@@ -76,9 +124,8 @@
   flex: none;
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
-  margin: -3px 0 -3px -4px;
+  width: 22px;
+  height: 22px;
   padding: 0;
   border: 1px solid transparent;
   border-radius: 50%;

@@ -129,6 +129,17 @@ class ProjectViewSet(viewsets.ModelViewSet):
             project = services.set_working(self._actor(), int(pk), working=bool(request.data.get("working", True)))
         return self._respond(project)
 
+    @action(detail=True, methods=["post"], url_path="find-logo")
+    def find_logo(self, request, pk=None):
+        """One button: `{"website": "example.com"}` (optional) -> logo from drogoz.network or the site's favicon."""
+        website = request.data.get("website") if hasattr(request.data, "get") else None
+        project, found_in = services.find_project_logo(
+            self._actor(), int(pk), website=None if website is None else str(website)[:300]
+        )
+        response = self._respond(project)
+        response.data["found_in"] = found_in
+        return response
+
     @action(detail=False, methods=["post"], url_path="follow-calendar")
     def follow_calendar(self, request):
         """Forget the manual order: the dashboard goes back to the project calendar's order."""

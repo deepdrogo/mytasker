@@ -1,6 +1,6 @@
 .grid {
   display: grid;
-  grid-template-columns: minmax(0, 2.5fr) minmax(260px, 0.7fr);
+  grid-template-columns: minmax(0, 2.4fr) minmax(300px, 0.8fr);
   gap: var(--s-7);
   align-items: start;
 }
@@ -52,112 +52,6 @@
 
 .hint + .sectionLink {
   margin-left: var(--s-3);
-}
-
-/* Compact timer tiles */
-.timers {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--s-3);
-}
-
-.tile {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-2);
-  padding: var(--s-4) var(--s-4);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-lg);
-  background: var(--g-surface);
-  box-shadow: var(--shadow-card);
-  min-width: 0;
-}
-
-.tileHead {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--s-2);
-  font-size: 10px;
-  font-weight: var(--fw-semibold);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--c-text-dim);
-  min-width: 0;
-}
-
-.tileHead > span:first-child {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-2);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.tileTarget {
-  font-family: var(--font-mono);
-  text-transform: none;
-  letter-spacing: 0;
-  color: var(--c-text-faint);
-  flex: none;
-}
-
-.tileRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--s-2);
-}
-
-.tileValue {
-  font-family: var(--font-mono);
-  font-size: 22px;
-  font-weight: var(--fw-medium);
-  letter-spacing: -0.03em;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  background: linear-gradient(180deg, #fff, #9a9a9a);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.tileBtn {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 1px solid var(--c-border-strong);
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--c-text);
-  cursor: pointer;
-  transition:
-    background var(--t-fast),
-    box-shadow var(--t-fast),
-    transform var(--t-fast);
-}
-
-.tileBtn:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.tileBtn:active {
-  transform: scale(0.94);
-}
-
-.tileBtnActive {
-  background: var(--g-primary);
-  color: var(--c-invert-text);
-  border-color: transparent;
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
-}
-
-.tile .runningLabel {
-  font-size: var(--fs-xs);
 }
 
 .section {
@@ -241,30 +135,6 @@
 
 .link:hover {
   text-decoration-color: var(--c-text);
-}
-
-.bar {
-  height: 6px;
-  border-radius: var(--r-full);
-  background: rgba(255, 255, 255, 0.07);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.5);
-  overflow: hidden;
-}
-
-.barFill {
-  height: 100%;
-  border-radius: var(--r-full);
-  background: var(--g-ink);
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.45);
-  transition: width var(--t-slow);
-}
-
-.runningLabel {
-  font-size: var(--fs-sm);
-  color: var(--c-text-dim);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* Routine */
@@ -638,15 +508,6 @@
 
 /* Phones: the numbers shrink to one swipeable strip so the projects start right below the timers. */
 @media (max-width: 600px) {
-  .timers {
-    gap: var(--s-3);
-  }
-  .tile {
-    padding: var(--s-3) var(--s-4);
-  }
-  .tileValue {
-    font-size: 18px;
-  }
   .stats {
     display: flex;
     gap: var(--s-3);

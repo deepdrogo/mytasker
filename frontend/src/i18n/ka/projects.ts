@@ -280,4 +280,20 @@ export const projects: Record<string, string> = {
   'Drag to move up or down': 'გადაათრიე ზემოთ ან ქვემოთ',
   'Drag a row by its handle to move it up or down; the dashboard shows projects in the same order.':
     'რიგი სახელურით გადაათრიე ზემოთ ან ქვემოთ — დეშბორდზე პროექტები იმავე რიგით გამოჩნდება.',
+
+  // Project icons
+  Website: 'ვებსაიტი',
+  "Its icon becomes the project's logo. Without a site the project gets its own generated logo.":
+    'საიტის აიკონი პროექტის ლოგო გახდება. საიტის გარეშე პროექტს საკუთარი გენერირებული ლოგო ექნება.',
+  'Updated {when}': 'განახლდა {when}',
+  // Find logo
+  'Find logo': 'ლოგოს პოვნა',
+  'Type the site, or leave it empty, and press Find logo: Drogoz Network is searched first, then the site itself.':
+    'ჩაწერე საიტი ან დატოვე ცარიელი და დააჭირე „ლოგოს პოვნა“: ჯერ Drogoz Network-ზე ეძებს, მერე თვითონ საიტზე.',
+  'After saving, the logo is looked up on Drogoz Network and the site by itself.':
+    'შენახვის შემდეგ ლოგოს თვითონ მოძებნის Drogoz Network-ზე და საიტზე.',
+  'Logo found on Drogoz Network': 'ლოგო მოიძებნა Drogoz Network-ზე',
+  "Logo taken from the project's website": 'ლოგო აღებულია პროექტის საიტიდან',
+  'No logo found - the generated one stays': 'ლოგო ვერ მოიძებნა — გენერირებული დარჩება',
+  'Could not look for a logo.': 'ლოგოს ძებნა ვერ მოხერხდა.',
 };

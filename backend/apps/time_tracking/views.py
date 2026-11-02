@@ -36,9 +36,17 @@ def timer_state(request):
         {
             "running": TimeEntrySerializer(running).data if running else None,
             "sleep": SleepSessionSerializer(sleep).data if sleep else None,
-            "today": {"business": totals["business"], "personal": totals["personal"], "total": totals["total"]},
+            "today": {
+                **{category: totals[category] for category in TimeEntry.Category.values},
+                "total": totals["total"],
+            },
         }
     )
+
+
+@api_view(["GET"])
+def cycle(request):
+    return Response(services.cycle(request.user))
 
 
 @api_view(["POST"])
@@ -75,7 +83,7 @@ def entries(request):
         qs = qs.filter(task_id=params["task"])
     if params.get("project"):
         qs = qs.filter(project_id=params["project"])
-    if params.get("category") in ("business", "personal"):
+    if params.get("category") in TimeEntry.Category.values:
         qs = qs.filter(category=params["category"])
     day = params.get("date")
     window = params.get("window")

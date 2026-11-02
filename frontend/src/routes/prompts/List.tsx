@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from '@solidjs/router';
-import { Plus, Search } from 'lucide-solid';
+import { BookText, CheckCircle2, Plus, Search } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { createSignal, For, Show } from 'solid-js';
 import { Page } from '~/components/shared/Page';
@@ -9,6 +9,7 @@ import { promptListKey, promptsApi, type PromptListParams } from '~/features/pro
 import { PromptList } from '~/features/prompts/PromptList';
 import { createQuery } from '~/hooks/createQuery';
 import { t } from '~/i18n';
+import { cx } from '~/utils/cx';
 import styles from './List.module.css';
 
 const SORTS = [
@@ -23,13 +24,15 @@ type View = 'all' | 'favorites' | 'mine' | 'shared' | 'archived';
 
 export default function Prompts(): JSX.Element {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams<{ q?: string; category?: string; tag?: string; view?: string }>();
+  const [searchParams, setSearchParams] = useSearchParams<{ q?: string; category?: string; tag?: string; view?: string; status?: string }>();
   const [ordering, setOrdering] = createSignal('-updated');
   const [page, setPage] = createSignal(1);
   const [q, setQ] = createSignal(searchParams.q ?? '');
   let debounce: number | undefined;
 
   const view = (): View => (searchParams.view as View) || 'all';
+  /** Open prompts are the library; done ones (used up) wait in their own list. */
+  const doneList = () => searchParams.status === 'done';
 
   const params = (): PromptListParams => ({
     q: searchParams.q || undefined,
@@ -38,10 +41,16 @@ export default function Prompts(): JSX.Element {
     favorite: view() === 'favorites' ? true : undefined,
     owned: view() === 'mine' ? true : view() === 'shared' ? false : undefined,
     archived: view() === 'archived' ? true : undefined,
-    ordering: ordering(),
+    done: doneList() ? true : undefined,
+    ordering: doneList() && ordering() === '-updated' ? '-done' : ordering(),
     page: page(),
     page_size: 30,
   });
+
+  const setStatus = (done: boolean) => {
+    setPage(1);
+    setSearchParams({ status: done ? 'done' : undefined });
+  };
 
   const query = createQuery(
     () => promptListKey('library', params()),
@@ -121,6 +130,31 @@ export default function Prompts(): JSX.Element {
       }
     >
       <div class={styles.wrap}>
+        <div class={styles.status} role="tablist" aria-label={t('Prompts')}>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={!doneList()}
+            class={cx(styles.statusBtn, !doneList() && styles.statusOn)}
+            onClick={() => setStatus(false)}
+          >
+            <BookText size={13} />
+            {t('Open prompts')}
+            <span class={styles.statusCount}>{facets.data()?.counts.open ?? '–'}</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={doneList()}
+            class={cx(styles.statusBtn, doneList() && styles.statusOn)}
+            onClick={() => setStatus(true)}
+          >
+            <CheckCircle2 size={13} />
+            {t('Done prompts')}
+            <span class={styles.statusCount}>{facets.data()?.counts.done ?? '–'}</span>
+          </button>
+        </div>
+
         <Show when={(facets.data()?.tags.length ?? 0) > 0}>
           <div class={styles.tags}>
             <For each={facets.data()?.tags.slice(0, 20)}>
@@ -146,10 +180,16 @@ export default function Prompts(): JSX.Element {
           error={query.error()}
           onRetry={query.refetch}
           onChanged={query.refetch}
-          emptyTitle={searchParams.q ? t('No prompts match') : t('Your library is empty')}
-          emptyHint={searchParams.q ? t('Try a different search.') : t('Save the prompts you keep re-typing. Long ones are welcome.')}
+          emptyTitle={searchParams.q ? t('No prompts match') : doneList() ? t('Nothing done yet') : t('Your library is empty')}
+          emptyHint={
+            searchParams.q
+              ? t('Try a different search.')
+              : doneList()
+                ? t('Press Done on a prompt once it has done its job - it moves here.')
+                : t('Save the prompts you keep re-typing. Long ones are welcome.')
+          }
           emptyAction={
-            <Show when={!searchParams.q}>
+            <Show when={!searchParams.q && !doneList()}>
               <Button size="sm" onClick={() => navigate('/prompts/new')}>
                 {t('Create your first prompt')}
               </Button>

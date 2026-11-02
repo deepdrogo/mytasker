@@ -128,4 +128,13 @@ export const settings: Record<string, string> = {
   'Could not change password.': 'პაროლის შეცვლა ვერ მოხერხდა.',
   'Sign out': 'გასვლა',
   'Ends this session on this device.': 'დაასრულებს სესიას ამ მოწყობილობაზე.',
+
+  // Navigation + 24-hour cycle targets
+  Navigation: 'ნავიგაცია',
+  'Sidebar layout. You always land on the Dashboard after signing in.':
+    'გვერდითი მენიუს განლაგება. ავტორიზაციის შემდეგ ყოველთვის დეშბორდზე აღმოჩნდები.',
+  Full: 'სრული',
+  'Projects first': 'პროექტები პირველ რიგში',
+  'Fun target / 24h (hours)': 'გართობის მიზანი / 24სთ (საათი)',
+  'Exercise target / 24h (hours)': 'ვარჯიშის მიზანი / 24სთ (საათი)',
 };

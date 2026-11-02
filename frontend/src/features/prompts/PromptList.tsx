@@ -1,7 +1,7 @@
 import { A } from '@solidjs/router';
-import { Copy, FileText, MoreHorizontal, Star } from 'lucide-solid';
+import { Check, Copy, FileText, MoreHorizontal, RotateCcw, Star } from 'lucide-solid';
 import type { JSX } from 'solid-js';
-import { For, Show } from 'solid-js';
+import { createSignal, For, Show } from 'solid-js';
 import { Badge, VisibilityMark } from '~/components/shared/Indicators';
 import { Button } from '~/components/ui/Button';
 import { Dropdown } from '~/components/ui/Dropdown';
@@ -10,7 +10,8 @@ import { copyToClipboard, promptsApi } from '~/features/prompts/api';
 import { t } from '~/i18n';
 import { tx } from '~/stores/translations';
 import { toast } from '~/stores/ui';
-import type { PromptListItem } from '~/types';
+import type { ID, PromptListItem } from '~/types';
+import { cx } from '~/utils/cx';
 import { formatRelative } from '~/utils/format';
 import styles from './PromptList.module.css';
 
@@ -34,6 +35,25 @@ export function PromptList(props: PromptListProps): JSX.Element {
       toast(ok ? t('Prompt copied') : t('Copy failed'));
     } catch {
       toast(t('Could not load the prompt.'));
+    }
+  };
+
+  const [leaving, setLeaving] = createSignal<Set<ID>>(new Set());
+  /** Done leaves this list for the other one; the row slides out at once and comes back if saving fails. */
+  const toggleDone = async (prompt: PromptListItem) => {
+    const next = !prompt.is_done;
+    setLeaving((ids) => new Set(ids).add(prompt.id));
+    try {
+      await promptsApi.setDone(prompt.id, next);
+      toast(next ? t('Moved to Done') : t('Back in the library'));
+      props.onChanged?.();
+    } catch {
+      toast(t('Action failed.'));
+      setLeaving((ids) => {
+        const copy = new Set(ids);
+        copy.delete(prompt.id);
+        return copy;
+      });
     }
   };
 
@@ -65,7 +85,14 @@ export function PromptList(props: PromptListProps): JSX.Element {
             <ul class={styles.list}>
               <For each={prompts()}>
                 {(prompt) => (
-                  <li class={[styles.row, prompt.is_archived ? styles.archived : ''].join(' ')}>
+                  <li
+                    class={cx(
+                      styles.row,
+                      prompt.is_archived && styles.archived,
+                      prompt.is_done && styles.done,
+                      leaving().has(prompt.id) && styles.leaving,
+                    )}
+                  >
                     <A href={`/prompts/${prompt.id}`} class={styles.main}>
                       <div class={styles.titleRow}>
                         <Show when={prompt.is_favorite}>
@@ -88,10 +115,27 @@ export function PromptList(props: PromptListProps): JSX.Element {
                         <span class={styles.spacer} />
                         <span class="mt-mono">{t('{count} chars', { count: prompt.body_length.toLocaleString() })}</span>
                         <span>v{prompt.version}</span>
-                        <span>{formatRelative(prompt.updated_at)}</span>
+                        <Show when={prompt.is_done && prompt.done_at} fallback={<span>{formatRelative(prompt.updated_at)}</span>}>
+                          <span class={styles.doneAt}>
+                            <Check size={11} /> {t('Done {when}', { when: formatRelative(prompt.done_at) })}
+                          </span>
+                        </Show>
                       </div>
                     </A>
                     <div class={styles.actions}>
+                      <button
+                        type="button"
+                        class={cx(styles.doneBtn, prompt.is_done && styles.doneBtnOn)}
+                        disabled={leaving().has(prompt.id)}
+                        onClick={() => void toggleDone(prompt)}
+                        aria-pressed={prompt.is_done}
+                        title={prompt.is_done ? t('Reopen - back to the library') : t('Done - move to Done prompts')}
+                      >
+                        <Show when={prompt.is_done} fallback={<Check size={13} />}>
+                          <RotateCcw size={12} />
+                        </Show>
+                        <span>{prompt.is_done ? t('Reopen') : t('Done')}</span>
+                      </button>
                       <Button variant="ghost" size="icon-sm" aria-label={t('Copy prompt')} onClick={() => void copy(prompt)}>
                         <Copy size={14} />
                       </Button>

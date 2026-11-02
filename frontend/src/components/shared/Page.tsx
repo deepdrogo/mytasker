@@ -7,6 +7,8 @@ import styles from './Page.module.css';
 interface PageProps {
   title: string;
   subtitle?: string;
+  /** Shown left of the title, e.g. a project's avatar. */
+  icon?: JSX.Element;
   actions?: JSX.Element;
   tabs?: Array<{ label: string; href: string; count?: number }>;
   toolbar?: JSX.Element;
@@ -22,10 +24,15 @@ export function Page(props: PageProps): JSX.Element {
       <header class={styles.header}>
         <div class={styles.headRow}>
           <div class={styles.titleBlock}>
-            <h1 class={styles.title}>{props.title}</h1>
-            <Show when={props.subtitle}>
-              <p class={styles.subtitle}>{props.subtitle}</p>
+            <Show when={props.icon}>
+              <div class={styles.icon}>{props.icon}</div>
             </Show>
+            <div class={styles.titleText}>
+              <h1 class={styles.title}>{props.title}</h1>
+              <Show when={props.subtitle}>
+                <p class={styles.subtitle}>{props.subtitle}</p>
+              </Show>
+            </div>
           </div>
           <Show when={props.actions}>
             <div class={styles.actions}>{props.actions}</div>

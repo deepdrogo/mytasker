@@ -8,12 +8,14 @@ import { createEffect, createMemo, createSignal, For, Show } from 'solid-js';
 import { Dropdown, type MenuItem } from '~/components/ui/Dropdown';
 import { ConfirmDialog, EmptyState, ErrorNote, Skeleton } from '~/components/ui/Feedback';
 import { projectsApi, workGroupsApi, type WorkGroup } from '~/features/projects/api';
+import { ProjectAvatar } from '~/features/projects/ProjectAvatar';
 import { createQuery } from '~/hooks/createQuery';
 import { createSortable, type Sortable } from '~/hooks/createSortable';
 import { t } from '~/i18n';
 import { tx } from '~/stores/translations';
 import { toast } from '~/stores/ui';
 import type { ID, Project, WorkState } from '~/types';
+import { cx } from '~/utils/cx';
 import styles from './WorkingBoard.module.css';
 
 /** Tapping the dot walks the cycle: waiting (yellow) → active (orange) → working (green) → waiting. */
@@ -440,6 +442,7 @@ function ProjectChip(props: {
       onSelect: () => props.onMove(null),
     },
   ];
+  const progress = () => props.project.progress;
   return (
     <li
       class={[
@@ -452,27 +455,37 @@ function ProjectChip(props: {
       {...props.sortable.itemProps(props.project)}
       style={props.sortable.itemStyle(props.project)}
     >
-      <Show when={canManage()}>
+      <Show when={canManage()} fallback={<ProjectAvatar project={props.project} size={30} />}>
         <button
           type="button"
-          class={styles.grip}
+          class={styles.avatarGrip}
           {...props.sortable.handleProps(props.project)}
           aria-label={t('Drag to reorder · arrow keys to move')}
           title={t('Drag to reorder · arrow keys to move')}
         >
-          <GripVertical size={13} />
+          <ProjectAvatar project={props.project} size={30} />
+          <GripVertical size={11} class={styles.gripMark} />
         </button>
       </Show>
-      <A href={`/projects/${props.project.id}/overview`} class={styles.name} title={name()}>
-        {name()}
+      <A href={`/projects/${props.project.id}/overview`} class={styles.body} title={name()}>
+        <span class={styles.name}>{name()}</span>
+        <span class={styles.meta}>
+          <span class={styles.stateWord}>{t(STATE_LABEL[props.project.work_state])}</span>
+          <Show when={props.project.open_tasks > 0}>
+            <span>· {t('{count} open', { count: props.project.open_tasks })}</span>
+          </Show>
+        </span>
       </A>
+      <Show when={progress() !== null}>
+        <span class={styles.progress} style={{ width: `${progress()}%` }} aria-hidden="true" />
+      </Show>
       <Show when={canManage()}>
         <Dropdown
           align="end"
           label={t('Move to…')}
           items={moveItems()}
           trigger={({ toggle }) => (
-            <button type="button" class={styles.iconBtn} aria-label={t('Move to…')} title={t('Move to…')} onClick={toggle}>
+            <button type="button" class={cx(styles.iconBtn, styles.moveBtn)} aria-label={t('Move to…')} title={t('Move to…')} onClick={toggle}>
               <FolderInput size={12} />
             </button>
           )}

@@ -22,6 +22,8 @@ export default function PreferencesSection(): JSX.Element {
     default_reminder_minutes: initial?.default_reminder_minutes ?? 30,
     business_hours_target_minutes: initial?.business_hours_target_minutes ?? 600,
     sleep_target_minutes: initial?.sleep_target_minutes ?? 480,
+    fun_target_minutes: initial?.fun_target_minutes ?? 240,
+    exercise_target_minutes: initial?.exercise_target_minutes ?? 120,
     planned_bedtime: initial?.planned_bedtime ?? null,
     planned_wake_time: initial?.planned_wake_time ?? null,
     morning_summary_enabled: initial?.morning_summary_enabled ?? true,
@@ -84,6 +86,26 @@ export default function PreferencesSection(): JSX.Element {
               onInput={(e) => set('sleep_target_minutes', Math.round(Number(e.currentTarget.value) * 60))}
             />
           </Field>
+          <Field label={t('Fun target / 24h (hours)')}>
+            <Input
+              type="number"
+              min={0}
+              max={24}
+              step={0.5}
+              value={hours(form().fun_target_minutes)}
+              onInput={(e) => set('fun_target_minutes', Math.round(Number(e.currentTarget.value) * 60))}
+            />
+          </Field>
+          <Field label={t('Exercise target / 24h (hours)')}>
+            <Input
+              type="number"
+              min={0}
+              max={24}
+              step={0.5}
+              value={hours(form().exercise_target_minutes)}
+              onInput={(e) => set('exercise_target_minutes', Math.round(Number(e.currentTarget.value) * 60))}
+            />
+          </Field>
           <Field label={t('Planned bedtime')}>
             <Input type="time" value={form().planned_bedtime ?? ''} onInput={(e) => set('planned_bedtime', e.currentTarget.value || null)} />
           </Field>
@@ -99,10 +121,10 @@ export default function PreferencesSection(): JSX.Element {
           <Field label={t('Default reminder (minutes before)')}>
             <Input type="number" min={0} max={1440} value={form().default_reminder_minutes} onInput={(e) => set('default_reminder_minutes', Number(e.currentTarget.value))} />
           </Field>
-          <Field label={t('Home page')} hint={t('Where you land after signing in.')}>
+          <Field label={t('Navigation')} hint={t('Sidebar layout. You always land on the Dashboard after signing in.')}>
             <Select value={form().home_view} onChange={(e) => set('home_view', e.currentTarget.value as UserPreferences['home_view'])}>
-              <option value="dashboard">{t('Dashboard')}</option>
-              <option value="projects">{t('Working projects')}</option>
+              <option value="dashboard">{t('Full')}</option>
+              <option value="projects">{t('Projects first')}</option>
             </Select>
           </Field>
           <Field label={t('First day of week')}>

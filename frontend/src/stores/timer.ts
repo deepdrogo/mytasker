@@ -11,7 +11,7 @@ import type { ID, SleepSession, TimeCategory, TimeEntry } from '~/types';
 export interface TimerState {
   running: TimeEntry | null;
   sleep: SleepSession | null;
-  today: { business: number; personal: number; total: number };
+  today: Record<TimeCategory, number> & { total: number };
 }
 
 /**
@@ -28,7 +28,7 @@ interface TotalsSnapshot {
 const [running, setRunning] = createSignal<TimeEntry | null>(null);
 const [sleep, setSleep] = createSignal<SleepSession | null>(null);
 const [totals, setTotals] = createSignal<TotalsSnapshot>({
-  today: { business: 0, personal: 0, total: 0 },
+  today: { business: 0, personal: 0, fun: 0, exercise: 0, total: 0 },
   runningId: null,
   runningCategory: null,
   readAt: Date.now(),
@@ -125,6 +125,8 @@ export async function startTimer(input: StartTimerInput = {}): Promise<TimeEntry
   try {
     const entry = await api.post<TimeEntry>('/timer/start/', input);
     applyRunningTimer(entry);
+    // The server ends a running sleep when anything else starts.
+    if (sleep()) applySleep(null);
     invalidate(...TIMER_SCOPES);
     void refreshTotals();
     return entry;
@@ -152,6 +154,7 @@ export async function resumeTimer(entryId: ID): Promise<TimeEntry> {
   try {
     const entry = await api.post<TimeEntry>(`/timer/entries/${entryId}/resume/`);
     applyRunningTimer(entry);
+    if (sleep()) applySleep(null);
     invalidate(...TIMER_SCOPES);
     void refreshTotals();
     return entry;
