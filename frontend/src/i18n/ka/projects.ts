@@ -296,4 +296,5 @@ export const projects: Record<string, string> = {
   "Logo taken from the project's website": 'ლოგო აღებულია პროექტის საიტიდან',
   'No logo found - the generated one stays': 'ლოგო ვერ მოიძებნა — გენერირებული დარჩება',
   'Could not look for a logo.': 'ლოგოს ძებნა ვერ მოხერხდა.',
+  'In work': 'მუშავდება',
 };

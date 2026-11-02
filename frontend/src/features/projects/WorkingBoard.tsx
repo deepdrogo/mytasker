@@ -370,13 +370,10 @@ function ProjectGrid(props: {
   onCycleState: (project: Project) => void;
   onMove: (project: Project, groupId: ID | null) => void;
 }): JSX.Element {
-  const sortable = createSortable<Project>({
-    items: () => props.projects,
-    key: (project) => project.id,
-    flow: () => 'grid',
-    enabled: () => props.projects.length > 1 && props.projects.some((project) => project.capabilities.manage_project),
-    onReorder: (projects) => props.onReorder(projects),
-  });
+  // Projects in work (green) lead their group on a lit shelf of their own; the rest follow. Automatic:
+  // turning a dot green moves the card up, turning it off moves it back.
+  const working = createMemo(() => props.projects.filter((project) => project.work_state === 'working'));
+  const others = createMemo(() => props.projects.filter((project) => project.work_state !== 'working'));
   return (
     <div>
       <Show when={props.label}>
@@ -385,6 +382,40 @@ function ProjectGrid(props: {
           <Tally projects={props.projects} />
         </div>
       </Show>
+      <div class={styles.split}>
+        <Show when={working().length > 0}>
+          <div class={styles.spotlight}>
+            <span class={styles.spotlightLabel}>
+              <i class={[styles.key, styles.keyWorking].join(' ')} />
+              {t('In work')}
+              <span class={styles.spotlightCount}>{working().length}</span>
+            </span>
+            <ChipList {...props} projects={working()} />
+          </div>
+        </Show>
+        <Show when={others().length > 0}>
+          <ChipList {...props} projects={others()} />
+        </Show>
+      </div>
+    </div>
+  );
+}
+
+function ChipList(props: {
+  projects: Project[];
+  groups: WorkGroup[];
+  onReorder: (projects: Project[]) => void;
+  onCycleState: (project: Project) => void;
+  onMove: (project: Project, groupId: ID | null) => void;
+}): JSX.Element {
+  const sortable = createSortable<Project>({
+    items: () => props.projects,
+    key: (project) => project.id,
+    flow: () => 'grid',
+    enabled: () => props.projects.length > 1 && props.projects.some((project) => project.capabilities.manage_project),
+    onReorder: (projects) => props.onReorder(projects),
+  });
+  return (
       <ul class={styles.list} ref={sortable.setContainer}>
         <For each={sortable.items()}>
           {(project) => (
@@ -398,7 +429,6 @@ function ProjectGrid(props: {
           )}
         </For>
       </ul>
-    </div>
   );
 }
 
