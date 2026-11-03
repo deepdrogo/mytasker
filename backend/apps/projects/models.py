@@ -127,7 +127,7 @@ class Project(TimeStampedModel, SoftDeleteModel):
         ACTIVE = "active", "Active"
         WORKING = "working", "Working"
 
-    # Where the owner stands with this project on the Working projects board (yellow / orange / green).
+    # Where the owner stands with this project on the Working projects board (yellow / blue / green).
     # Orthogonal to status/kind: a planned or paused project can still be in the working process.
     work_state = models.CharField(max_length=8, choices=WorkState.choices, default=WorkState.WAITING, db_index=True)
     # Kept equal to `work_state == "working"` for older clients that only know the on/off flag.

@@ -17,7 +17,7 @@ export const projects: Record<string, string> = {
   'Green on the Working projects page: in the working process.':
     '„მიმდინარე პროექტების" გვერდზე მწვანეა — მუშაობის პროცესშია.',
   'Yellow on the Working projects page: waiting.': '„მიმდინარე პროექტების" გვერდზე ყვითელია — ელოდება.',
-  'Orange on the Working projects page: active.': '„მიმდინარე პროექტების" გვერდზე სტაფილოსფერია — აქტიური.',
+  'Blue on the Working projects page: active.': '„მიმდინარე პროექტების" გვერდზე ლურჯია — აქტიური.',
 
   // Working projects catalog
   'Working projects': 'მიმდინარე პროექტები',

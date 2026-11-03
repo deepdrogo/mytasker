@@ -18,7 +18,7 @@ import type { ID, Project, WorkState } from '~/types';
 import { cx } from '~/utils/cx';
 import styles from './WorkingBoard.module.css';
 
-/** Tapping the dot walks the cycle: waiting (yellow) → active (orange) → working (green) → waiting. */
+/** Tapping the dot walks the cycle: waiting (yellow) → active (blue) → working (green) → waiting. */
 const NEXT_STATE: Record<WorkState, WorkState> = { waiting: 'active', active: 'working', working: 'waiting' };
 const STATE_ORDER: WorkState[] = ['working', 'active', 'waiting'];
 const STATE_LABEL: Record<WorkState, string> = { working: 'Working', active: 'Active', waiting: 'Waiting' };
@@ -432,7 +432,7 @@ function ChipList(props: {
   );
 }
 
-/** Green working, orange active, yellow waiting. Zero counts are left out. */
+/** Green working, blue active, yellow waiting. Zero counts are left out. */
 function Tally(props: { projects: Project[] }): JSX.Element {
   return (
     <span class={styles.tally}>

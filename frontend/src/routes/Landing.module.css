@@ -92,7 +92,7 @@
 .accentGreen {
   --accent: var(--state-working);
 }
-.accentOrange {
+.accentBlue {
   --accent: var(--state-active);
 }
 .accentYellow {

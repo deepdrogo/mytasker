@@ -110,10 +110,10 @@
   --state-working: #2ee36a;
   --state-working-deep: #17a34a;
   --state-working-glow: rgba(46, 227, 106, 0.5);
-  --state-active: #ff8a3d;
-  --state-active-light: #ffa25c;
-  --state-active-deep: #e8621c;
-  --state-active-glow: rgba(255, 138, 61, 0.5);
+  --state-active: #4d9fff;
+  --state-active-light: #7ab8ff;
+  --state-active-deep: #2a6fe0;
+  --state-active-glow: rgba(77, 159, 255, 0.5);
   --state-waiting: #f5c451;
   --state-waiting-light: #f8d26a;
   --state-waiting-deep: #d99a1e;

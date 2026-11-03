@@ -52,8 +52,8 @@ const FEATURES: Feature[] = [
   { icon: Users, title: 'Collaboration', text: 'Comments, mentions, activity feed and public share links.' },
 ];
 
-/** Feature tiles take the Working-board colours in turn: green, orange, yellow. */
-const TILE_ACCENTS = [styles.accentGreen, styles.accentOrange, styles.accentYellow];
+/** Feature tiles take the Working-board colours in turn: green, blue, yellow. */
+const TILE_ACCENTS = [styles.accentGreen, styles.accentBlue, styles.accentYellow];
 
 const MOCK_TASKS = [
   { title: 'Ship landing page', tag: 'Business', done: true },
@@ -131,7 +131,7 @@ function LandingView(): JSX.Element {
             <LayoutGrid size={14} stroke-width={2} />
             Features
           </a>
-          <a href={botUrl()} target="_blank" rel="noreferrer" class={styles.accentOrange}>
+          <a href={botUrl()} target="_blank" rel="noreferrer" class={styles.accentBlue}>
             <Send size={14} stroke-width={2} />
             Telegram
           </a>
@@ -229,7 +229,7 @@ function LandingView(): JSX.Element {
                         </Show>
                       </span>
                       <span class={styles.taskTitle}>{t.title}</span>
-                      <span class={`${styles.taskTag} ${t.tag === 'Business' ? styles.accentOrange : styles.accentYellow}`}>
+                      <span class={`${styles.taskTag} ${t.tag === 'Business' ? styles.accentBlue : styles.accentYellow}`}>
                         <i class={styles.tagDot} />
                         {t.tag}
                       </span>

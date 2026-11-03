@@ -31,7 +31,7 @@ const MODE_HINT: Record<ProjectMode, string> = {
 
 const WORK_STATE_HINT: Record<WorkState, string> = {
   waiting: 'Yellow on the Working projects page: waiting.',
-  active: 'Orange on the Working projects page: active.',
+  active: 'Blue on the Working projects page: active.',
   working: 'Green on the Working projects page: in the working process.',
 };
 

@@ -12,7 +12,7 @@ export type ProjectKind = 'project' | 'active';
 export type ProjectCategory = 'general' | 'startup';
 export type ProjectMode = 'private' | 'group' | 'group_plus';
 export type ProjectStatus = 'planned' | 'active' | 'paused' | 'completed' | 'archived';
-/** Working projects board: yellow waiting, orange active, green in the working process. */
+/** Working projects board: yellow waiting, blue active, green in the working process. */
 export type WorkState = 'waiting' | 'active' | 'working';
 export type Role = 'owner' | 'admin' | 'member' | 'viewer';
 export type RoutineKind = 'personal' | 'business';
