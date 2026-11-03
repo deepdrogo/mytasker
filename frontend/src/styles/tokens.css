@@ -2,45 +2,153 @@
    Hand-tuned by drogoz · https://github.com/deepdrogo/mytasker */
 
 /*
- * MyTasker design tokens - monochrome with depth.
- * Hue is never used for state; instead: contrast, layered gradients, light rims, glow and weight.
- * Base greys: #000000 #0D0D0D #1A1A1A #262626 #404040 #808080 #FFFFFF (+ white/black alpha for glass).
+ * Monochrome glass. Every colour in the app lives in this file; components use the semantic tokens below.
+ * Only true greys (R = G = B). The one hue in the product is the Working-board state dot (--state-*),
+ * kept on purpose: the owner reads the board by it.
  */
 
 :root {
-  /* Surfaces */
-  --c-bg: #000000;
-  --c-surface: #0d0d0d;
-  --c-surface-2: #1a1a1a;
-  --c-surface-3: #262626;
+  color-scheme: dark;
 
-  /* Glass & gradient surfaces (the "volumetric" language shared with the landing) */
-  --g-surface: linear-gradient(180deg, #161616 0%, #0b0b0b 100%);
-  --g-surface-raised: linear-gradient(180deg, #1d1d1d 0%, #0f0f0f 100%);
+  /* ---- Primitives: the grey ramp -------------------------------------------------------------- */
+  --grey-00: #000000;
+  --grey-0a: #0a0a0a;
+  --grey-14: #141414;
+  --grey-1f: #1f1f1f;
+  --grey-2b: #2b2b2b;
+  --grey-3d: #3d3d3d;
+  --grey-57: #575757;
+  --grey-7a: #7a7a7a;
+  --grey-a3: #a3a3a3;
+  --grey-c9: #c9c9c9;
+  --grey-e5: #e5e5e5;
+  --grey-f5: #f5f5f5;
+  --grey-ff: #ffffff;
+
+  /* ---- Primitives: pure white / black alpha for glass ------------------------------------ */
+  --white-008: rgba(255, 255, 255, 0.008);
+  --white-012: rgba(255, 255, 255, 0.012);
+  --white-016: rgba(255, 255, 255, 0.016);
+  --white-020: rgba(255, 255, 255, 0.02);
+  --white-025: rgba(255, 255, 255, 0.025);
+  --white-030: rgba(255, 255, 255, 0.03);
+  --white-035: rgba(255, 255, 255, 0.035);
+  --white-040: rgba(255, 255, 255, 0.04);
+  --white-045: rgba(255, 255, 255, 0.045);
+  --white-050: rgba(255, 255, 255, 0.05);
+  --white-060: rgba(255, 255, 255, 0.06);
+  --white-070: rgba(255, 255, 255, 0.07);
+  --white-080: rgba(255, 255, 255, 0.08);
+  --white-090: rgba(255, 255, 255, 0.09);
+  --white-100: rgba(255, 255, 255, 0.1);
+  --white-120: rgba(255, 255, 255, 0.12);
+  --white-140: rgba(255, 255, 255, 0.14);
+  --white-160: rgba(255, 255, 255, 0.16);
+  --white-200: rgba(255, 255, 255, 0.2);
+  --white-250: rgba(255, 255, 255, 0.25);
+  --white-300: rgba(255, 255, 255, 0.3);
+  --white-350: rgba(255, 255, 255, 0.35);
+  --white-400: rgba(255, 255, 255, 0.4);
+  --white-450: rgba(255, 255, 255, 0.45);
+  --white-500: rgba(255, 255, 255, 0.5);
+  --white-550: rgba(255, 255, 255, 0.55);
+  --white-600: rgba(255, 255, 255, 0.6);
+  --white-800: rgba(255, 255, 255, 0.8);
+  --white-900: rgba(255, 255, 255, 0.9);
+  --black-080: rgba(0, 0, 0, 0.08);
+  --black-160: rgba(0, 0, 0, 0.16);
+  --black-200: rgba(0, 0, 0, 0.2);
+  --black-250: rgba(0, 0, 0, 0.25);
+  --black-300: rgba(0, 0, 0, 0.3);
+  --black-400: rgba(0, 0, 0, 0.4);
+  --black-450: rgba(0, 0, 0, 0.45);
+  --black-500: rgba(0, 0, 0, 0.5);
+  --black-550: rgba(0, 0, 0, 0.55);
+  --black-600: rgba(0, 0, 0, 0.6);
+  --black-700: rgba(0, 0, 0, 0.7);
+  --black-800: rgba(0, 0, 0, 0.8);
+  --black-900: rgba(0, 0, 0, 0.9);
+
+  /* ---- Semantic: surfaces ------------------------------------------------------------------- */
+  --bg-app: var(--grey-00);
+  --bg-card: rgba(255, 255, 255, 0.034);
+  --bg-inset: rgba(255, 255, 255, 0.045);
+  --bg-raised: rgba(255, 255, 255, 0.07);
+  --bg-raised-strong: rgba(255, 255, 255, 0.1);
+  --bg-hover: rgba(255, 255, 255, 0.065);
+  --bg-field: rgba(0, 0, 0, 0.34);
+  --bg-field-hover: rgba(0, 0, 0, 0.42);
+  --bg-field-focus: rgba(0, 0, 0, 0.5);
+  --bg-float: rgba(0, 0, 0, 0.74);
+  --bg-solid: var(--grey-0a);
+  --bg-scrim: rgba(0, 0, 0, 0.55);
+
+  /* ---- Semantic: lines and text ------------------------------------------------------------- */
+  --line: rgba(255, 255, 255, 0.085);
+  --line-strong: rgba(255, 255, 255, 0.17);
+  --text-primary: var(--grey-ff);
+  --text-secondary: var(--grey-a3);
+  --text-tertiary: var(--grey-7a);
+  --text-inverse: var(--grey-00);
+
+  /* ---- Semantic: glass ---------------------------------------------------------------------- */
+  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 46%);
+  --glass-rim: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  --glass-drop: 0 28px 56px -30px rgba(0, 0, 0, 0.9);
+  /* Only layers floating over moving content blur what is behind them; cards never do. */
+  --fx-blur: blur(18px);
+  --fx-blur-scrim: blur(4px);
+
+  /* ---- Semantic: neon (light, never hue) ---------------------------------------------------- */
+  --neon-rail: 0 0 12px rgba(255, 255, 255, 0.6);
+  --neon-halo: 0 0 22px rgba(255, 255, 255, 0.12);
+  --neon-ring: 0 0 0 3px rgba(255, 255, 255, 0.14), 0 0 22px rgba(255, 255, 255, 0.28);
+  --neon-text: 0 0 18px rgba(255, 255, 255, 0.22);
+  --focus-ring: 0 0 0 2px rgba(255, 255, 255, 0.26), 0 0 14px rgba(255, 255, 255, 0.16);
+
+  /* ---- The one hue: Working-board state dots ----------------------------------------------- */
+  --state-working: #2ee36a;
+  --state-working-deep: #17a34a;
+  --state-working-glow: rgba(46, 227, 106, 0.5);
+  --state-active: #ff8a3d;
+  --state-active-light: #ffa25c;
+  --state-active-deep: #e8621c;
+  --state-active-glow: rgba(255, 138, 61, 0.5);
+  --state-waiting: #f5c451;
+  --state-waiting-light: #f8d26a;
+  --state-waiting-deep: #d99a1e;
+  --state-waiting-glow: rgba(245, 196, 81, 0.45);
+
+  /* ---- Component-facing names (kept so every module follows the semantic layer) -------------- */
+  --c-bg: var(--bg-app);
+  --c-surface: var(--bg-solid);
+  --c-surface-2: var(--bg-raised);
+  --c-surface-3: var(--bg-raised-strong);
+
+  --g-surface: var(--glass-sheen), var(--bg-card);
+  --g-surface-raised: var(--glass-sheen), var(--bg-raised);
+  --g-float: var(--glass-sheen), var(--bg-float);
   --g-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015));
   --g-glass-hover: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
   --g-glass-active: linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.05));
-  --g-primary: linear-gradient(180deg, #ffffff 0%, #e4e4e4 100%);
-  --g-ink: linear-gradient(90deg, #808080, #ffffff);
+  --g-primary: linear-gradient(180deg, var(--grey-ff) 0%, var(--grey-e5) 100%);
+  --g-ink: linear-gradient(90deg, var(--grey-7a), var(--grey-ff));
 
-  /* Lines */
-  --c-border: rgba(255, 255, 255, 0.08);
-  --c-border-strong: rgba(255, 255, 255, 0.18);
-  --c-border-solid: #262626;
+  --c-border: var(--line);
+  --c-border-strong: var(--line-strong);
+  --c-border-solid: var(--grey-2b);
   --c-rim: rgba(255, 255, 255, 0.1);
 
-  /* Text */
-  --c-text: #ffffff;
-  --c-text-dim: #8a8a8a;
-  --c-text-faint: #4a4a4a;
+  --c-text: var(--text-primary);
+  --c-text-dim: var(--text-secondary);
+  --c-text-faint: var(--text-tertiary);
 
-  /* Interactive */
-  --c-hover: rgba(255, 255, 255, 0.05);
+  --c-hover: var(--bg-hover);
   --c-active: rgba(255, 255, 255, 0.09);
-  --c-focus: rgba(255, 255, 255, 0.7);
-  --c-invert-bg: #ffffff;
-  --c-invert-text: #000000;
-  --ring: 0 0 0 3px rgba(255, 255, 255, 0.09);
+  --c-focus: rgba(255, 255, 255, 0.26);
+  --c-invert-bg: var(--grey-ff);
+  --c-invert-text: var(--text-inverse);
+  --ring: var(--focus-ring);
 
   /* Radii */
   --r-xs: 6px;
@@ -67,6 +175,7 @@
   --font-sans:
     'Inter Variable', 'Inter', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
     sans-serif;
+  --font-display: 'Space Grotesk Variable', 'Space Grotesk', var(--font-sans);
   --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
   --fs-xs: 11.5px;
   --fs-sm: 12.5px;
@@ -94,13 +203,13 @@
   --t-base: 170ms cubic-bezier(0.2, 0.7, 0.2, 1);
   --t-slow: 260ms cubic-bezier(0.2, 0.7, 0.2, 1);
 
-  /* Elevation - layered neutral shadows + top light rim */
-  --rim-top: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  /* Elevation */
+  --rim-top: var(--glass-rim);
   --rim-top-strong: inset 0 1px 0 rgba(255, 255, 255, 0.14);
-  --shadow-sm: var(--rim-top), 0 1px 2px rgba(0, 0, 0, 0.6);
-  --shadow-md: var(--rim-top), 0 10px 28px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.5);
+  --shadow-sm: var(--glass-rim), 0 1px 2px rgba(0, 0, 0, 0.6);
+  --shadow-md: var(--glass-rim), 0 10px 28px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.5);
   --shadow-lg: var(--rim-top-strong), 0 30px 70px rgba(0, 0, 0, 0.8), 0 10px 24px rgba(0, 0, 0, 0.6);
-  --shadow-card: var(--rim-top), 0 12px 30px rgba(0, 0, 0, 0.45);
+  --shadow-card: var(--glass-rim), var(--glass-drop);
   --glow: 0 8px 28px rgba(255, 255, 255, 0.14);
   --glow-strong: 0 14px 40px rgba(255, 255, 255, 0.24);
 
@@ -109,6 +218,15 @@
   --z-modal: 70;
   --z-toast: 80;
   --z-palette: 90;
+}
+
+/* Weak devices, Save-Data, reduced transparency or the user's choice (set before first paint by /fx.js):
+   no blur anywhere, floating layers nearly opaque, no background cross-fades. */
+html[data-fx='low'] {
+  --fx-blur: none;
+  --fx-blur-scrim: none;
+  --bg-float: rgba(10, 10, 10, 0.97);
+  --bg-scrim: rgba(0, 0, 0, 0.72);
 }
 
 @media (prefers-reduced-motion: reduce) {

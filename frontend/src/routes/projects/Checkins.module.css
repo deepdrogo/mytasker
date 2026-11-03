@@ -64,7 +64,7 @@
 }
 
 .crypto {
-  color: #f4b941;
+  color: var(--grey-c9);
 }
 
 /* Per line over the period: days ticked out of days on the calendar. */
@@ -98,7 +98,7 @@
 .bar {
   height: 4px;
   border-radius: var(--r-full);
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--white-070);
   overflow: hidden;
 }
 
@@ -188,7 +188,7 @@
 .chipDone {
   border-style: solid;
   border-color: var(--c-border-strong);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--white-080);
   color: var(--c-text);
 }
 

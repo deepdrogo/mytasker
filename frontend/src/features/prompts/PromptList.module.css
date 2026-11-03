@@ -129,7 +129,7 @@
   padding: 0 11px 0 9px;
   border-radius: var(--r-full);
   border: 1px solid var(--c-border-strong);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--white-050);
   color: var(--c-text);
   font: inherit;
   font-size: var(--fs-xs);
@@ -159,17 +159,27 @@
 
 .doneBtnOn {
   border-color: var(--c-border-strong);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--white-040);
   color: var(--c-text-dim);
 }
 
 .doneBtnOn:hover {
   background: var(--c-hover);
-  border-color: #fff;
+  border-color: var(--grey-ff);
   color: var(--c-text);
 }
 
 @media (max-width: 599px) {
+  /* Icon-only on phones so the title keeps its room; the button keeps its title and pressed state. */
+  .doneBtn {
+    width: 30px;
+    padding: 0;
+    justify-content: center;
+    margin-right: 0;
+  }
+  .doneBtn span {
+    display: none;
+  }
   .spacer {
     display: none;
   }

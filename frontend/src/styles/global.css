@@ -32,27 +32,6 @@ body {
   font-feature-settings: 'cv11', 'ss01';
 }
 
-/* Ambient depth behind every screen: two soft glows + a faint grid fading out from the top-left. */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(900px 600px at 8% -10%, rgba(255, 255, 255, 0.075), transparent 60%),
-    radial-gradient(700px 500px at 100% 110%, rgba(255, 255, 255, 0.045), transparent 60%),
-    linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
-  background-size:
-    auto,
-    auto,
-    56px 56px,
-    56px 56px;
-  mask-image: radial-gradient(ellipse 90% 80% at 30% 20%, #000 20%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse 90% 80% at 30% 20%, #000 20%, transparent 100%);
-}
-
 h1,
 h2,
 h3,
@@ -65,12 +44,20 @@ h6 {
   letter-spacing: -0.015em;
 }
 
+/* Titles in the display face, with a faint light glow. */
+h1,
+h2 {
+  font-family: var(--font-display);
+}
+
 h1 {
   font-size: var(--fs-xl);
   letter-spacing: -0.025em;
+  text-shadow: var(--neon-text);
 }
 h2 {
   font-size: var(--fs-lg);
+  letter-spacing: -0.02em;
 }
 h3 {
   font-size: var(--fs-base);
@@ -130,9 +117,29 @@ kbd {
 }
 
 :focus-visible {
-  outline: 1.5px solid var(--c-focus);
+  outline: 2px solid var(--c-focus);
   outline-offset: 2px;
+  box-shadow: var(--focus-ring);
   border-radius: var(--r-xs);
+}
+
+/* Native dropdown lists are drawn by the OS: give them an opaque surface. */
+option,
+optgroup {
+  background-color: var(--bg-solid);
+  color: var(--text-primary);
+}
+
+/* Long URLs, hashes and code never push the page sideways. */
+code,
+pre,
+kbd,
+.mt-break {
+  overflow-wrap: anywhere;
+}
+
+body {
+  overflow-wrap: break-word;
 }
 
 /* Shared "volumetric" surface utilities - use for cards/panels anywhere. */
@@ -162,7 +169,7 @@ kbd {
 /* Scrollbars */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--c-border-strong) transparent;
+  scrollbar-color: var(--white-160) transparent;
 }
 
 *::-webkit-scrollbar {
@@ -175,14 +182,14 @@ kbd {
 }
 
 *::-webkit-scrollbar-thumb {
-  background: var(--c-border);
+  background: var(--white-120);
   border-radius: var(--r-full);
   border: 2px solid transparent;
   background-clip: content-box;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: var(--c-border-strong);
+  background: var(--white-250);
   background-clip: content-box;
 }
 
@@ -245,4 +252,21 @@ html[data-keyboard='open'] .mt-hide-on-keyboard {
   transform: translateY(140%);
   opacity: 0;
   pointer-events: none;
+}
+
+/* Low effects / reduced motion: nothing loops. One-off transitions stay - they are cheap. */
+html[data-fx='low'] *,
+html[data-fx='low'] *::before,
+html[data-fx='low'] *::after {
+  animation-iteration-count: 1 !important;
+  animation-duration: 0.01ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-iteration-count: 1 !important;
+    animation-duration: 0.01ms !important;
+  }
 }

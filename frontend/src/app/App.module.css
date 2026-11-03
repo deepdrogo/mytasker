@@ -2,12 +2,12 @@
   height: 100dvh;
   display: grid;
   place-items: center;
-  background: var(--c-bg);
+  background: transparent;
 }
 
 .bootMark {
   animation: pulse 1.2s ease-in-out infinite;
-  filter: drop-shadow(0 8px 24px rgba(255, 255, 255, 0.12));
+  filter: drop-shadow(0 8px 24px var(--white-120));
 }
 
 @keyframes pulse {

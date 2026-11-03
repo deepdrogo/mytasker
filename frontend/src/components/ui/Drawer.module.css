@@ -2,9 +2,9 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-drawer);
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--bg-scrim);
+  backdrop-filter: var(--fx-blur-scrim);
+  -webkit-backdrop-filter: var(--fx-blur-scrim);
   display: flex;
   padding: var(--canvas-gap);
   animation: fade var(--t-base);
@@ -17,7 +17,9 @@
   width: var(--drawer-w);
   max-width: 100%;
   height: 100%;
-  background: var(--g-surface);
+  background: var(--g-float);
+  backdrop-filter: var(--fx-blur);
+  -webkit-backdrop-filter: var(--fx-blur);
   border: 1px solid var(--c-border-strong);
   border-radius: var(--r-xl);
   box-shadow: var(--shadow-lg);
@@ -84,7 +86,7 @@
   gap: var(--s-4);
   padding: var(--s-5);
   border-top: 1px solid var(--c-border);
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--black-250);
 }
 
 @keyframes fade {

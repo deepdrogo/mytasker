@@ -29,15 +29,15 @@
   flex: 1;
   height: 6px;
   border-radius: var(--r-full);
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--white-070);
   overflow: hidden;
 }
 
 .barFill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.55), #fff);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
+  background: linear-gradient(90deg, var(--white-550), var(--grey-ff));
+  box-shadow: 0 0 10px var(--white-350);
   transition: width var(--t-base);
 }
 
@@ -65,9 +65,9 @@
   gap: var(--s-4);
   min-width: 0;
   padding: var(--s-3) var(--s-4) var(--s-3) var(--s-5);
-  border: 1px solid hsl(var(--project-hue) 60% 70% / 0.18);
+  border: 1px solid var(--white-120);
   border-radius: var(--r-lg);
-  background: linear-gradient(135deg, hsl(var(--project-hue) 55% 45% / 0.12), rgba(255, 255, 255, 0.015) 70%);
+  background: linear-gradient(135deg, var(--white-050), var(--white-016) 70%);
   overflow: hidden;
   transition:
     border-color var(--t-fast),
@@ -80,12 +80,12 @@
   position: absolute;
   inset: 0 auto 0 0;
   width: 3px;
-  background: hsl(var(--project-hue) 72% 62%);
-  box-shadow: 0 0 10px hsl(var(--project-hue) 72% 60% / 0.6);
+  background: var(--grey-a3);
+  box-shadow: 0 0 10px var(--white-350);
 }
 
 .tile:hover {
-  border-color: hsl(var(--project-hue) 60% 70% / 0.4);
+  border-color: var(--white-300);
 }
 
 .check {
@@ -95,9 +95,9 @@
   width: 26px;
   height: 26px;
   padding: 0;
-  border: 1.5px solid hsl(var(--project-hue) 60% 72% / 0.55);
+  border: 1.5px solid var(--white-400);
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--black-250);
   color: transparent;
   cursor: pointer;
   transition:
@@ -109,7 +109,7 @@
 }
 
 .check:hover {
-  border-color: #fff;
+  border-color: var(--grey-ff);
   color: var(--c-text-faint);
 }
 
@@ -118,10 +118,10 @@
 }
 
 .done .check {
-  border-color: hsl(var(--project-hue) 72% 70%);
-  background: hsl(var(--project-hue) 62% 58%);
-  color: #fff;
-  box-shadow: 0 0 12px hsl(var(--project-hue) 70% 55% / 0.55);
+  border-color: var(--grey-a3);
+  background: var(--grey-a3);
+  color: var(--grey-ff);
+  box-shadow: 0 0 12px var(--white-300);
 }
 
 .done .check svg {
@@ -145,7 +145,7 @@
 
 .crypto {
   flex: none;
-  color: #f4b941;
+  color: var(--grey-c9);
 }
 
 .name {
@@ -164,7 +164,7 @@ a.name:hover {
 }
 
 .done {
-  background: linear-gradient(135deg, hsl(var(--project-hue) 55% 45% / 0.2), rgba(255, 255, 255, 0.02) 75%);
+  background: linear-gradient(135deg, var(--white-090), var(--white-020) 75%);
 }
 
 .done .name {
@@ -185,7 +185,7 @@ a.name:hover {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  color: hsl(var(--project-hue) 75% 75%);
+  color: var(--grey-c9);
   font-family: var(--font-mono);
   font-size: 10px;
 }

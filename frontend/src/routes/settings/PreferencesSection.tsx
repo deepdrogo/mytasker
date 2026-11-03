@@ -1,6 +1,7 @@
 import type { JSX } from 'solid-js';
 import { createSignal } from 'solid-js';
 import { ApiError } from '~/api/client';
+import { fxLevel, setFxLevel } from '~/app/fx';
 import { Button } from '~/components/ui/Button';
 import { Checkbox, Field, Input, Select } from '~/components/ui/Input';
 import { settingsApi } from '~/features/settings/api';
@@ -36,6 +37,7 @@ export default function PreferencesSection(): JSX.Element {
     home_view: initial?.home_view ?? 'dashboard',
   });
   const [busy, setBusy] = createSignal(false);
+  const [lowFx, setLowFx] = createSignal(fxLevel() === 'low');
   const set = <K extends keyof PreferencesForm>(key: K, value: PreferencesForm[K]) => setForm((f) => ({ ...f, [key]: value }));
   const hours = (minutes: number) => String(Math.round((minutes / 60) * 10) / 10);
   const hhmm = (v: string) => v.slice(0, 5);
@@ -148,6 +150,22 @@ export default function PreferencesSection(): JSX.Element {
         </div>
         <p class={styles.dim}>
           {t('Off: the everyday routine pauses on Saturday and Sunday and does not count against you. Rules still apply every day. Blocks scheduled only for weekend days always show.')}
+        </p>
+
+        <hr class={styles.divider} />
+
+        <div class={styles.row}>
+          <Checkbox
+            label={t('Light effects')}
+            checked={lowFx()}
+            onChange={(e) => {
+              setLowFx(e.currentTarget.checked);
+              setFxLevel(e.currentTarget.checked ? 'low' : 'high');
+            }}
+          />
+        </div>
+        <p class={styles.dim}>
+          {t('No blur and a still background - smoother on older phones and computers. Applies at once, on this device only.')}
         </p>
 
         <hr class={styles.divider} />

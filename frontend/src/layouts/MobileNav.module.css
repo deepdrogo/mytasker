@@ -11,14 +11,14 @@
   grid-auto-columns: 1fr;
   padding: 6px;
   gap: 2px;
-  background: linear-gradient(180deg, rgba(28, 28, 28, 0.92), rgba(10, 10, 10, 0.94));
-  backdrop-filter: blur(18px) saturate(1.2);
-  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  background: var(--g-float);
+  backdrop-filter: var(--fx-blur);
+  -webkit-backdrop-filter: var(--fx-blur);
   border: 1px solid var(--c-border-strong);
   border-radius: var(--r-2xl);
   box-shadow:
     var(--rim-top-strong),
-    0 20px 50px rgba(0, 0, 0, 0.7);
+    0 20px 50px var(--black-700);
   transition:
     transform var(--t-base),
     opacity var(--t-base);
@@ -56,7 +56,7 @@
 
 .active .icon svg {
   stroke-width: 2.4;
-  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.45));
+  filter: drop-shadow(0 0 8px var(--white-450));
 }
 
 .label {

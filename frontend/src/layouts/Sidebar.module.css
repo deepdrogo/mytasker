@@ -182,21 +182,22 @@
   color: var(--c-text);
   box-shadow:
     var(--rim-top-strong),
-    0 8px 20px rgba(0, 0, 0, 0.45);
+    0 8px 20px var(--black-450),
+    var(--neon-halo);
 }
 
-/* Glowing pip on the active item */
+/* Lit rail on the active item */
 .linkActive::before {
   content: '';
   position: absolute;
   left: -1px;
   top: 50%;
-  width: 3px;
-  height: 16px;
+  width: 2px;
+  height: 18px;
   transform: translateY(-50%);
-  border-radius: 0 3px 3px 0;
-  background: #fff;
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
+  border-radius: 0 2px 2px 0;
+  background: var(--grey-ff);
+  box-shadow: var(--neon-rail);
 }
 
 .linkIcon {
@@ -264,7 +265,7 @@
   border-radius: var(--r-full);
   font-size: var(--fs-sm);
   font-weight: var(--fw-bold);
-  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 14px var(--white-120);
 }
 
 .accountName {
@@ -307,11 +308,11 @@
   font-size: 10.5px;
   padding: 1px 7px;
   border-radius: var(--r-full);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--white-080);
   color: var(--c-text-dim);
 }
 
 .linkActive .linkCount {
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--white-160);
   color: var(--c-text);
 }

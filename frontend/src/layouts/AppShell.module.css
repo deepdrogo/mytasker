@@ -16,11 +16,11 @@
   overflow: hidden;
   margin: var(--canvas-gap);
   border-radius: var(--r-xl);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012) 30%, rgba(255, 255, 255, 0.008));
+  background: transparent;
   border: 1px solid var(--c-border);
   box-shadow:
     var(--rim-top),
-    0 24px 60px rgba(0, 0, 0, 0.55);
+    0 24px 60px var(--black-550);
   position: relative;
   isolation: isolate;
 }
@@ -63,9 +63,9 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-drawer);
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: var(--bg-scrim);
+  backdrop-filter: var(--fx-blur-scrim);
+  -webkit-backdrop-filter: var(--fx-blur-scrim);
   display: flex;
   animation: fade var(--t-base);
 }
@@ -74,7 +74,9 @@
   width: 288px;
   max-width: 86%;
   height: 100%;
-  background: var(--g-surface);
+  background: var(--g-float);
+  backdrop-filter: var(--fx-blur);
+  -webkit-backdrop-filter: var(--fx-blur);
   border-right: 1px solid var(--c-border-strong);
   box-shadow: var(--shadow-lg);
   animation: slideIn var(--t-slow);
@@ -82,7 +84,7 @@
 }
 
 .navOverlayDesktop {
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--black-450);
 }
 
 .navPanelDesktop {

@@ -54,7 +54,7 @@
 }
 
 .badge-default {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--white-060);
   color: var(--c-text-dim);
   border: 1px solid var(--c-border);
 }
@@ -68,9 +68,9 @@
 .badge-solid {
   background: var(--g-primary);
   color: var(--c-invert-text);
-  border: 1px solid #fff;
+  border: 1px solid var(--grey-ff);
   font-weight: var(--fw-semibold);
-  box-shadow: 0 2px 10px rgba(255, 255, 255, 0.15);
+  box-shadow: 0 2px 10px var(--white-160);
 }
 
 .badge-dashed {
@@ -101,17 +101,17 @@
 .progress {
   height: 5px;
   width: 100%;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--white-070);
   border-radius: var(--r-full);
   overflow: hidden;
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 1px 1px var(--black-500);
 }
 
 .progressFill {
   height: 100%;
   background: var(--g-ink);
   border-radius: var(--r-full);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 10px var(--white-400);
   transition: width var(--t-slow);
 }
 

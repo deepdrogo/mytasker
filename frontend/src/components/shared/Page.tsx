@@ -1,6 +1,7 @@
 import { A, useLocation } from '@solidjs/router';
 import type { JSX } from 'solid-js';
-import { For, Show } from 'solid-js';
+import { SlidersHorizontal } from 'lucide-solid';
+import { createSignal, For, Show } from 'solid-js';
 import { t } from '~/i18n';
 import styles from './Page.module.css';
 
@@ -12,6 +13,8 @@ interface PageProps {
   actions?: JSX.Element;
   tabs?: Array<{ label: string; href: string; count?: number }>;
   toolbar?: JSX.Element;
+  /** The toolbar is a filter bar: on phones it folds behind a "Filters" button. */
+  collapseToolbar?: boolean;
   children: JSX.Element;
   /** Content scrolls internally (default). Set false for pages managing their own layout. */
   scroll?: boolean;
@@ -19,6 +22,7 @@ interface PageProps {
 
 export function Page(props: PageProps): JSX.Element {
   const location = useLocation();
+  const [filtersOpen, setFiltersOpen] = createSignal(false);
   return (
     <div class={styles.page}>
       <header class={styles.header}>
@@ -34,8 +38,22 @@ export function Page(props: PageProps): JSX.Element {
               </Show>
             </div>
           </div>
-          <Show when={props.actions}>
-            <div class={styles.actions}>{props.actions}</div>
+          <Show when={props.actions || (props.toolbar && props.collapseToolbar)}>
+            <div class={styles.actions}>
+              <Show when={props.toolbar && props.collapseToolbar}>
+                <button
+                  type="button"
+                  class={[styles.filtersBtn, filtersOpen() ? styles.filtersBtnOn : ''].filter(Boolean).join(' ')}
+                  aria-expanded={filtersOpen()}
+                  aria-controls="page-toolbar"
+                  onClick={() => setFiltersOpen((open) => !open)}
+                >
+                  <SlidersHorizontal size={14} />
+                  {t('Filters')}
+                </button>
+              </Show>
+              {props.actions}
+            </div>
           </Show>
         </div>
 
@@ -58,7 +76,14 @@ export function Page(props: PageProps): JSX.Element {
         </Show>
 
         <Show when={props.toolbar}>
-          <div class={styles.toolbar}>{props.toolbar}</div>
+          <div
+            id="page-toolbar"
+            class={[styles.toolbar, props.collapseToolbar ? styles.toolbarCollapsible : '', filtersOpen() ? styles.toolbarOpen : '']
+              .filter(Boolean)
+              .join(' ')}
+          >
+            {props.toolbar}
+          </div>
         </Show>
       </header>
 

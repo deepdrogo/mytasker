@@ -137,4 +137,7 @@ export const settings: Record<string, string> = {
   'Projects first': 'პროექტები პირველ რიგში',
   'Fun target / 24h (hours)': 'გართობის მიზანი / 24სთ (საათი)',
   'Exercise target / 24h (hours)': 'ვარჯიშის მიზანი / 24სთ (საათი)',
+  'Light effects': 'მსუბუქი ეფექტები',
+  'No blur and a still background - smoother on older phones and computers. Applies at once, on this device only.':
+    'ბუნდოვნების გარეშე და უძრავი ფონით — უფრო სწრაფია ძველ ტელეფონებსა და კომპიუტერებზე. მაშინვე ირთვება, მხოლოდ ამ მოწყობილობაზე.',
 };

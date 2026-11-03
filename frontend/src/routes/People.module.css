@@ -115,13 +115,13 @@
   gap: 2px;
   padding: 1px 7px;
   border-radius: var(--r-full);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--white-060);
   color: var(--c-text-dim);
 }
 
 .countOpen {
   color: var(--c-text);
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--white-120);
 }
 
 /* Add person */
@@ -386,7 +386,7 @@
 .toggleOn:hover {
   background: var(--g-primary);
   color: var(--c-invert-text);
-  border-color: #fff;
+  border-color: var(--grey-ff);
 }
 
 .dim {

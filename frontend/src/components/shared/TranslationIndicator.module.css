@@ -9,9 +9,9 @@
   padding: 5px 10px 5px 8px;
   border: 1px solid var(--c-border);
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(28, 28, 28, 0.9), rgba(12, 12, 12, 0.92));
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--g-float);
+  backdrop-filter: var(--fx-blur);
+  -webkit-backdrop-filter: var(--fx-blur);
   box-shadow: var(--shadow-md);
   color: var(--c-text-dim);
   font-size: var(--fs-xs);

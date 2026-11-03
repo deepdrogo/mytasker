@@ -63,7 +63,7 @@
   gap: 2px;
   margin: 0 var(--s-8) var(--s-5);
   padding: 3px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--white-030);
   border: 1px solid var(--c-border);
   border-radius: var(--r-md);
   overflow-x: auto;
@@ -102,7 +102,7 @@
   background: var(--g-glass-active);
   box-shadow:
     var(--rim-top-strong),
-    0 4px 12px rgba(0, 0, 0, 0.4);
+    0 4px 12px var(--black-400);
 }
 
 .tabCount {
@@ -111,7 +111,7 @@
   font-variant-numeric: tabular-nums;
   padding: 1px 6px;
   border-radius: var(--r-full);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--white-050);
 }
 
 .tabActive .tabCount {
@@ -129,6 +129,28 @@
 
 .toolbar::-webkit-scrollbar {
   display: none;
+}
+
+/* Filters button: phones only, see below. */
+.filtersBtn {
+  display: none;
+  align-items: center;
+  gap: var(--s-3);
+  height: 30px;
+  padding: 0 var(--s-5);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--r-full);
+  background: var(--g-glass);
+  box-shadow: var(--rim-top);
+  color: var(--c-text);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+}
+
+.filtersBtnOn {
+  background: var(--g-glass-active);
+  border-color: var(--white-450);
 }
 
 .toolbar > :only-child {
@@ -227,6 +249,16 @@
   }
   .toolbar {
     padding: 0 var(--s-5) var(--s-4);
+  }
+  .filtersBtn {
+    display: inline-flex;
+  }
+  .toolbarCollapsible:not(.toolbarOpen) {
+    display: none;
+  }
+  /* Opened filters wrap onto as many lines as they need instead of scrolling sideways. */
+  .toolbarCollapsible {
+    overflow: visible;
   }
   .body {
     padding: var(--s-5) var(--s-5) var(--s-10);

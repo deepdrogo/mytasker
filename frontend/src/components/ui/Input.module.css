@@ -24,7 +24,7 @@
 .error {
   font-size: var(--fs-xs);
   color: var(--c-text);
-  border-left: 2px solid #fff;
+  border-left: 2px solid var(--grey-ff);
   padding-left: var(--s-3);
 }
 
@@ -32,12 +32,12 @@
 .select,
 .textarea {
   width: 100%;
-  background: rgba(255, 255, 255, 0.03);
+  background-color: var(--bg-field);
   border: 1px solid var(--c-border);
   border-radius: var(--r-md);
   color: var(--c-text);
   padding: 0 var(--s-5);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 1px 2px var(--black-500);
   transition:
     border-color var(--t-fast),
     background var(--t-fast),
@@ -48,17 +48,17 @@
 .select:hover,
 .textarea:hover {
   border-color: var(--c-border-strong);
-  background: rgba(255, 255, 255, 0.045);
+  background-color: var(--bg-field-hover);
 }
 
 .input:focus,
 .select:focus,
 .textarea:focus {
-  border-color: rgba(255, 255, 255, 0.45);
-  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--white-450);
+  background-color: var(--bg-field-focus);
   outline: none;
   box-shadow:
-    inset 0 1px 2px rgba(0, 0, 0, 0.5),
+    inset 0 1px 2px var(--black-500),
     var(--ring);
 }
 
@@ -99,7 +99,7 @@
 }
 
 .invalid {
-  border-color: rgba(255, 255, 255, 0.5);
+  border-color: var(--white-500);
   border-style: dashed;
 }
 
@@ -118,7 +118,7 @@
 }
 
 .select option {
-  background: #161616;
+  background: var(--bg-solid);
   color: var(--c-text);
 }
 
@@ -138,7 +138,7 @@
   flex: none;
   border: 1px solid var(--c-border-strong);
   border-radius: 5px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-field);
   display: grid;
   place-content: center;
   cursor: pointer;
@@ -149,13 +149,13 @@
 }
 
 .checkbox:hover {
-  border-color: rgba(255, 255, 255, 0.45);
+  border-color: var(--white-450);
 }
 
 .checkbox:checked {
   background: var(--g-primary);
-  border-color: #fff;
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.25);
+  border-color: var(--grey-ff);
+  box-shadow: 0 0 12px var(--white-250);
 }
 
 .checkbox:checked::after {

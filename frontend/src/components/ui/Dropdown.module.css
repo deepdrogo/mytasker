@@ -4,9 +4,9 @@
   min-width: 176px;
   max-width: 280px;
   padding: var(--s-2);
-  background: linear-gradient(180deg, rgba(34, 34, 34, 0.96), rgba(14, 14, 14, 0.98));
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: var(--g-float);
+  backdrop-filter: var(--fx-blur);
+  -webkit-backdrop-filter: var(--fx-blur);
   border: 1px solid var(--c-border-strong);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-lg);

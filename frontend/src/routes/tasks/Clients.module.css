@@ -90,7 +90,7 @@
   color: var(--c-text-dim);
   padding: 1px 7px;
   border-radius: var(--r-full);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--white-060);
 }
 
 .groupProgress {
@@ -147,7 +147,7 @@
   font-size: 10.5px;
   padding: 1px 7px;
   border-radius: var(--r-full);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--white-060);
 }
 
 .whoOverdue {

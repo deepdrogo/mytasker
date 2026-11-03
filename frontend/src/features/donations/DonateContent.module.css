@@ -69,8 +69,8 @@
   padding: var(--s-4) var(--s-5);
   border: 1px solid var(--c-border);
   border-radius: var(--r-md);
-  background: rgba(0, 0, 0, 0.45);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+  background: var(--black-450);
+  box-shadow: inset 0 1px 2px var(--black-600);
   overflow-wrap: anywhere;
   user-select: all;
 }
@@ -96,7 +96,7 @@
   color: var(--c-invert-text);
   font-weight: var(--fw-bold);
   font-size: var(--fs-base);
-  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.14);
+  box-shadow: 0 4px 14px var(--white-140);
   align-self: center;
 }
 
@@ -124,7 +124,7 @@
   font-family: 'Sora', var(--font-sans);
   font-weight: var(--fw-bold);
   font-size: 20px;
-  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.16);
+  box-shadow: 0 8px 24px var(--white-160);
 }
 
 .authorBody {
@@ -178,7 +178,7 @@
 .authorPrimary {
   background: var(--g-primary);
   color: var(--c-invert-text);
-  box-shadow: 0 6px 18px rgba(255, 255, 255, 0.14);
+  box-shadow: 0 6px 18px var(--white-140);
 }
 
 .authorPrimary:hover {
@@ -194,7 +194,7 @@
 
 .authorGhost:hover {
   background: var(--g-glass-hover);
-  border-color: rgba(255, 255, 255, 0.28);
+  border-color: var(--white-300);
 }
 
 @media (max-width: 599px) {

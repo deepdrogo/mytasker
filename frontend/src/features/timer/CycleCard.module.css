@@ -15,27 +15,27 @@
 
 /* Monochrome like the rest of the app: each activity is a shade of white, never a hue. */
 .kSleep {
-  --k: #ffffff;
-  --k2: #9a9a9a;
+  --k: var(--grey-ff);
+  --k2: var(--grey-a3);
 }
 .kWork {
-  --k: #c4c4c4;
-  --k2: #6e6e6e;
+  --k: var(--grey-c9);
+  --k2: var(--grey-7a);
 }
 .kFun {
-  --k: #8f8f8f;
-  --k2: #4f4f4f;
+  --k: var(--grey-a3);
+  --k2: var(--grey-57);
 }
 .kExercise {
-  --k: #626262;
-  --k2: #383838;
+  --k: var(--grey-57);
+  --k2: var(--grey-3d);
 }
 .kOther {
-  --k: #3d3d3d;
-  --k2: #2a2a2a;
+  --k: var(--grey-3d);
+  --k2: var(--grey-2b);
 }
 .kFree {
-  --k: rgba(255, 255, 255, 0.1);
+  --k: var(--white-100);
 }
 
 .head {
@@ -106,17 +106,17 @@
 
 .track {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.05);
+  stroke: var(--white-050);
   stroke-width: 12;
 }
 
 .tick {
-  stroke: rgba(255, 255, 255, 0.12);
+  stroke: var(--white-120);
   stroke-width: 1;
 }
 
 .tickMajor {
-  stroke: rgba(255, 255, 255, 0.3);
+  stroke: var(--white-300);
   stroke-width: 1.4;
 }
 
@@ -135,12 +135,12 @@
 }
 
 .segment.kSleep {
-  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.45));
+  filter: drop-shadow(0 0 4px var(--white-450));
 }
 
 /* Untagged personal time: dashed, so it reads as "other" without a colour. */
 .segment.kOther {
-  stroke: #555;
+  stroke: var(--grey-57);
   stroke-dasharray: 2 2;
 }
 
@@ -149,19 +149,19 @@
 }
 
 .hand {
-  stroke: #fff;
+  stroke: var(--grey-ff);
   stroke-width: 1.5;
   stroke-linecap: round;
 }
 
 .handDot {
-  fill: #fff;
-  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.9));
+  fill: var(--grey-ff);
+  filter: drop-shadow(0 0 5px var(--white-900));
 }
 
 .ringTrack {
   fill: none;
-  stroke: #fff;
+  stroke: var(--grey-ff);
   stroke-opacity: 0.06;
   stroke-width: 8;
 }
@@ -175,7 +175,7 @@
 }
 
 .ringFull {
-  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+  filter: drop-shadow(0 0 5px var(--white-500));
 }
 
 .center {
@@ -210,10 +210,11 @@
   font-variant-numeric: tabular-nums;
   color: var(--c-text);
   white-space: nowrap;
+  text-shadow: var(--neon-text);
 }
 
 .centerLive {
-  text-shadow: 0 0 12px rgba(255, 255, 255, 0.45);
+  text-shadow: 0 0 12px var(--white-450);
 }
 
 .centerSub {
@@ -264,7 +265,7 @@
   height: 26px;
   border-radius: 8px;
   color: var(--c-text);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--white-050);
   box-shadow: inset 0 0 0 1px var(--c-border);
 }
 
@@ -314,7 +315,7 @@
 .rowBar {
   height: 3px;
   border-radius: var(--r-full);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--white-060);
   overflow: hidden;
 }
 
@@ -347,7 +348,7 @@
   padding: 0;
   border-radius: 50%;
   border: 1px solid var(--c-border-strong);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--white-050);
   color: var(--c-text);
   cursor: pointer;
   transition:
@@ -357,7 +358,7 @@
 }
 
 .rowBtn:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--white-120);
 }
 
 .rowBtn:active {
@@ -374,7 +375,7 @@
   background: var(--g-primary);
   border-color: transparent;
   color: var(--c-invert-text);
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 12px var(--white-300);
 }
 
 .foot {

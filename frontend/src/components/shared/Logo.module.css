@@ -3,8 +3,8 @@
   flex: none;
   border-radius: 27%;
   box-shadow:
-    0 2px 6px rgba(0, 0, 0, 0.7),
-    0 0 18px rgba(255, 255, 255, 0.08);
+    0 2px 6px var(--black-700),
+    0 0 18px var(--white-080);
 }
 
 .logo {
@@ -21,7 +21,7 @@
   font-size: calc(var(--logo-size, 24px) * 0.68);
   font-weight: 700;
   letter-spacing: -0.045em;
-  background: linear-gradient(180deg, #ffffff 0%, #d2d2d2 100%);
+  background: linear-gradient(180deg, var(--grey-ff) 0%, var(--grey-c9) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -30,7 +30,7 @@
 
 .wordAccent {
   font-weight: 600;
-  background: linear-gradient(180deg, #a8a8a8 0%, #6e6e6e 100%);
+  background: linear-gradient(180deg, var(--grey-a3) 0%, var(--grey-7a) 100%);
   -webkit-background-clip: text;
   background-clip: text;
 }

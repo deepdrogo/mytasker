@@ -4,6 +4,7 @@
 import { Router } from '@solidjs/router';
 import type { JSX } from 'solid-js';
 import { createEffect, createResource, on, Show } from 'solid-js';
+import { Ambient } from '~/components/shared/Ambient';
 import { LogoMark } from '~/components/shared/Logo';
 import { TranslationIndicator } from '~/components/shared/TranslationIndicator';
 import { ToastHost } from '~/components/ui/Feedback';
@@ -26,6 +27,7 @@ export function App(): JSX.Element {
 
   return (
     <>
+      <Ambient />
       <Show when={ready()} fallback={<BootScreen />}>
         <Router>{routes}</Router>
       </Show>

@@ -172,7 +172,7 @@
   align-items: flex-end;
   gap: var(--s-4);
   padding: var(--s-4) var(--s-4) var(--s-4) var(--s-6);
-  background: var(--g-surface);
+  background: var(--bg-field);
   border: 1px solid var(--c-border);
   border-radius: var(--r-2xl);
   box-shadow: var(--shadow-card);
@@ -271,7 +271,7 @@
   transform: translateY(-1px);
   box-shadow:
     var(--rim-top),
-    0 6px 18px rgba(0, 0, 0, 0.4);
+    0 6px 18px var(--black-400);
 }
 
 .suggestionIcon {

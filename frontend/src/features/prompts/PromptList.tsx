@@ -129,6 +129,7 @@ export function PromptList(props: PromptListProps): JSX.Element {
                         disabled={leaving().has(prompt.id)}
                         onClick={() => void toggleDone(prompt)}
                         aria-pressed={prompt.is_done}
+                        aria-label={prompt.is_done ? t('Reopen') : t('Done')}
                         title={prompt.is_done ? t('Reopen - back to the library') : t('Done - move to Done prompts')}
                       >
                         <Show when={prompt.is_done} fallback={<Check size={13} />}>

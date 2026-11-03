@@ -80,7 +80,7 @@
   background: var(--g-glass);
   box-shadow:
     var(--shadow-card),
-    0 12px 28px rgba(0, 0, 0, 0.45);
+    0 12px 28px var(--black-450);
 }
 
 .grip {
@@ -113,7 +113,7 @@
 
 .grip:hover {
   color: var(--c-text);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--white-080);
 }
 
 .grip:active,
@@ -210,7 +210,7 @@
 
 .subtaskAction:hover:not(:disabled) {
   color: var(--c-text);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--white-080);
 }
 
 .subtaskAction:disabled {

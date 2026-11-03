@@ -37,22 +37,22 @@ export function LogoMark(props: LogoMarkProps): JSX.Element {
       <Show when={variant() === 'tile'}>
         <defs>
           <linearGradient id={`${id}-plate`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#3a3a3a" />
-            <stop offset="0.55" stop-color="#141414" />
-            <stop offset="1" stop-color="#060606" />
+            <stop offset="0" style={{ 'stop-color': 'var(--grey-3d)' }} />
+            <stop offset="0.55" style={{ 'stop-color': 'var(--grey-14)' }} />
+            <stop offset="1" style={{ 'stop-color': 'var(--grey-0a)' }} />
           </linearGradient>
           <linearGradient id={`${id}-rim`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#ffffff" stop-opacity="0.6" />
-            <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.14" />
-            <stop offset="1" stop-color="#ffffff" stop-opacity="0.05" />
+            <stop offset="0" style={{ 'stop-color': 'var(--grey-ff)', 'stop-opacity': '0.6' }} />
+            <stop offset="0.5" style={{ 'stop-color': 'var(--grey-ff)', 'stop-opacity': '0.14' }} />
+            <stop offset="1" style={{ 'stop-color': 'var(--grey-ff)', 'stop-opacity': '0.05' }} />
           </linearGradient>
           <linearGradient id={`${id}-ink`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#ffffff" />
-            <stop offset="1" stop-color="#bdbdbd" />
+            <stop offset="0" style={{ 'stop-color': 'var(--grey-ff)' }} />
+            <stop offset="1" style={{ 'stop-color': 'var(--grey-c9)' }} />
           </linearGradient>
           <radialGradient id={`${id}-sheen`} cx="0.3" cy="0" r="0.9">
-            <stop offset="0" stop-color="#ffffff" stop-opacity="0.16" />
-            <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
+            <stop offset="0" style={{ 'stop-color': 'var(--grey-ff)', 'stop-opacity': '0.16' }} />
+            <stop offset="1" style={{ 'stop-color': 'var(--grey-ff)', 'stop-opacity': '0' }} />
           </radialGradient>
         </defs>
         <rect x="1" y="1" width="62" height="62" rx="17" fill={`url(#${id}-plate)`} />

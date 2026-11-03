@@ -86,6 +86,7 @@ export default function Prompts(): JSX.Element {
           {t('New prompt')}
         </Button>
       }
+      collapseToolbar
       toolbar={
         <div class={styles.toolbar}>
           <div class={styles.search}>

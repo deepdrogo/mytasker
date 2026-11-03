@@ -2,9 +2,9 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-modal);
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: var(--bg-scrim);
+  backdrop-filter: var(--fx-blur-scrim);
+  -webkit-backdrop-filter: var(--fx-blur-scrim);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -17,7 +17,9 @@
   flex-direction: column;
   width: 100%;
   max-height: calc(100dvh - 2 * var(--s-6));
-  background: var(--g-surface);
+  background: var(--g-float);
+  backdrop-filter: var(--fx-blur);
+  -webkit-backdrop-filter: var(--fx-blur);
   border: 1px solid var(--c-border-strong);
   border-radius: var(--r-xl);
   box-shadow: var(--shadow-lg);
@@ -98,7 +100,7 @@
   gap: var(--s-4);
   padding: var(--s-5) var(--s-6);
   border-top: 1px solid var(--c-border);
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--black-250);
   flex: none;
 }
 

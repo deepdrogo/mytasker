@@ -23,6 +23,7 @@
   height: 6px;
   border-radius: var(--r-full);
   background: var(--c-text);
+  box-shadow: var(--neon-rail);
   animation: pulse 1.6s ease-in-out infinite;
   flex: none;
 }

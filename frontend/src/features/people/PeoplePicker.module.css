@@ -36,7 +36,7 @@
 .chipOn:hover:not(:disabled) {
   background: var(--g-primary);
   color: var(--c-invert-text);
-  border-color: #fff;
+  border-color: var(--grey-ff);
 }
 
 .chip:disabled {
@@ -50,13 +50,13 @@
   display: grid;
   place-items: center;
   border-radius: var(--r-full);
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--white-100);
   font-size: 10px;
   font-weight: var(--fw-semibold);
 }
 
 .chipOn .avatar {
-  background: rgba(0, 0, 0, 0.15);
+  background: var(--black-160);
 }
 
 .name {

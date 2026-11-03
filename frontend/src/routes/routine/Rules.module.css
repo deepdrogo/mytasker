@@ -115,7 +115,7 @@
   padding: 1px 7px;
   border-radius: var(--r-full);
   border: 1px solid var(--c-border);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--white-050);
   font-family: var(--font-mono);
   font-size: 10px;
   color: var(--c-text-dim);
@@ -156,11 +156,11 @@
   background: var(--g-primary);
   color: var(--c-invert-text);
   border-color: transparent;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0 10px var(--white-250);
 }
 
 .checkBroken {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--white-100);
   color: var(--c-text);
   border-color: var(--c-border-strong);
 }
@@ -213,18 +213,18 @@
   flex: 1;
   height: 4px;
   border-radius: var(--r-full);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--white-080);
   transition: background var(--t-base), box-shadow var(--t-base);
 }
 
 .segKept {
   background: var(--g-ink);
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 8px var(--white-350);
 }
 
 .segBroken {
-  background: rgba(255, 255, 255, 0.22);
-  background-image: repeating-linear-gradient(135deg, transparent 0 2px, rgba(0, 0, 0, 0.5) 2px 4px);
+  background: var(--white-200);
+  background-image: repeating-linear-gradient(135deg, transparent 0 2px, var(--black-500) 2px 4px);
 }
 
 .todayHint {

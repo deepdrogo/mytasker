@@ -94,17 +94,17 @@
 /* A project drawn on the project timeline, in that project's colour. */
 .projectBar {
   gap: 4px;
-  border-color: hsl(var(--project-hue) 72% 74% / 0.45);
+  border-color: var(--white-350);
   border-radius: var(--r-sm);
-  background: linear-gradient(135deg, hsl(var(--project-hue) 48% 42%), hsl(var(--project-hue) 36% 28%));
-  color: #fff;
+  background: linear-gradient(135deg, var(--grey-7a), var(--grey-3d));
+  color: var(--grey-ff);
   font-weight: 560;
   text-decoration: none;
 }
 
 .projectBar:hover {
-  background: linear-gradient(135deg, hsl(var(--project-hue) 52% 48%), hsl(var(--project-hue) 40% 32%));
-  color: #fff;
+  background: linear-gradient(135deg, var(--grey-7a), var(--grey-57));
+  color: var(--grey-ff);
 }
 
 .projectIcon {

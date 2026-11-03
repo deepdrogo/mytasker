@@ -6,7 +6,7 @@
   padding: var(--s-4) var(--s-3) var(--s-3);
   border: 1px dashed var(--c-border-strong);
   border-radius: var(--r-lg);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--white-020);
 }
 
 .checkinsHead {
@@ -29,7 +29,7 @@
 .checkinsCount {
   padding: 1px 7px;
   border-radius: var(--r-full);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--white-060);
   font-family: var(--font-mono);
   font-size: 10.5px;
   letter-spacing: 0;

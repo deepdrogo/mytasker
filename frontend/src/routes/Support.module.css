@@ -70,7 +70,7 @@
   line-height: 1.05;
   font-weight: var(--fw-bold);
   letter-spacing: -0.04em;
-  background: linear-gradient(180deg, #fff, #a9a9a9);
+  background: linear-gradient(180deg, var(--grey-ff), var(--grey-a3));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

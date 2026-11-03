@@ -56,7 +56,7 @@
 .groupCount {
   padding: 1px 7px;
   border-radius: var(--r-full);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--white-060);
   font-family: var(--font-mono);
   font-size: 10.5px;
   letter-spacing: 0;
@@ -64,7 +64,7 @@
 }
 
 .group-important .groupHead {
-  color: #f4c95d;
+  color: var(--grey-c9);
 }
 
 .group-important .groupHead svg {
@@ -72,15 +72,15 @@
 }
 
 .group-important .groupHead::after {
-  background: linear-gradient(90deg, rgba(244, 201, 93, 0.45), transparent);
+  background: linear-gradient(90deg, var(--white-350), transparent);
 }
 
 .group-startup .groupHead {
-  color: #9db8ff;
+  color: var(--grey-c9);
 }
 
 .group-startup .groupHead::after {
-  background: linear-gradient(90deg, rgba(157, 184, 255, 0.4), transparent);
+  background: linear-gradient(90deg, var(--white-300), transparent);
 }
 
 @media (max-width: 599px) {

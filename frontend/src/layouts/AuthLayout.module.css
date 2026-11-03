@@ -28,7 +28,7 @@
   height: 640px;
   left: -180px;
   top: -220px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.12), transparent 65%);
+  background: radial-gradient(circle, var(--white-120), transparent 65%);
 }
 
 .glowB {
@@ -36,7 +36,7 @@
   height: 520px;
   right: -160px;
   bottom: -220px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.07), transparent 65%);
+  background: radial-gradient(circle, var(--white-070), transparent 65%);
 }
 
 /* Back to home - pinned top-left, glass pill */
@@ -121,7 +121,7 @@
   padding: 0 var(--s-5);
   border-radius: var(--r-full);
   border: 1px solid var(--c-border);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--white-040);
   font-size: var(--fs-xs);
   font-weight: var(--fw-semibold);
   letter-spacing: 0.02em;
@@ -138,7 +138,7 @@
 
 .storyTitle span {
   display: block;
-  background: linear-gradient(90deg, #8a8a8a, #ffffff);
+  background: linear-gradient(90deg, var(--grey-7a), var(--grey-ff));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -205,8 +205,8 @@
   border-radius: var(--r-2xl);
   box-shadow:
     var(--rim-top-strong),
-    0 40px 90px rgba(0, 0, 0, 0.75),
-    0 0 0 1px rgba(0, 0, 0, 0.6);
+    0 40px 90px var(--black-800),
+    0 0 0 1px var(--black-600);
   display: flex;
   flex-direction: column;
   gap: var(--s-7);
@@ -218,7 +218,7 @@
   position: absolute;
   inset: -1px -40% auto;
   height: 160px;
-  background: radial-gradient(ellipse at top, rgba(255, 255, 255, 0.1), transparent 70%);
+  background: radial-gradient(ellipse at top, var(--white-100), transparent 70%);
   pointer-events: none;
 }
 

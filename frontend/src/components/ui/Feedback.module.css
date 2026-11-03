@@ -6,7 +6,7 @@
 
 .skeleton {
   border-radius: var(--r-md);
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 75%);
+  background: linear-gradient(90deg, var(--white-030) 25%, var(--white-080) 50%, var(--white-030) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.3s ease-in-out infinite;
 }
@@ -79,7 +79,7 @@
   padding: var(--s-4) var(--s-5);
   border: 1px dashed var(--c-border-strong);
   border-radius: var(--r-md);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--white-020);
   font-size: var(--fs-sm);
   color: var(--c-text-dim);
 }
@@ -103,9 +103,9 @@
   align-items: center;
   gap: var(--s-5);
   padding: var(--s-5) var(--s-6);
-  background: linear-gradient(180deg, rgba(34, 34, 34, 0.92), rgba(14, 14, 14, 0.94));
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: var(--g-float);
+  backdrop-filter: var(--fx-blur);
+  -webkit-backdrop-filter: var(--fx-blur);
   border: 1px solid var(--c-border-strong);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-lg);
@@ -117,8 +117,8 @@
 .toastStrong {
   background: var(--g-primary);
   color: var(--c-invert-text);
-  border-color: #fff;
-  box-shadow: var(--glow), 0 10px 30px rgba(0, 0, 0, 0.6);
+  border-color: var(--grey-ff);
+  box-shadow: var(--glow), 0 10px 30px var(--black-600);
 }
 
 .toastMessage {

@@ -39,11 +39,11 @@
   position: absolute;
   inset: -1px;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+    linear-gradient(var(--white-045) 1px, transparent 1px),
+    linear-gradient(90deg, var(--white-045) 1px, transparent 1px);
   background-size: 56px 56px;
-  mask-image: radial-gradient(ellipse 70% 65% at 50% 40%, #000 30%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse 70% 65% at 50% 40%, #000 30%, transparent 100%);
+  mask-image: radial-gradient(ellipse 70% 65% at 50% 40%, var(--grey-00) 30%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 65% at 50% 40%, var(--grey-00) 30%, transparent 100%);
 }
 
 .glowA,
@@ -59,7 +59,7 @@
   height: 62vw;
   left: -18vw;
   top: -30vw;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 65%);
+  background: radial-gradient(circle, var(--white-160), transparent 65%);
 }
 
 .glowB {
@@ -67,7 +67,7 @@
   height: 55vw;
   right: -22vw;
   bottom: -28vw;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0) 65%);
+  background: radial-gradient(circle, var(--white-120), transparent 65%);
 }
 
 .spot {
@@ -75,7 +75,7 @@
   inset: 0;
   background: radial-gradient(
     520px circle at var(--spot-x, 50%) var(--spot-y, 40%),
-    rgba(255, 255, 255, 0.075),
+    var(--white-080),
     transparent 60%
   );
   transition: background-position 0.2s;
@@ -206,11 +206,11 @@
 .solidBtn {
   background: var(--c-invert-bg);
   color: var(--c-invert-text);
-  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 16px var(--white-120);
 }
 .solidBtn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 26px rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 26px var(--white-200);
 }
 
 @media (min-width: 900px) {
@@ -256,11 +256,11 @@
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--c-text);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(180deg, var(--white-100), var(--white-030));
+  border: 1px solid var(--white-160);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.12) inset,
-    0 8px 24px rgba(0, 0, 0, 0.6);
+    0 1px 0 var(--white-120) inset,
+    0 8px 24px var(--black-600);
 }
 
 .badge strong {
@@ -276,15 +276,15 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.9);
+  background: var(--grey-ff);
+  box-shadow: 0 0 10px var(--white-900);
 }
 .pulse::after {
   content: '';
   position: absolute;
   inset: -4px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--white-600);
   animation: ping 1.8s ease-out infinite;
 }
 
@@ -298,7 +298,7 @@
 
 .h1 em {
   font-style: normal;
-  background: linear-gradient(180deg, #fff 30%, #808080 140%);
+  background: linear-gradient(180deg, var(--grey-ff) 30%, var(--grey-7a) 140%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -335,29 +335,29 @@
 }
 
 .primary {
-  background: linear-gradient(180deg, #fff, #e6e6e6);
+  background: linear-gradient(180deg, var(--grey-ff), var(--grey-e5));
   color: var(--c-invert-text);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 10px 30px rgba(255, 255, 255, 0.16),
-    0 2px 6px rgba(0, 0, 0, 0.5);
+    0 1px 0 var(--white-900) inset,
+    0 10px 30px var(--white-160),
+    0 2px 6px var(--black-500);
 }
 .primary:hover {
   transform: translateY(-2px);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 16px 40px rgba(255, 255, 255, 0.26),
-    0 2px 6px rgba(0, 0, 0, 0.5);
+    0 1px 0 var(--white-900) inset,
+    0 16px 40px var(--white-250),
+    0 2px 6px var(--black-500);
 }
 
 .secondary {
   color: var(--c-text);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset;
+  background: linear-gradient(180deg, var(--white-080), var(--white-020));
+  border: 1px solid var(--white-140);
+  box-shadow: 0 1px 0 var(--white-080) inset;
 }
 .secondary:hover {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04));
+  background: linear-gradient(180deg, var(--white-120), var(--white-040));
   transform: translateY(-2px);
 }
 
@@ -397,14 +397,14 @@
 .floating {
   position: absolute;
   border-radius: 14px;
-  background: linear-gradient(180deg, #171717, #0b0b0b);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, var(--grey-14), var(--grey-0a));
+  border: 1px solid var(--white-100);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.14) inset,
-    0 -1px 0 rgba(0, 0, 0, 0.8) inset,
-    0 30px 60px rgba(0, 0, 0, 0.85),
-    0 10px 20px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(0, 0, 0, 0.8);
+    0 1px 0 var(--white-140) inset,
+    0 -1px 0 var(--black-800) inset,
+    0 30px 60px var(--black-900),
+    0 10px 20px var(--black-600),
+    0 0 0 1px var(--black-800);
 }
 
 .cardMain {
@@ -459,8 +459,8 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #808080, #fff);
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
+  background: linear-gradient(90deg, var(--grey-7a), var(--grey-ff));
+  box-shadow: 0 0 12px var(--white-500);
   animation: fill 1.4s 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
@@ -476,8 +476,8 @@
   gap: var(--s-5);
   padding: 9px 10px;
   border-radius: var(--r-md);
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--white-025);
+  border: 1px solid var(--white-050);
   font-size: var(--fs-md);
 }
 
@@ -493,8 +493,8 @@
 }
 
 .taskDone .check {
-  background: #fff;
-  border-color: #fff;
+  background: var(--grey-ff);
+  border-color: var(--grey-ff);
 }
 
 .taskDone .taskTitle {
@@ -566,7 +566,7 @@
   font-weight: 600;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 18px rgba(255, 255, 255, 0.35);
+  text-shadow: 0 0 18px var(--white-350);
 }
 
 .miniSub {
@@ -585,12 +585,12 @@
 .bars i {
   flex: 1;
   border-radius: 3px 3px 1px 1px;
-  background: linear-gradient(180deg, #fff, #404040);
+  background: linear-gradient(180deg, var(--grey-ff), var(--grey-3d));
   transform-origin: bottom;
   animation: grow 1s 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 .bars i:nth-child(4) {
-  box-shadow: 0 0 14px rgba(255, 255, 255, 0.45);
+  box-shadow: 0 0 14px var(--white-450);
 }
 
 .tgHead {
@@ -607,8 +607,8 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: #fff;
-  color: #000;
+  background: var(--grey-ff);
+  color: var(--grey-00);
 }
 
 .tgTime {
@@ -643,8 +643,8 @@
   width: max-content;
   padding: 5px 10px;
   border-radius: 10px 10px 3px 10px;
-  background: #fff;
-  color: #000;
+  background: var(--grey-ff);
+  color: var(--grey-00);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   font-weight: 600;
@@ -677,11 +677,11 @@
   gap: 10px;
   padding: 11px 12px;
   border-radius: 12px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, var(--white-045), var(--white-012));
+  border: 1px solid var(--white-080);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.07) inset,
-    0 10px 24px rgba(0, 0, 0, 0.5);
+    0 1px 0 var(--white-070) inset,
+    0 10px 24px var(--black-500);
   transition:
     transform var(--t-base),
     border-color var(--t-base),
@@ -690,8 +690,8 @@
 
 .tile:hover {
   transform: translateY(-3px);
-  border-color: rgba(255, 255, 255, 0.2);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+  border-color: var(--white-200);
+  background: linear-gradient(180deg, var(--white-080), var(--white-020));
 }
 
 .tileIcon {
@@ -701,9 +701,9 @@
   display: grid;
   place-items: center;
   border-radius: 9px;
-  background: linear-gradient(180deg, #262626, #121212);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset;
+  background: linear-gradient(180deg, var(--grey-2b), var(--grey-14));
+  border: 1px solid var(--white-100);
+  box-shadow: 0 1px 0 var(--white-120) inset;
 }
 
 .tileBody {

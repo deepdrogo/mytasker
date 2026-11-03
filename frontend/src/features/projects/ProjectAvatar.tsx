@@ -31,6 +31,8 @@ export function seed(id: number, name: string): number {
 }
 
 const MOTIFS = 5;
+/** Light end of the avatar gradient, from the grey ramp. */
+const SHADES = ['var(--grey-1f)', 'var(--grey-2b)', 'var(--grey-3d)'];
 let uid = 0;
 
 export function ProjectAvatar(props: { project: AvatarProject; size?: number; class?: string }): JSX.Element {
@@ -65,23 +67,23 @@ function Generated(props: { project: AvatarProject }): JSX.Element {
   const hash = () => seed(props.project.id, props.project.name);
   const motif = () => hash() % MOTIFS;
   // Monochrome, like the rest of the app: projects differ by shade, light direction, motif and initials.
-  const top = () => 20 + (Math.floor(hash() / MOTIFS) % 5) * 4;
+  const top = () => SHADES[Math.floor(hash() / MOTIFS) % SHADES.length]!;
   const flip = () => Math.floor(hash() / 25) % 2 === 1;
   const text = () => initials(props.project.name);
   return (
     <svg viewBox="0 0 64 64" class={styles.svg}>
       <defs>
         <linearGradient id={`${id}g`} x1={flip() ? '1' : '0'} y1="0" x2={flip() ? '0' : '1'} y2="1">
-          <stop offset="0" stop-color={`hsl(0 0% ${top()}%)`} />
-          <stop offset="1" stop-color="hsl(0 0% 6%)" />
+          <stop offset="0" style={{ 'stop-color': top() }} />
+          <stop offset="1" style={{ 'stop-color': 'var(--grey-0a)' }} />
         </linearGradient>
         <radialGradient id={`${id}l`} cx="0.25" cy="0.1" r="0.9">
-          <stop offset="0" stop-color="#fff" stop-opacity="0.35" />
-          <stop offset="0.6" stop-color="#fff" stop-opacity="0" />
+          <stop offset="0" style={{ 'stop-color': 'var(--grey-ff)', 'stop-opacity': '0.35' }} />
+          <stop offset="0.6" style={{ 'stop-color': 'var(--grey-ff)', 'stop-opacity': '0' }} />
         </radialGradient>
       </defs>
       <rect width="64" height="64" fill={`url(#${id}g)`} />
-      <g fill="none" stroke="#fff" stroke-opacity="0.14" stroke-width="3">
+      <g fill="none" style={{ stroke: 'var(--grey-ff)' }} stroke-opacity="0.14" stroke-width="3">
         <Show when={motif() === 0}>
           <circle cx="54" cy="56" r="22" />
           <circle cx="54" cy="56" r="12" />

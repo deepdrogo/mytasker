@@ -195,4 +195,5 @@ export const core: Record<string, string> = {
   'Unpin sidebar - it slides over again': 'მენიუს მოხსნა - ისევ გამოცოცდება და ჩაიკეცება',
   'Collapse sidebar': 'მენიუს ჩაკეცვა',
   Change: 'შეცვლა',
+  Filters: 'ფილტრები',
 };

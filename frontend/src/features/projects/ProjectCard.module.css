@@ -23,7 +23,7 @@
   position: absolute;
   inset: 0 0 auto;
   height: 1px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.35), transparent 70%);
+  background: linear-gradient(90deg, var(--white-350), transparent 70%);
 }
 
 .card:hover {
@@ -31,7 +31,7 @@
   border-color: var(--c-border-strong);
   box-shadow:
     var(--rim-top),
-    0 18px 40px rgba(0, 0, 0, 0.55);
+    0 18px 40px var(--black-550);
 }
 
 .card:focus-visible {
@@ -138,16 +138,16 @@
 }
 
 .star:hover {
-  color: #f4c95d;
-  border-color: rgba(244, 201, 93, 0.35);
+  color: var(--grey-c9);
+  border-color: var(--white-300);
 }
 
 .starOn,
 .starOn:hover {
-  color: #f4c95d;
+  color: var(--grey-c9);
 }
 
 .starOn svg {
   fill: currentColor;
-  filter: drop-shadow(0 0 6px rgba(244, 201, 93, 0.55));
+  filter: drop-shadow(0 0 6px var(--white-450));
 }

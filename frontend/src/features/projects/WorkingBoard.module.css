@@ -101,7 +101,7 @@
   padding: 0 6px;
   border-radius: 6px;
   border: 1px solid var(--c-border-strong);
-  background: var(--c-surface-2);
+  background: var(--bg-field);
   color: var(--c-text);
   font: inherit;
   font-size: 12px;
@@ -133,18 +133,18 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #f5c451;
-  box-shadow: 0 0 6px rgba(245, 196, 81, 0.45);
+  background: var(--state-waiting);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--state-waiting) 45%, transparent);
 }
 
 .keyWorking {
-  background: #2ee36a;
-  box-shadow: 0 0 6px rgba(46, 227, 106, 0.5);
+  background: var(--state-working);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--state-working) 50%, transparent);
 }
 
 .keyActive {
-  background: #ff8a3d;
-  box-shadow: 0 0 6px rgba(255, 138, 61, 0.5);
+  background: var(--state-active);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--state-active) 50%, transparent);
 }
 
 .totalPart,
@@ -225,11 +225,11 @@
   border-radius: 16px;
   border: 1px solid var(--c-border-strong);
   background:
-    radial-gradient(90% 120% at 0% 0%, rgba(255, 255, 255, 0.07), transparent 60%),
-    rgba(255, 255, 255, 0.025);
+    radial-gradient(90% 120% at 0% 0%, var(--white-070), transparent 60%),
+    var(--white-025);
   box-shadow:
     var(--rim-top-strong),
-    0 12px 30px rgba(0, 0, 0, 0.45);
+    0 12px 30px var(--black-450);
 }
 
 .spotlightLabel {
@@ -247,7 +247,7 @@
 .spotlightCount {
   padding: 0 6px;
   border-radius: var(--r-full);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--white-080);
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0;
@@ -256,7 +256,7 @@
 
 /* Working cards on the shelf read a step brighter than the rest. */
 .spotlight .chip {
-  border-color: rgba(255, 255, 255, 0.16);
+  border-color: var(--white-160);
   background: var(--g-surface-raised);
 }
 
@@ -285,12 +285,12 @@
   border-color: var(--c-border-strong);
   box-shadow:
     var(--rim-top),
-    0 10px 24px rgba(0, 0, 0, 0.5);
+    0 10px 24px var(--black-500);
 }
 
 /* Only the dot carries the state colour; the card stays monochrome. Working reads a touch brighter. */
 .chipWorking {
-  border-color: rgba(255, 255, 255, 0.14);
+  border-color: var(--white-140);
   background: var(--g-surface-raised);
 }
 
@@ -302,7 +302,7 @@
 .chipDragging {
   opacity: 1;
   z-index: 2;
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 14px 30px var(--black-550);
 }
 
 .avatarGrip {
@@ -436,7 +436,7 @@
 }
 
 .starOn {
-  color: #f5c451;
+  color: var(--state-waiting);
 }
 
 .dot {
@@ -446,9 +446,9 @@
   margin: 0 4px;
   padding: 0;
   border-radius: 50%;
-  border: 1.5px solid rgba(245, 196, 81, 0.75);
-  background: linear-gradient(180deg, #f8d26a 0%, #d99a1e 100%);
-  box-shadow: 0 0 7px rgba(245, 196, 81, 0.4);
+  border: 1.5px solid color-mix(in srgb, var(--state-waiting) 75%, transparent);
+  background: linear-gradient(180deg, var(--state-waiting-light) 0%, var(--state-waiting-deep) 100%);
+  box-shadow: 0 0 7px color-mix(in srgb, var(--state-waiting) 40%, transparent);
   cursor: pointer;
   transition:
     transform 0.12s ease,
@@ -464,15 +464,15 @@
 }
 
 .dotActive {
-  border-color: rgba(255, 138, 61, 0.75);
-  background: linear-gradient(180deg, #ffa25c 0%, #e8621c 100%);
-  box-shadow: 0 0 8px rgba(255, 138, 61, 0.45);
+  border-color: color-mix(in srgb, var(--state-active) 75%, transparent);
+  background: linear-gradient(180deg, var(--state-active-light) 0%, var(--state-active-deep) 100%);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--state-active) 45%, transparent);
 }
 
 .dotWorking {
-  border-color: rgba(46, 227, 106, 0.7);
-  background: linear-gradient(180deg, #2ee36a 0%, #17a34a 100%);
-  box-shadow: 0 0 8px rgba(34, 197, 94, 0.45);
+  border-color: color-mix(in srgb, var(--state-working) 70%, transparent);
+  background: linear-gradient(180deg, var(--state-working) 0%, var(--state-working-deep) 100%);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--state-working) 45%, transparent);
 }
 
 @media (max-width: 699px) {

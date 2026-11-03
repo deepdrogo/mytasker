@@ -90,6 +90,7 @@ export function ProjectListPage(props: ProjectListPageProps): JSX.Element {
             {t('New')}
           </Button>
         }
+        collapseToolbar
         toolbar={
           <div class={styles.toolbar}>
             <Input

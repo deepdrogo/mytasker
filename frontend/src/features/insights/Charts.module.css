@@ -97,6 +97,8 @@
   font-size: var(--fs-2xl);
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
+  text-shadow: var(--neon-text);
+  font-variant-numeric: tabular-nums;
 }
 
 .statDelta {

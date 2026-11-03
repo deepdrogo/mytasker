@@ -2,9 +2,9 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-palette);
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: var(--bg-scrim);
+  backdrop-filter: var(--fx-blur-scrim);
+  -webkit-backdrop-filter: var(--fx-blur-scrim);
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -27,10 +27,12 @@
   max-height: 70vh;
   display: flex;
   flex-direction: column;
-  background: var(--g-surface);
+  background: var(--g-float);
+  backdrop-filter: var(--fx-blur);
+  -webkit-backdrop-filter: var(--fx-blur);
   border: 1px solid var(--c-border-strong);
   border-radius: var(--r-xl);
-  box-shadow: var(--shadow-lg), 0 0 80px rgba(255, 255, 255, 0.05);
+  box-shadow: var(--shadow-lg), 0 0 80px var(--white-050);
   overflow: hidden;
   animation: pop var(--t-slow);
 }
