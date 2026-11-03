@@ -12,7 +12,7 @@
   grid-template-rows: auto 1fr auto auto;
   padding: 0 var(--pad-x);
   color: var(--c-text);
-  background: var(--c-bg);
+  background: transparent;
   overflow-x: hidden;
 }
 
@@ -32,42 +32,6 @@
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
-  background: var(--c-bg);
-}
-
-.grid {
-  position: absolute;
-  inset: -1px;
-  background-image:
-    linear-gradient(var(--white-045) 1px, transparent 1px),
-    linear-gradient(90deg, var(--white-045) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: radial-gradient(ellipse 70% 65% at 50% 40%, var(--grey-00) 30%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse 70% 65% at 50% 40%, var(--grey-00) 30%, transparent 100%);
-}
-
-.glowA,
-.glowB {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(70px);
-  opacity: 0.55;
-}
-
-.glowA {
-  width: 62vw;
-  height: 62vw;
-  left: -18vw;
-  top: -30vw;
-  background: radial-gradient(circle, var(--white-160), transparent 65%);
-}
-
-.glowB {
-  width: 55vw;
-  height: 55vw;
-  right: -22vw;
-  bottom: -28vw;
-  background: radial-gradient(circle, var(--white-120), transparent 65%);
 }
 
 .spot {
@@ -79,6 +43,10 @@
     transparent 60%
   );
   transition: background-position 0.2s;
+}
+
+:global(html[data-fx='low']) .spot {
+  display: none;
 }
 
 /* ------------------------------------------------------------------ nav */
@@ -210,7 +178,7 @@
 }
 .solidBtn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 26px var(--white-200);
+  box-shadow: var(--neon-ring);
 }
 
 @media (min-width: 900px) {
@@ -289,6 +257,8 @@
 }
 
 .h1 {
+  font-family: var(--font-display);
+  text-shadow: var(--neon-text);
   font-size: clamp(34px, 4.1vw, 60px);
   line-height: 1.02;
   letter-spacing: -0.035em;
@@ -335,26 +305,24 @@
 }
 
 .primary {
-  background: linear-gradient(180deg, var(--grey-ff), var(--grey-e5));
+  background: var(--grey-ff);
   color: var(--c-invert-text);
   box-shadow:
-    0 1px 0 var(--white-900) inset,
     0 10px 30px var(--white-160),
     0 2px 6px var(--black-500);
 }
 .primary:hover {
   transform: translateY(-2px);
   box-shadow:
-    0 1px 0 var(--white-900) inset,
-    0 16px 40px var(--white-250),
+    var(--neon-ring),
     0 2px 6px var(--black-500);
 }
 
 .secondary {
   color: var(--c-text);
-  background: linear-gradient(180deg, var(--white-080), var(--white-020));
-  border: 1px solid var(--white-140);
-  box-shadow: 0 1px 0 var(--white-080) inset;
+  background: var(--g-surface-raised);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--glass-rim);
 }
 .secondary:hover {
   background: linear-gradient(180deg, var(--white-120), var(--white-040));
@@ -397,14 +365,18 @@
 .floating {
   position: absolute;
   border-radius: 14px;
-  background: linear-gradient(180deg, var(--grey-14), var(--grey-0a));
-  border: 1px solid var(--white-100);
+  background: var(--g-surface);
+  border: 1px solid var(--line-strong);
   box-shadow:
-    0 1px 0 var(--white-140) inset,
-    0 -1px 0 var(--black-800) inset,
+    var(--glass-rim),
     0 30px 60px var(--black-900),
-    0 10px 20px var(--black-600),
-    0 0 0 1px var(--black-800);
+    0 10px 20px var(--black-600);
+}
+
+.floating {
+  background: var(--g-float);
+  backdrop-filter: var(--fx-blur);
+  -webkit-backdrop-filter: var(--fx-blur);
 }
 
 .cardMain {
@@ -676,12 +648,10 @@
   display: flex;
   gap: 10px;
   padding: 11px 12px;
-  border-radius: 12px;
-  background: linear-gradient(180deg, var(--white-045), var(--white-012));
-  border: 1px solid var(--white-080);
-  box-shadow:
-    0 1px 0 var(--white-070) inset,
-    0 10px 24px var(--black-500);
+  border-radius: 14px;
+  background: var(--g-surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-card);
   transition:
     transform var(--t-base),
     border-color var(--t-base),
@@ -690,8 +660,8 @@
 
 .tile:hover {
   transform: translateY(-3px);
-  border-color: var(--white-200);
-  background: linear-gradient(180deg, var(--white-080), var(--white-020));
+  border-color: var(--line-strong);
+  background: var(--g-surface-raised);
 }
 
 .tileIcon {

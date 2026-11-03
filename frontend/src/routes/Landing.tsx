@@ -112,9 +112,6 @@ function LandingView(): JSX.Element {
         aria-hidden="true"
         style={{ '--spot-x': `${spot().x}%`, '--spot-y': `${spot().y}%` }}
       >
-        <div class={styles.grid} />
-        <div class={styles.glowA} />
-        <div class={styles.glowB} />
         <div class={styles.spot} />
       </div>
 
