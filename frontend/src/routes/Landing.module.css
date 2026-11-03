@@ -72,8 +72,31 @@
   color: var(--c-text-dim);
 }
 
+.navLinks a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: color var(--t-fast);
+}
+
+.navLinks a svg {
+  color: var(--accent);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 45%, transparent));
+}
+
 .navLinks a:hover {
   color: var(--c-text);
+}
+
+/* Small colour accents, the same three as the Working-board dots. */
+.accentGreen {
+  --accent: var(--state-working);
+}
+.accentOrange {
+  --accent: var(--state-active);
+}
+.accentYellow {
+  --accent: var(--state-waiting);
 }
 
 .navActions {
@@ -139,10 +162,19 @@
   text-decoration-color: var(--c-text);
 }
 
-.footGithub {
+.footIcon {
   display: inline-flex;
   align-items: center;
-  gap: var(--s-2);
+  gap: 6px;
+}
+
+.footIcon svg {
+  color: var(--c-text-faint);
+  transition: color var(--t-fast);
+}
+
+.footIcon:hover svg {
+  color: var(--c-text);
 }
 
 .ghostBtn,
@@ -244,15 +276,15 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--grey-ff);
-  box-shadow: 0 0 10px var(--white-900);
+  background: var(--state-working);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--state-working) 80%, transparent);
 }
 .pulse::after {
   content: '';
   position: absolute;
   inset: -4px;
   border-radius: 50%;
-  border: 1px solid var(--white-600);
+  border: 1px solid color-mix(in srgb, var(--state-working) 55%, transparent);
   animation: ping 1.8s ease-out infinite;
 }
 
@@ -484,11 +516,37 @@
 
 .taskTag {
   flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: var(--fs-xs);
   color: var(--c-text-dim);
   padding: 2px 7px;
   border-radius: var(--r-full);
   border: 1px solid var(--c-border);
+}
+
+.tagDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+.liveDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--state-working);
+  box-shadow: 0 0 8px var(--state-working-glow);
+  animation: live 1.6s ease-in-out infinite;
+}
+
+@keyframes live {
+  50% {
+    opacity: 0.35;
+  }
 }
 
 .floating {
@@ -660,7 +718,7 @@
 
 .tile:hover {
   transform: translateY(-3px);
-  border-color: var(--line-strong);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line-strong));
   background: var(--g-surface-raised);
 }
 
@@ -671,9 +729,18 @@
   display: grid;
   place-items: center;
   border-radius: 9px;
-  background: linear-gradient(180deg, var(--grey-2b), var(--grey-14));
-  border: 1px solid var(--white-100);
-  box-shadow: 0 1px 0 var(--white-120) inset;
+  color: var(--accent);
+  background:
+    radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%),
+    linear-gradient(180deg, var(--grey-2b), var(--grey-14));
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--white-100));
+  box-shadow:
+    0 1px 0 var(--white-120) inset,
+    0 0 14px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.tileIcon svg {
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--accent) 50%, transparent));
 }
 
 .tileBody {

@@ -11,12 +11,16 @@ import {
   FolderKanban,
   Github,
   Heart,
+  LayoutGrid,
+  LifeBuoy,
   ListChecks,
+  LogIn,
   Repeat,
   Send,
   Sparkles,
   Sun,
   Timer,
+  UserPlus,
   Users,
 } from 'lucide-solid';
 import type { Component, JSX } from 'solid-js';
@@ -47,6 +51,9 @@ const FEATURES: Feature[] = [
   { icon: Bot, title: 'AI command bar', text: 'Admin-only assistant that turns plain language into tasks and plans.' },
   { icon: Users, title: 'Collaboration', text: 'Comments, mentions, activity feed and public share links.' },
 ];
+
+/** Feature tiles take the Working-board colours in turn: green, orange, yellow. */
+const TILE_ACCENTS = [styles.accentGreen, styles.accentOrange, styles.accentYellow];
 
 const MOCK_TASKS = [
   { title: 'Ship landing page', tag: 'Business', done: true },
@@ -120,11 +127,18 @@ function LandingView(): JSX.Element {
           <Logo size={30} />
         </A>
         <nav class={styles.navLinks} aria-label="Primary">
-          <a href="#features">Features</a>
-          <a href={botUrl()} target="_blank" rel="noreferrer">
+          <a href="#features" class={styles.accentGreen}>
+            <LayoutGrid size={14} stroke-width={2} />
+            Features
+          </a>
+          <a href={botUrl()} target="_blank" rel="noreferrer" class={styles.accentOrange}>
+            <Send size={14} stroke-width={2} />
             Telegram
           </a>
-          <A href="/support">Support</A>
+          <A href="/support" class={styles.accentYellow}>
+            <LifeBuoy size={14} stroke-width={2} />
+            Support
+          </A>
         </nav>
         <div class={styles.navActions}>
           <a href={GITHUB_URL} class={styles.githubBtn} target="_blank" rel="noreferrer" aria-label="MyTasker on GitHub">
@@ -215,7 +229,10 @@ function LandingView(): JSX.Element {
                         </Show>
                       </span>
                       <span class={styles.taskTitle}>{t.title}</span>
-                      <span class={styles.taskTag}>{t.tag}</span>
+                      <span class={`${styles.taskTag} ${t.tag === 'Business' ? styles.accentOrange : styles.accentYellow}`}>
+                        <i class={styles.tagDot} />
+                        {t.tag}
+                      </span>
                     </li>
                   )}
                 </For>
@@ -224,6 +241,7 @@ function LandingView(): JSX.Element {
 
             <div class={`${styles.floating} ${styles.cardTimer}`}>
               <div class={styles.miniHead}>
+                <i class={styles.liveDot} aria-hidden="true" />
                 <Timer size={13} stroke-width={2.2} />
                 Timer running
               </div>
@@ -261,8 +279,8 @@ function LandingView(): JSX.Element {
 
       <section id="features" class={styles.features} aria-label="Features">
         <For each={FEATURES}>
-          {(f) => (
-            <article class={styles.tile}>
+          {(f, index) => (
+            <article class={`${styles.tile} ${TILE_ACCENTS[index() % TILE_ACCENTS.length]}`}>
               <span class={styles.tileIcon}>
                 <f.icon size={16} stroke-width={1.9} />
               </span>
@@ -286,17 +304,26 @@ function LandingView(): JSX.Element {
           - no premium tier, no trials, no paywalls.
         </span>
         <span class={styles.footLinks}>
-          <A href="/auth/login">Log in</A>
-          <A href="/auth/register">Create account</A>
-          <a href={botUrl()} target="_blank" rel="noreferrer">
-            @{botUsername()}
+          <A href="/auth/login" class={styles.footIcon}>
+            <LogIn size={12} stroke-width={2.2} />
+            Log in
+          </A>
+          <A href="/auth/register" class={styles.footIcon}>
+            <UserPlus size={12} stroke-width={2.2} />
+            Create account
+          </A>
+          <a href={botUrl()} target="_blank" rel="noreferrer" class={styles.footIcon}>
+            <Bot size={12} stroke-width={2.2} />@{botUsername()}
           </a>
-          <a href={AUTHOR_TELEGRAM} target="_blank" rel="noreferrer" class={styles.footGithub}>
+          <a href={AUTHOR_TELEGRAM} target="_blank" rel="noreferrer" class={styles.footIcon}>
             <Send size={12} stroke-width={2.2} />
             Author: @drogoz
           </a>
-          <A href="/support">Support hosting</A>
-          <a href={GITHUB_URL} target="_blank" rel="noreferrer" class={styles.footGithub}>
+          <A href="/support" class={styles.footIcon}>
+            <Heart size={12} stroke-width={2.2} />
+            Support hosting
+          </A>
+          <a href={GITHUB_URL} target="_blank" rel="noreferrer" class={styles.footIcon}>
             <Github size={13} stroke-width={2.2} />
             GitHub
           </a>
