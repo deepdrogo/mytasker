@@ -30,7 +30,8 @@ from apps.accounts.serializers import (
     UserPreferenceSerializer,
     VerifyEmailSerializer,
 )
-from common.throttling import AuthLoginThrottle, AuthRegisterThrottle, PasswordResetThrottle
+from apps.security import signup as signup_guard
+from common.throttling import AssistantLinkThrottle, AuthLoginThrottle, AuthRegisterThrottle, PasswordResetThrottle
 
 
 def _me_payload(user):
@@ -53,6 +54,7 @@ def csrf(request: Request) -> Response:
 @permission_classes([AllowAny])
 @throttle_classes([AuthRegisterThrottle])
 def register(request: Request) -> Response:
+    signup_guard.check(request)
     serializer = RegisterSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     data = serializer.validated_data
@@ -62,6 +64,7 @@ def register(request: Request) -> Response:
         full_name=data.get("full_name", ""),
         timezone_name=data.get("timezone", "UTC"),
     )
+    signup_guard.record(user, request)
     services.login_user(request._request, email=data["email"], password=data["password"])
     return Response(_me_payload(user), status=status.HTTP_201_CREATED)
 
@@ -70,6 +73,7 @@ def register(request: Request) -> Response:
 @permission_classes([AllowAny])
 @throttle_classes([AuthLoginThrottle])
 def login_view(request: Request) -> Response:
+    signup_guard.enforce_csrf(request)
     serializer = LoginSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     user = services.login_user(
@@ -253,6 +257,7 @@ def _link_payload(link) -> dict:
 
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
+@throttle_classes([AssistantLinkThrottle])
 def linked_assistants(request: Request) -> Response:
     """Existing accounts that write tasks for the user from their own login."""
     from common.exceptions import Forbidden

@@ -1,0 +1,6 @@
+[Unit]
+Description=Sync the MyTasker IP blocklist into nginx deny rules
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/mytasker-blocklist-sync

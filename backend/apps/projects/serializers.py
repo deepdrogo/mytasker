@@ -155,12 +155,18 @@ class ProjectReorderSerializer(serializers.Serializer):
 
 
 class MembershipSerializer(serializers.ModelSerializer):
-    user = UserRefSerializer(read_only=True)
+    user = serializers.SerializerMethodField()
 
     class Meta:
         model = ProjectMembership
         fields = ["id", "user", "invited_email", "role", "accepted_at", "created_at"]
         read_only_fields = fields
+
+    def get_user(self, obj):
+        # Until the invite is accepted the inviter must not learn whether that e-mail has an account (or its name).
+        if obj.user_id is None or (obj.accepted_at is None and obj.role != ProjectMembership.Role.OWNER):
+            return None
+        return UserRefSerializer(obj.user).data
 
 
 class InviteSerializer(serializers.Serializer):

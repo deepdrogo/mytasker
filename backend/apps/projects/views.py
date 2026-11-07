@@ -28,6 +28,7 @@ from apps.projects.serializers import (
 from common.actors import Actor
 from common.exceptions import ValidationFailed
 from common.permissions import Capability
+from common.throttling import FindLogoThrottle, MemberInviteThrottle
 from common.tz import today_for
 
 
@@ -129,7 +130,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             project = services.set_working(self._actor(), int(pk), working=bool(request.data.get("working", True)))
         return self._respond(project)
 
-    @action(detail=True, methods=["post"], url_path="find-logo")
+    @action(detail=True, methods=["post"], url_path="find-logo", throttle_classes=[FindLogoThrottle])
     def find_logo(self, request, pk=None):
         """One button: `{"website": "example.com"}` (optional) -> logo from drogoz.network or the site's favicon."""
         website = request.data.get("website") if hasattr(request.data, "get") else None
@@ -153,7 +154,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project = services.change_mode(self._actor(), int(pk), mode=serializer.validated_data["mode"])
         return self._respond(project)
 
-    @action(detail=True, methods=["get", "post"])
+    @action(detail=True, methods=["get", "post"], throttle_classes=[MemberInviteThrottle])
     def members(self, request, pk=None):
         project = services.get_project_for_user(int(pk), request.user, capability=Capability.VIEW_ACTIVITY)
         if request.method == "POST":

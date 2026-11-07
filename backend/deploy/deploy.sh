@@ -51,9 +51,21 @@ chmod o+x "$BACKEND" && chmod -R o+rX "$BACKEND/media"
 if [[ $DO_BACKEND == 1 ]]; then
   log "Services"
   cp "$BACKEND"/deploy/systemd/*.service /etc/systemd/system/
+  mkdir -p "$BACKEND/var" && chown "$APP_USER:$APP_USER" "$BACKEND/var"
+
+  log "Security shield: nginx blocklist sync, scanner trap, SSH alerts"
+  install -m 0755 -o root -g root "$BACKEND/deploy/security/mytasker-blocklist-sync" /usr/local/sbin/
+  install -m 0755 -o root -g root "$BACKEND/deploy/security/mytasker-ssh-alert" /usr/local/sbin/
+  install -m 0644 -o root -g root "$BACKEND"/deploy/security/mytasker-blocklist.{service,path,timer} /etc/systemd/system/
+  install -m 0644 -o root -g root "$BACKEND/deploy/nginx/mytasker-trap-proxy.conf" /etc/nginx/snippets/
+  [[ -f /etc/nginx/snippets/mytasker-blocklist.conf ]] || install -m 0644 /dev/null /etc/nginx/snippets/mytasker-blocklist.conf
+  grep -q mytasker-ssh-alert /etc/pam.d/sshd ||
+    printf 'session    optional     pam_exec.so quiet /usr/local/sbin/mytasker-ssh-alert\n' >> /etc/pam.d/sshd
+
   systemctl daemon-reload
-  systemctl enable --quiet mytasker-web mytasker-worker mytasker-beat
-  systemctl restart mytasker-web mytasker-worker mytasker-beat
+  systemctl enable --quiet mytasker-web mytasker-worker mytasker-beat mytasker-security-bot
+  systemctl enable --quiet --now mytasker-blocklist.path mytasker-blocklist.timer
+  systemctl restart mytasker-web mytasker-worker mytasker-beat mytasker-security-bot
 
   if ! cmp -s "$BACKEND/deploy/nginx/mytasker.io.conf" /etc/nginx/sites-enabled/mytasker.io.conf; then
     log "nginx vhost changed - installing"
@@ -68,7 +80,9 @@ if [[ $DO_BACKEND == 1 ]]; then
     [[ $i == 5 ]] && { echo "health check failed" >&2; journalctl -u mytasker-web -n 30 --no-pager; exit 1; }
     sleep 2
   done
-  systemctl --no-pager --lines=0 status mytasker-web mytasker-worker mytasker-beat | grep -E "●|Active:"
+  /usr/local/sbin/mytasker-blocklist-sync || echo "blocklist sync failed (see journalctl -t mytasker-blocklist)" >&2
+  systemctl --no-pager --lines=0 status mytasker-web mytasker-worker mytasker-beat mytasker-security-bot |
+    grep -E "●|Active:"
 fi
 
 log "Done"

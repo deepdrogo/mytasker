@@ -1,0 +1,29 @@
+[Unit]
+Description=MyTasker owner-only security Telegram bot (long polling)
+After=network.target postgresql.service redis-server.service
+Wants=postgresql.service redis-server.service
+
+[Service]
+Type=simple
+User=mytasker
+Group=mytasker
+WorkingDirectory=/home/mytasker/htdocs/mytasker.io/backend
+EnvironmentFile=/home/mytasker/htdocs/mytasker.io/backend/.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/mytasker/htdocs/mytasker.io/backend/.venv/bin/python manage.py security_bot
+Restart=always
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=20
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/home/mytasker/htdocs/mytasker.io/backend/var
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target

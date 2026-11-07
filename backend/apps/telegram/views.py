@@ -72,7 +72,7 @@ def deliveries(request):
     rows = (
         TelegramDelivery.objects.filter(user=request.user)
         .order_by("-created_at")
-        .values("id", "kind", "status", "attempts", "last_error", "created_at", "delivered_at")[:30]
+        .values("id", "status", "attempts", "last_error", "created_at", "delivered_at")[:30]
     )
     return Response(list(rows))
 

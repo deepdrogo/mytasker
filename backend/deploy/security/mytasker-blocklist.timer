@@ -1,0 +1,10 @@
+[Unit]
+Description=Re-sync the MyTasker IP blocklist every minute (safety net for the path unit)
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=60s
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target

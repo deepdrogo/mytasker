@@ -102,6 +102,7 @@ export async function register(input: {
   password: string;
   full_name?: string;
   timezone?: string;
+  mt_hp?: string;
 }): Promise<Me> {
   await ensureCsrf();
   const me = await api.post<Me>('/auth/register/', input);

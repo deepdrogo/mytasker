@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+#
+# PAM hook (sshd session): report every SSH login to the owner's security bot.
+# Installed as /usr/local/sbin/mytasker-ssh-alert and referenced from /etc/pam.d/sshd as
+#   session optional pam_exec.so quiet /usr/local/sbin/mytasker-ssh-alert
+# `optional` + detaching means a broken alert can never block or slow down a login.
+[[ ${PAM_TYPE:-} == open_session ]] || exit 0
+
+BACKEND=/home/mytasker/htdocs/mytasker.io/backend
+setsid -f bash -c '
+  cd "$0" || exit 0
+  exec timeout 30 runuser -u mytasker -- env DJANGO_SETTINGS_MODULE=config.settings.prod \
+    "$0/.venv/bin/python" manage.py security_alert --kind ssh_login \
+    --user "$1" --ip "$2" --service "$3" --host "$4"
+' "$BACKEND" "${PAM_USER:-?}" "${PAM_RHOST:-}" "${PAM_SERVICE:-sshd}" "$(hostname)" </dev/null >/dev/null 2>&1
+exit 0

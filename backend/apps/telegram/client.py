@@ -10,6 +10,17 @@ from django.conf import settings
 
 logger = logging.getLogger("mytasker.telegram")
 
+_http: httpx.Client | None = None
+
+
+def _client() -> httpx.Client:
+    # api.telegram.org's IPv6 route is black-holed from this host: every call stalled for the full timeout before
+    # falling back. Binding the local side to 0.0.0.0 keeps Telegram traffic on IPv4.
+    global _http
+    if _http is None:
+        _http = httpx.Client(transport=httpx.HTTPTransport(local_address="0.0.0.0", retries=1))
+    return _http
+
 
 class TelegramError(Exception):
     def __init__(
@@ -38,7 +49,7 @@ class TelegramClient:
             raise TelegramError("Telegram bot token is not configured.", permanent=True)
         payload = {k: v for k, v in params.items() if v is not None}
         try:
-            response = httpx.post(self._url(method), json=payload, timeout=self.timeout)
+            response = _client().post(self._url(method), json=payload, timeout=self.timeout)
         except httpx.HTTPError as exc:
             raise TelegramError(f"network error: {exc}") from exc
         try:

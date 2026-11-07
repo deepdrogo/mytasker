@@ -1,0 +1,9 @@
+[Unit]
+Description=Watch the MyTasker IP blocklist for changes
+
+[Path]
+PathChanged=/home/mytasker/htdocs/mytasker.io/backend/var/blocklist.txt
+Unit=mytasker-blocklist.service
+
+[Install]
+WantedBy=multi-user.target

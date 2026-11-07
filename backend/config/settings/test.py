@@ -17,3 +17,10 @@ PROJECT_ICONS_ENABLED = False  # same for favicon fetching: no network in tests
 TELEGRAM_BOT_TOKEN = "test-token"
 TELEGRAM_WEBHOOK_SECRET = "test-webhook-secret"
 LOGGING["handlers"]["console"]["formatter"] = "plain"  # noqa: F405
+SECURITY_SHIELD_ENABLED = False  # the shield's own tests switch it on
+SECURITY_REQUIRE_ORIGIN = False
+SECURITY_BOT_TOKEN = ""
+SECURITY_BLOCKLIST_FILE = ""
+SECURITY_SIGNUP_LIMITS = {"attempts_per_hour": 10000, "accounts_per_day": 10000, "min_gap_seconds": 0,
+                          "global_per_hour": 10000}
+CLOUDFLARE_API_TOKEN = ""

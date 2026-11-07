@@ -15,6 +15,8 @@ export default function Register(): JSX.Element {
   const [fullName, setFullName] = createSignal('');
   const [email, setEmail] = createSignal('');
   const [password, setPassword] = createSignal('');
+  // Honeypot: invisible to people, filled in by form-stuffing bots. The server refuses any sign-up that has it.
+  const [company, setCompany] = createSignal('');
   const [error, setError] = createSignal('');
   const [fieldErrors, setFieldErrors] = createSignal<Record<string, string>>({});
   const [busy, setBusy] = createSignal(false);
@@ -33,6 +35,7 @@ export default function Register(): JSX.Element {
         password: password(),
         full_name: fullName().trim(),
         timezone: guessTimezone(),
+        mt_hp: company(),
       });
       navigate(homeRoute(), { replace: true });
     } catch (err) {
@@ -59,6 +62,22 @@ export default function Register(): JSX.Element {
       </div>
 
       {error() && <ErrorNote message={error()} />}
+
+      <div class={styles.trap} aria-hidden="true">
+        <label>
+          Leave this empty
+          <input
+            type="text"
+            name="mt_hp"
+            tabindex="-1"
+            autocomplete="new-password"
+            data-lpignore="true"
+            data-1p-ignore
+            value={company()}
+            onInput={(e) => setCompany(e.currentTarget.value)}
+          />
+        </label>
+      </div>
 
       <Field label={t('Name')} id={nameId} error={fieldErrors().full_name}>
         <Input

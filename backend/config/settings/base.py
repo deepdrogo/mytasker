@@ -81,10 +81,12 @@ INSTALLED_APPS = [
     "apps.people",
     "apps.realtime",
     "apps.translations",
+    "apps.security",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "apps.security.middleware.SecurityShieldMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -170,6 +172,8 @@ CELERY_TASK_ROUTES = {
     "apps.notifications.tasks.*": {"queue": "notify"},
     "apps.analytics.tasks.*": {"queue": "default"},
     "apps.translations.tasks.*": {"queue": "default"},
+    "apps.security.tasks.send_alert": {"queue": "notify"},
+    "apps.security.tasks.*": {"queue": "default"},
 }
 # Static schedule; DatabaseScheduler picks these up on first run and they can be tuned in admin afterwards.
 CELERY_BEAT_SCHEDULE = {
@@ -178,6 +182,9 @@ CELERY_BEAT_SCHEDULE = {
     "daily-rollup-hourly": {"task": "apps.analytics.tasks.rollup_daily_summaries", "schedule": 60 * 60.0},
     "telegram-log-cleanup": {"task": "apps.telegram.tasks.cleanup_update_log", "schedule": 6 * 60 * 60.0},
     "ai-actions-expire": {"task": "apps.ai.tasks.expire_pending_actions", "schedule": 30 * 60.0},
+    "security-blocklist-maintain": {"task": "apps.security.tasks.maintain_blocklist", "schedule": 60.0},
+    "security-daily-digest": {"task": "apps.security.tasks.daily_digest", "schedule": 24 * 60 * 60.0},
+    "security-events-purge": {"task": "apps.security.tasks.purge_old_events", "schedule": 24 * 60 * 60.0},
 }
 
 # ---------------------------------------------------------------------------
@@ -233,10 +240,13 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.JSONParser",
         "rest_framework.parsers.MultiPartParser",
     ],
-    "DEFAULT_THROTTLE_CLASSES": [],
+    "DEFAULT_THROTTLE_CLASSES": ["common.throttling.GlobalAnonThrottle", "common.throttling.GlobalUserThrottle"],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "60/min",
-        "user": "600/min",
+        "anon": "120/min",
+        "user": "1200/min",
+        "find_logo": "20/hour",
+        "member_invite": "30/hour",
+        "assistant_link": "10/hour",
         "auth_login": "10/min",
         "auth_register": "5/hour",
         "auth_password_reset": "5/hour",
@@ -299,6 +309,31 @@ TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN")
 TELEGRAM_BOT_USERNAME = env("TELEGRAM_BOT_USERNAME")
 TELEGRAM_WEBHOOK_SECRET = env("TELEGRAM_WEBHOOK_SECRET")
 SENTRY_DSN = env("SENTRY_DSN")
+
+# ---------------------------------------------------------------------------
+# Security shield (apps.security)
+# ---------------------------------------------------------------------------
+SECURITY_SHIELD_ENABLED = env.bool("SECURITY_SHIELD_ENABLED", default=True)
+# Never scored or banned: loopback, our own server, the owner's fixed address.
+SECURITY_TRUSTED_IPS = env.list("SECURITY_TRUSTED_IPS", default=["127.0.0.0/8", "::1"])
+SECURITY_REQUIRE_ORIGIN = env.bool("SECURITY_REQUIRE_ORIGIN", default=True)
+SECURITY_BAN_THRESHOLD = env.int("SECURITY_BAN_THRESHOLD", default=100)
+SECURITY_SCORE_WINDOW_SECONDS = env.int("SECURITY_SCORE_WINDOW_SECONDS", default=3600)
+SECURITY_SIGNUP_LIMITS = {
+    "attempts_per_hour": env.int("SECURITY_SIGNUP_ATTEMPTS_PER_HOUR", default=8),
+    "accounts_per_day": env.int("SECURITY_SIGNUP_ACCOUNTS_PER_DAY", default=2),
+    "min_gap_seconds": env.int("SECURITY_SIGNUP_MIN_GAP_SECONDS", default=600),
+    "global_per_hour": env.int("SECURITY_SIGNUP_GLOBAL_PER_HOUR", default=12),
+}
+# Read by the root nginx sync service (deploy/security/), which turns it into `deny` rules.
+SECURITY_BLOCKLIST_FILE = env.str("SECURITY_BLOCKLIST_FILE", default=str(BASE_DIR / "var" / "blocklist.txt"))
+SECURITY_BOT_TOKEN = env.str("SECURITY_BOT_TOKEN", default="")
+SECURITY_BOT_OWNER_USERNAME = env.str("SECURITY_BOT_OWNER_USERNAME", default="")
+# Outbound fetches (project icons) never go to our own hosting networks, even though they are public.
+SSRF_DENY_NETWORKS = env.list("SSRF_DENY_NETWORKS", default=[])
+# Optional edge mirroring of long bans (token scope: Zone > Firewall Services > Edit).
+CLOUDFLARE_API_TOKEN = env.str("CLOUDFLARE_API_TOKEN", default="")
+CLOUDFLARE_ZONE_ID = env.str("CLOUDFLARE_ZONE_ID", default="")
 
 # ---------------------------------------------------------------------------
 # Domain constants

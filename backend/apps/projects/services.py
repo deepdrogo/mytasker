@@ -10,7 +10,7 @@ from django.db import transaction
 from django.db.models import F, Max
 from django.utils import timezone
 
-from apps.projects.icons import find_logo, normalize_website, request_icon
+from apps.projects.icons import UnsafeWebsite, find_logo, normalize_website, request_icon
 from apps.projects.models import Idea, Project, ProjectMembership, WorkGroup
 from common.actors import Actor
 from common.events import DomainEvent, EventName, emit
@@ -41,6 +41,13 @@ PROJECT_FIELDS = {
 def _clean_website(value: str | None) -> str:
     try:
         return normalize_website(value or "")
+    except UnsafeWebsite as exc:
+        from apps.security import guard
+        from apps.security.models import SecurityEvent
+
+        guard.flag(kind=SecurityEvent.Kind.SSRF, points=40, severity=SecurityEvent.Severity.HIGH,
+                   details={"website": str(value)[:200]})
+        raise ValidationFailed(str(exc), fields={"website": [str(exc)]}) from exc
     except ValueError as exc:
         raise ValidationFailed(str(exc), fields={"website": [str(exc)]}) from exc
 

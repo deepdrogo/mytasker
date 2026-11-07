@@ -52,6 +52,33 @@ class IconError(Exception):
     pass
 
 
+class UnsafeWebsite(ValueError):
+    """An address that only makes sense as an SSRF probe (raw IP, wildcard-DNS host)."""
+
+
+# Wildcard-DNS and out-of-band-callback services: any IP can be dressed up as a hostname under them, which is how
+# SSRF probes get past "domains only" rules.
+REBINDING_SUFFIXES = (
+    "sslip.io", "nip.io", "xip.io", "nip.direct", "traefik.me", "localtest.me", "lvh.me", "vcap.me", "1u.ms",
+    "rbndr.us", "lock.cmpxchg8b.com", "burpcollaborator.net", "oastify.com", "interact.sh", "interactsh.com",
+    "oast.fun", "oast.pro", "oast.live", "oast.site", "oast.online", "oast.me", "requestbin.net", "webhook.site",
+    "ngrok.io", "ngrok-free.app", "ngrok.app", "localhost", "local", "internal", "hstgr.cloud",
+)
+
+
+def _is_ip_literal(host: str) -> bool:
+    try:
+        ipaddress.ip_address(host.strip("[]"))
+    except ValueError:
+        return False
+    return True
+
+
+def _is_rebinding_host(host: str) -> bool:
+    host = host.lower().rstrip(".")
+    return any(host == suffix or host.endswith(f".{suffix}") for suffix in REBINDING_SUFFIXES)
+
+
 def normalize_website(raw: str) -> str:
     """`example.com` -> `https://example.com`. Raises ValueError for anything but a plain http(s) address."""
     value = (raw or "").strip()
@@ -63,6 +90,10 @@ def normalize_website(raw: str) -> str:
     if parts.scheme not in ("http", "https") or not parts.hostname or parts.username or parts.password:
         raise ValueError("Enter a website address like example.com.")
     if "." not in parts.hostname and ":" not in parts.hostname:
+        raise ValueError("Enter a website address like example.com.")
+    if _is_ip_literal(parts.hostname) or _is_rebinding_host(parts.hostname):
+        raise UnsafeWebsite("Enter the site's domain name, not an IP address.")
+    if parts.port is not None and parts.port not in ALLOWED_PORTS:
         raise ValueError("Enter a website address like example.com.")
     if len(value) > 300:
         raise ValueError("The address is too long.")
@@ -76,10 +107,25 @@ def icon_url(file_name: str) -> str | None:
 # ------------------------------------------------------------------------------------- network
 
 
-def _assert_public(url: str) -> None:
+def _denied_networks() -> list:
+    networks = []
+    for item in [*getattr(settings, "SSRF_DENY_NETWORKS", []), *getattr(settings, "SECURITY_TRUSTED_IPS", [])]:
+        try:
+            networks.append(ipaddress.ip_network(str(item).strip(), strict=False))
+        except ValueError:
+            continue
+    return networks
+
+
+def _assert_public(url: str) -> str:
+    """Resolve once and validate every address. Returns the address to connect to (the request is pinned to it)."""
     parts = urlsplit(url)
     if parts.scheme not in ("http", "https") or not parts.hostname:
         raise IconError("unsupported url")
+    if parts.username or parts.password:
+        raise IconError("credentials in url")
+    if _is_ip_literal(parts.hostname) or _is_rebinding_host(parts.hostname):
+        raise IconError("ip literal or wildcard-dns host")
     port = parts.port or (443 if parts.scheme == "https" else 80)
     if port not in ALLOWED_PORTS:
         raise IconError("port not allowed")
@@ -89,24 +135,44 @@ def _assert_public(url: str) -> None:
         raise IconError("dns failed") from exc
     if not infos:
         raise IconError("dns empty")
+    denied = _denied_networks()
+    chosen = None
     for info in infos:
         address = ipaddress.ip_address(str(info[4][0]).split("%", 1)[0])
         if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped is not None:
             address = address.ipv4_mapped
-        if not address.is_global or address.is_multicast:
+        if not address.is_global or address.is_multicast or any(address in net for net in denied):
             raise IconError("address is not public")
+        if chosen is None or (chosen.version == 6 and address.version == 4):
+            chosen = address
+    return str(chosen)
+
+
+def _pinned(url: str, address: str) -> tuple[str, dict, dict]:
+    """
+    The same request aimed at an already-validated address, so a second DNS answer (rebinding) can never
+    redirect it. Host header and TLS SNI/certificate check still use the real hostname.
+    """
+    parts = urlsplit(url)
+    host_literal = f"[{address}]" if ":" in address else address
+    netloc = host_literal if parts.port is None else f"{host_literal}:{parts.port}"
+    target = parts._replace(netloc=netloc).geturl()
+    headers = {"Host": parts.netloc}
+    extensions = {"sni_hostname": parts.hostname} if parts.scheme == "https" else {}
+    return target, headers, extensions
 
 
 def _get(client: httpx.Client, url: str, limit: int) -> tuple[str, str, bytes]:
     """GET with manual, re-validated redirects and a hard byte cap. Returns (final url, content type, body)."""
     for _ in range(MAX_REDIRECTS + 1):
-        _assert_public(url)
-        with client.stream("GET", url) as response:
+        address = _assert_public(url)
+        target, headers, extensions = _pinned(url, address)
+        with client.stream("GET", target, headers=headers, extensions=extensions) as response:
             if response.is_redirect:
                 location = response.headers.get("location")
                 if not location:
                     raise IconError("redirect without location")
-                url = urljoin(str(response.url), location)
+                url = urljoin(url, location)
                 continue
             if response.status_code != 200:
                 raise IconError(f"status {response.status_code}")
@@ -118,7 +184,7 @@ def _get(client: httpx.Client, url: str, limit: int) -> tuple[str, str, bytes]:
                 body += chunk
                 if len(body) > limit:
                     raise IconError("too large")
-            return str(response.url), response.headers.get("content-type", "").lower(), bytes(body)
+            return url, response.headers.get("content-type", "").lower(), bytes(body)
     raise IconError("too many redirects")
 
 

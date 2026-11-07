@@ -64,3 +64,13 @@
   color: var(--c-text-dim);
   text-align: center;
 }
+
+/* Sign-up honeypot: kept in the layout for bots, out of sight and reach for people. */
+.trap {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
