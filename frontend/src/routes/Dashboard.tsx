@@ -8,6 +8,7 @@ import { For, Show, createSignal } from 'solid-js';
 import { Page } from '~/components/shared/Page';
 import { ErrorNote, Skeleton } from '~/components/ui/Feedback';
 import { dashboardApi } from '~/features/dashboard/api';
+import { TaskAgenda } from '~/features/dashboard/TaskAgenda';
 import { WorkingBoard } from '~/features/projects/WorkingBoard';
 import { routinesApi, rulesApi } from '~/features/routines/api';
 import { CycleCard } from '~/features/timer/CycleCard';
@@ -77,6 +78,9 @@ export default function Dashboard(): JSX.Element {
                 </p>
                 </div>
               </section>
+
+              {/* Very bottom, full width: Today / Tomorrow / Later in three compact columns */}
+              <TaskAgenda />
             </div>
           )}
         </Show>

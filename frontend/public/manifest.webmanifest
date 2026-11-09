@@ -2,7 +2,7 @@
   "name": "MyTasker",
   "short_name": "MyTasker",
   "description": "An always-free control center for life, business, projects, prompts, time and teams. By drogoz.",
-  "start_url": "/today",
+  "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",

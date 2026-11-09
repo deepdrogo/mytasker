@@ -116,6 +116,8 @@ export const core: Record<string, string> = {
   Duplicate: 'დუბლირება',
   'Task duplicated': 'დავალება დუბლირდა',
   Tomorrow: 'ხვალ',
+  Later: 'შემდეგ',
+  'Nothing due.': 'არაფერია დაგეგმილი.',
   Yesterday: 'გუშინ',
   Delete: 'წაშლა',
   'Task deleted': 'დავალება წაიშალა',
