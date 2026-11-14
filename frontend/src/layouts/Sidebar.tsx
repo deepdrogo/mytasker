@@ -5,6 +5,7 @@ import {
   BookText,
   Briefcase,
   CalendarClock,
+  History,
   CalendarOff,
   CalendarRange,
   CheckCircle2,
@@ -116,6 +117,7 @@ const SECTIONS: NavSection[] = [
       { label: 'Weekly', href: '/insights/weekly', icon: () => <TrendingUp size={15} /> },
       { label: 'Monthly', href: '/insights/monthly', icon: () => <TrendingUp size={15} /> },
       { label: 'Time', href: '/insights/time', icon: () => <CalendarClock size={15} /> },
+      { label: 'Time history', href: '/time/history', icon: () => <History size={15} /> },
     ],
   },
 ];
@@ -202,6 +204,7 @@ const INSIGHT_LINKS: NavLink[] = [
   { label: 'Weekly', href: '/insights/weekly', icon: () => <TrendingUp size={15} /> },
   { label: 'Monthly', href: '/insights/monthly', icon: () => <TrendingUp size={15} /> },
   { label: 'Time', href: '/insights/time', icon: () => <CalendarClock size={15} /> },
+  { label: 'Time history', href: '/time/history', icon: () => <History size={15} /> },
 ];
 
 const PROMPT_LINK: NavLink = { label: 'Prompts', href: '/prompts', icon: () => <BookText size={15} /> };

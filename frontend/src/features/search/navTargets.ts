@@ -32,5 +32,6 @@ export const NAV_TARGETS: NavTarget[] = [
   { id: 'rules', label: 'Rules', href: '/routine/rules', keywords: 'წესები' },
   { id: 'insights', label: 'Insights', href: '/insights/daily', keywords: 'analytics review ანალიტიკა' },
   { id: 'time', label: 'Time tracking', href: '/insights/time', keywords: 'timer entries დრო' },
+  { id: 'time-history', label: 'Time history', href: '/time/history', keywords: 'cycle sleep work history ისტორია დრო' },
   { id: 'settings', label: 'Settings', href: '/settings', keywords: 'preferences telegram account პარამეტრები' },
 ];

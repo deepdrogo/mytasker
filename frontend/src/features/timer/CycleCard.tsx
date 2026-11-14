@@ -1,11 +1,12 @@
 // MyTasker — the 24-hour cycle. Sleep, work, fun and exercise over the last 24 hours, whatever the clock says:
 // a night split in two, a nap at noon or training at dawn all land in the same rolling day.
 
-import { Briefcase, Check, Dumbbell, Gamepad2, Moon, Play, Square } from 'lucide-solid';
+import { A } from '@solidjs/router';
+import { Briefcase, Check, Dumbbell, Gamepad2, History, Moon, Play, RotateCcw, Square } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For, Show, createMemo, createSignal, onCleanup } from 'solid-js';
 import { api } from '~/api/client';
-import { createQuery } from '~/hooks/createQuery';
+import { createQuery, invalidate } from '~/hooks/createQuery';
 import { t } from '~/i18n';
 import { tx } from '~/stores/translations';
 import { startSleep, startTimer, stopSleep, stopTimer, timerStore } from '~/stores/timer';
@@ -100,7 +101,42 @@ export function CycleCard(): JSX.Element {
     const kind = runningKind();
     const task = timerStore.running()?.task;
     if (kind && kind !== 'sleep' && task) return tx('task', task.id, 'title', task.title);
-    return kind ? t(KIND_LABEL[kind]) : t('Last 24 hours');
+    return kind ? t(KIND_LABEL[kind]) : windowLabel();
+  };
+
+  const [resetting, setResetting] = createSignal(false);
+  const applyCycle = (data: CycleData) => query.mutate(() => ({ ...data, fetched_at: Date.now() }));
+
+  /** Save the ring as a cycle in the history, then start it from now. Undo drops that saved cycle again. */
+  const reset = async () => {
+    if (resetting()) return;
+    setResetting(true);
+    try {
+      applyCycle(await api.post<CycleData>('/timer/cycle/reset/'));
+      invalidate('timer:snapshots');
+      toast(t('Cycle saved to history and reset'), {
+        action: {
+          label: t('Undo'),
+          run: () =>
+            void api
+              .delete<CycleData>('/timer/cycle/reset/')
+              .then((data) => {
+                applyCycle(data);
+                invalidate('timer:snapshots');
+              })
+              .catch(() => toast(t('Could not undo.'))),
+        },
+      });
+    } catch {
+      toast(t('Could not reset the cycle.'));
+    } finally {
+      setResetting(false);
+    }
+  };
+
+  const windowLabel = () => {
+    const since = query.data()?.reset_at;
+    return since ? t('Since {time}', { time: formatTime(since) }) : t('Last 24 hours');
   };
 
   const handAngle = () => clockAngle(new Date(now()));
@@ -110,7 +146,22 @@ export function CycleCard(): JSX.Element {
     <section class={styles.card} aria-label={t('24-hour cycle')}>
       <header class={styles.head}>
         <span class={styles.title}>{t('24-hour cycle')}</span>
-        <span class={styles.sub}>{t('Last 24 hours')}</span>
+        <span class={styles.sub}>{windowLabel()}</span>
+        <span class={styles.headActions}>
+          <button
+            type="button"
+            class={styles.headBtn}
+            disabled={resetting()}
+            onClick={() => void reset()}
+            aria-label={t('Reset the 24-hour cycle')}
+            title={t('Reset - save this cycle to the history and count from now')}
+          >
+            <RotateCcw size={12} />
+          </button>
+          <A href="/time/history" class={styles.headBtn} aria-label={t('Full time history')} title={t('Full time history')}>
+            <History size={12} />
+          </A>
+        </span>
       </header>
 
       <div class={styles.main}>
@@ -197,7 +248,9 @@ export function CycleCard(): JSX.Element {
               {(now(), formatClock(Math.max(0, Math.floor((now() - new Date(runningSince() ?? now()).getTime()) / 1000))))}
             </span>
           </Show>
-          <span class={styles.centerSub}>{runningKind() ? t('running') : t('of 24h tracked')}</span>
+          <span class={styles.centerSub}>
+            {runningKind() ? t('running') : query.data()?.reset_at ? t('tracked since reset') : t('of 24h tracked')}
+          </span>
         </div>
       </div>
 

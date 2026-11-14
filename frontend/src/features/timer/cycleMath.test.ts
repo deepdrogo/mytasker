@@ -37,6 +37,7 @@ describe('live figures', () => {
     free_seconds: 82200,
     running: { kind: 'fun', started_at: '' },
     segments: [],
+    reset_at: null,
   };
 
   it('adds only the time since the fetch to the running activity', () => {

@@ -40,7 +40,7 @@
 
 .head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: var(--s-3);
 }
@@ -57,6 +57,50 @@
   font-family: var(--font-mono);
   font-size: 10.5px;
   color: var(--c-text-faint);
+}
+
+.headActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.head .sub {
+  margin-left: auto;
+}
+
+.head .sub + .headActions {
+  margin-left: var(--s-2);
+}
+
+.headBtn {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: var(--r-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--c-text-faint);
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background var(--t-fast),
+    color var(--t-fast),
+    border-color var(--t-fast);
+}
+
+.headBtn:hover:not(:disabled) {
+  background: var(--g-glass-active);
+  border-color: var(--c-border);
+  color: var(--c-text);
+}
+
+.headBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 /* Dial above the rows in the side column; side by side when the card is wide (one-column layouts). */

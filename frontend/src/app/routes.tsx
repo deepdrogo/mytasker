@@ -39,6 +39,7 @@ const InsightsDaily = lazy(() => import('~/routes/insights/Daily'));
 const InsightsWeekly = lazy(() => import('~/routes/insights/Weekly'));
 const InsightsMonthly = lazy(() => import('~/routes/insights/Monthly'));
 const InsightsTime = lazy(() => import('~/routes/insights/Time'));
+const TimeHistory = lazy(() => import('~/routes/time/History'));
 const AIPage = lazy(() => import('~/routes/AI'));
 const Settings = lazy(() => import('~/routes/settings/Settings'));
 const Donate = lazy(() => import('~/routes/Donate'));
@@ -101,6 +102,7 @@ export const routes: RouteDefinition[] = [
       { path: '/insights/weekly', component: InsightsWeekly },
       { path: '/insights/monthly', component: InsightsMonthly },
       { path: '/insights/time', component: InsightsTime },
+      { path: '/time/history', component: TimeHistory },
       { path: '/ai', component: AIPage },
       { path: '/donate', component: Donate },
       { path: '/settings/*section', component: Settings },

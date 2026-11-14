@@ -10,13 +10,13 @@ from django.utils import timezone
 from apps.projects.models import Project
 from apps.routines.models import RoutineItem
 from apps.tasks.models import Task
-from apps.time_tracking.models import SleepSession, TimeEntry
+from apps.time_tracking.models import CycleSnapshot, SleepSession, TimeEntry
 from common.actors import Actor
 from common.events import DomainEvent, EventName, emit
 from common.exceptions import Conflict, NotFound, ValidationFailed
 from common.models import Visibility
 from common.permissions import Capability, can_view_object, project_access
-from common.tz import day_bounds, today_for
+from common.tz import day_bounds, today_for, user_zone, week_bounds
 
 MAX_ENTRY_SECONDS = 24 * 3600
 
@@ -434,23 +434,20 @@ def _claim(taken: list[Interval], pieces: list[Interval]) -> list[Interval]:
     return merged
 
 
-def cycle(user, now: datetime | None = None) -> dict:
+def _tally(user, start: datetime, end: datetime) -> tuple[dict[str, int], list[dict]]:
     """
-    The last 24 hours, whatever the clock says: sleep, work (business), fun, exercise and personal time.
-
-    Sleep is irregular - split nights, a nap, a late morning - so a calendar day would cut it in half. A rolling
-    window ending now counts every session in full once. Overlaps never count twice: sleep wins, then earlier
-    timers, and only the rest of a later entry is kept.
+    Seconds per kind and the joined segments inside [start, end). Overlaps never count twice: sleep wins,
+    then earlier timers, and only the rest of a later entry is kept. A running entry counts up to `end`.
     """
-    now = now or timezone.now()
-    start = now - CYCLE
     claimed: list[Interval] = []
     segments: list[dict] = []
     seconds = dict.fromkeys(CYCLE_KINDS, 0)
+    if end <= start:
+        return seconds, segments
 
     def take(kind: str, a: datetime, b: datetime) -> None:
         nonlocal claimed
-        a, b = max(a, start), min(b, now)
+        a, b = max(a, start), min(b, end)
         if b <= a:
             return
         pieces = _subtract((a, b), claimed)
@@ -459,11 +456,11 @@ def cycle(user, now: datetime | None = None) -> dict:
             seconds[kind] += int((p_end - p_start).total_seconds())
             segments.append({"kind": kind, "start": p_start, "end": p_end})
 
-    sessions = SleepSession.objects.filter(owner=user, started_at__lt=now).exclude(ended_at__lte=start)
+    sessions = SleepSession.objects.filter(owner=user, started_at__lt=end).exclude(ended_at__lte=start)
     for session in sessions.order_by("started_at"):
-        take(SLEEP, session.started_at, session.ended_at or now)
-    for entry in TimeEntry.objects.filter(owner=user).in_window(start, now).order_by("started_at"):
-        take(entry.category, entry.started_at, entry.ended_at or now)
+        take(SLEEP, session.started_at, session.ended_at or end)
+    for entry in TimeEntry.objects.filter(owner=user).in_window(start, end).order_by("started_at"):
+        take(entry.category, entry.started_at, entry.ended_at or end)
 
     segments.sort(key=lambda segment: segment["start"])
     joined: list[dict] = []
@@ -473,6 +470,32 @@ def cycle(user, now: datetime | None = None) -> dict:
             last["end"] = max(last["end"], segment["end"])
         else:
             joined.append(dict(segment))
+    return seconds, joined
+
+
+def _preferences(user):
+    from apps.accounts.models import UserPreference
+
+    return UserPreference.objects.filter(user=user).first()
+
+
+def cycle(user, now: datetime | None = None) -> dict:
+    """
+    The last 24 hours, whatever the clock says: sleep, work (business), fun, exercise and personal time.
+
+    Sleep is irregular - split nights, a nap, a late morning - so a calendar day would cut it in half. A rolling
+    window ending now counts every session in full once. After a reset the window starts at the reset instead,
+    until that moment is more than 24 hours old.
+    """
+    now = now or timezone.now()
+    prefs = _preferences(user)
+    start = now - CYCLE
+    reset_at = getattr(prefs, "cycle_reset_at", None)
+    if reset_at is not None and start < reset_at <= now:
+        start = reset_at
+    else:
+        reset_at = None
+    seconds, joined = _tally(user, start, now)
 
     running = None
     asleep = running_sleep(user)
@@ -483,9 +506,6 @@ def cycle(user, now: datetime | None = None) -> dict:
         if entry is not None:
             running = {"kind": entry.category, "started_at": entry.started_at}
 
-    from apps.accounts.models import UserPreference
-
-    prefs = UserPreference.objects.filter(user=user).first()
     targets = {
         SLEEP: int(getattr(prefs, "sleep_target_minutes", 480) or 0),
         "business": int(getattr(prefs, "business_hours_target_minutes", 600) or 0),
@@ -493,13 +513,159 @@ def cycle(user, now: datetime | None = None) -> dict:
         "exercise": int(getattr(prefs, "exercise_target_minutes", 120) or 0),
     }
     tracked = sum(seconds.values())
+    window = int((now - start).total_seconds())
     return {
         "window_start": start,
         "window_end": now,
+        "reset_at": reset_at,
         "seconds": seconds,
         "target_minutes": targets,
         "tracked_seconds": tracked,
-        "free_seconds": max(0, int(CYCLE.total_seconds()) - tracked),
+        "free_seconds": max(0, window - tracked),
         "running": running,
         "segments": joined,
     }
+
+
+@transaction.atomic
+def reset_cycle(user, at: datetime | None = None) -> CycleSnapshot | None:
+    """
+    Save what the ring holds right now as a snapshot, then start the ring from this moment. Entries are kept
+    either way; an empty ring (nothing tracked) leaves no snapshot behind.
+    """
+    from apps.accounts.models import UserPreference
+
+    at = at or timezone.now()
+    current = cycle(user, now=at)
+    snapshot = None
+    if current["tracked_seconds"] > 0:
+        seconds = current["seconds"]
+        snapshot = CycleSnapshot.objects.create(
+            owner=user,
+            started_at=current["window_start"],
+            ended_at=at,
+            **{f"{kind}_seconds": int(seconds.get(kind, 0)) for kind in CycleSnapshot.KINDS},
+            free_seconds=int(current["free_seconds"]),
+        )
+    prefs, _ = UserPreference.objects.get_or_create(user=user)
+    prefs.cycle_reset_at = at
+    prefs.save(update_fields=["cycle_reset_at"])
+    return snapshot
+
+
+@transaction.atomic
+def clear_cycle_reset(user) -> None:
+    """Undo the latest reset: the ring looks back the full 24 hours again and that reset's snapshot goes."""
+    prefs = _preferences(user)
+    if prefs is None or prefs.cycle_reset_at is None:
+        return
+    CycleSnapshot.objects.filter(owner=user, ended_at=prefs.cycle_reset_at).delete()
+    prefs.cycle_reset_at = None
+    prefs.save(update_fields=["cycle_reset_at"])
+
+
+def snapshot_dict(snapshot: CycleSnapshot) -> dict:
+    return {
+        "id": snapshot.pk,
+        "started_at": snapshot.started_at,
+        "ended_at": snapshot.ended_at,
+        "seconds": snapshot.seconds,
+        "total": snapshot.total_seconds,
+        "free_seconds": snapshot.free_seconds,
+    }
+
+
+SNAPSHOT_PAGE = 30
+
+
+def cycle_snapshots(user, page: int = 1) -> dict:
+    """Saved cycles, newest first, with the grand total across all of them (not only this page)."""
+    from django.db.models import Count
+
+    qs = CycleSnapshot.objects.filter(owner=user)
+    sums = qs.aggregate(
+        count=Count("id"),
+        **{kind: Coalesce(Sum(f"{kind}_seconds"), 0) for kind in CycleSnapshot.KINDS},
+    )
+    totals = {kind: int(sums[kind]) for kind in CycleSnapshot.KINDS}
+    page = max(1, int(page))
+    offset = (page - 1) * SNAPSHOT_PAGE
+    rows = list(qs.order_by("-ended_at")[offset : offset + SNAPSHOT_PAGE])
+    return {
+        "count": sums["count"],
+        "results": [snapshot_dict(row) for row in rows],
+        "next_page": page + 1 if offset + SNAPSHOT_PAGE < sums["count"] else None,
+        "totals": {"seconds": totals, "total": sum(totals.values())},
+    }
+
+
+def delete_cycle_snapshot(user, snapshot_id: int) -> None:
+    deleted, _ = CycleSnapshot.objects.filter(owner=user, pk=snapshot_id).delete()
+    if not deleted:
+        raise NotFound("No such saved cycle.")
+
+
+def _day_tally(user, day, now: datetime) -> dict:
+    start, end = day_bounds(user, day)
+    seconds, _ = _tally(user, start, min(end, now))
+    return {"date": day, "seconds": seconds, "total": sum(seconds.values())}
+
+
+def week_summary(user, now: datetime | None = None) -> dict:
+    """This week (the user's first day of week through today), per day and in total, per kind."""
+    now = now or timezone.now()
+    _, _, first, last = week_bounds(user, today_for(user))
+    days = [_day_tally(user, first + timedelta(days=offset), now) for offset in range((last - first).days + 1)]
+    totals = dict.fromkeys(CYCLE_KINDS, 0)
+    for day in days:
+        for kind, value in day["seconds"].items():
+            totals[kind] += value
+    return {"start": first, "end": last, "today": today_for(user), "seconds": totals, "total": sum(totals.values()), "days": days}
+
+
+HISTORY_PAGE_DAYS = 14
+
+
+def _first_record(user):
+    first_entry = TimeEntry.objects.filter(owner=user).order_by("started_at").values_list("started_at", flat=True).first()
+    first_sleep = SleepSession.objects.filter(owner=user).order_by("started_at").values_list("started_at", flat=True).first()
+    found = [moment for moment in (first_entry, first_sleep) if moment is not None]
+    return min(found) if found else None
+
+
+def history(user, before=None, days: int = HISTORY_PAGE_DAYS, now: datetime | None = None) -> dict:
+    """
+    Day by day, newest first: what the time went to (deduplicated totals) and every entry that touched the day.
+    `before` is exclusive; omit it to start from today. `next_before` pages further back while records exist.
+    """
+    now = now or timezone.now()
+    days = max(1, min(int(days), 62))
+    newest = (before - timedelta(days=1)) if before else today_for(user)
+    first = _first_record(user)
+    first_day = timezone.localtime(first, user_zone(user)).date() if first else None
+    out: list[dict] = []
+    day = newest
+    # Empty days are skipped; the scan stops after a year of them so one request stays bounded.
+    scanned = 0
+    while first_day is not None and day >= first_day and len(out) < days and scanned < 366:
+        scanned += 1
+        tally = _day_tally(user, day, now)
+        start, end = day_bounds(user, day)
+        items: list[dict] = []
+        for session in SleepSession.objects.filter(owner=user, started_at__lt=end).exclude(ended_at__lte=start):
+            items.append({"kind": SLEEP, "start": session.started_at, "end": session.ended_at, "label": session.note or ""})
+        entries = TimeEntry.objects.filter(owner=user).in_window(start, end).select_related("task", "project", "routine_item")
+        for entry in entries:
+            label = (
+                (entry.task.title if entry.task_id else "")
+                or (entry.routine_item.name if entry.routine_item_id else "")
+                or entry.note
+                or (entry.project.name if entry.project_id else "")
+            )
+            items.append({"kind": entry.category, "start": entry.started_at, "end": entry.ended_at, "label": label})
+        items.sort(key=lambda item: item["start"])
+        if tally["total"] or items:
+            out.append({**tally, "items": items})
+        day -= timedelta(days=1)
+    more = first_day is not None and day >= first_day
+    return {"days": out, "next_before": (day + timedelta(days=1)) if more else None}

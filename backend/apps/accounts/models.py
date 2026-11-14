@@ -110,6 +110,9 @@ class UserPreference(TimeStampedModel):
     # calendar day, so split or shifted sleep still adds up.
     fun_target_minutes = models.PositiveIntegerField(default=240)
     exercise_target_minutes = models.PositiveIntegerField(default=120)
+    # "Reset" on the 24-hour cycle: the ring counts from this moment until it falls out of the 24-hour window.
+    # Nothing is deleted - history keeps every entry.
+    cycle_reset_at = models.DateTimeField(null=True, blank=True)
     planned_bedtime = models.TimeField(null=True, blank=True)
     planned_wake_time = models.TimeField(null=True, blank=True)
 

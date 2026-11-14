@@ -2,7 +2,7 @@
 // Built by drogoz · https://github.com/deepdrogo/mytasker
 
 import { A } from '@solidjs/router';
-import { CalendarOff, Check, Circle, Flame, ScrollText, X } from 'lucide-solid';
+import { CalendarOff, Check, Circle, Coffee, Flame, ScrollText, X } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For, Show, createSignal } from 'solid-js';
 import { Page } from '~/components/shared/Page';
@@ -12,6 +12,7 @@ import { TaskAgenda } from '~/features/dashboard/TaskAgenda';
 import { WorkingBoard } from '~/features/projects/WorkingBoard';
 import { routinesApi, rulesApi } from '~/features/routines/api';
 import { CycleCard } from '~/features/timer/CycleCard';
+import { WeekCard } from '~/features/timer/WeekCard';
 import { createQuery } from '~/hooks/createQuery';
 import { t, tn } from '~/i18n';
 import { tx } from '~/stores/translations';
@@ -20,6 +21,13 @@ import type { RoutineItem, Rule, TodayData } from '~/types';
 import { formatDateFull, formatMinutes, percent } from '~/utils/format';
 import styles from './Dashboard.module.css';
 import { cx } from '~/utils/cx';
+
+/** Saturday or Sunday on the server's idea of the user's today (an ISO date, read as a local calendar day). */
+function isWeekend(iso: string): boolean {
+  const [y, m, d] = iso.split('-').map(Number);
+  const day = new Date(y!, (m ?? 1) - 1, d ?? 1).getDay();
+  return day === 0 || day === 6;
+}
 
 export default function Dashboard(): JSX.Element {
   const query = createQuery<TodayData>(() => 'today', () => dashboardApi.snapshot());
@@ -33,6 +41,17 @@ export default function Dashboard(): JSX.Element {
         <Show when={data()} fallback={<Skeleton rows={8} height={40} />}>
           {(d) => (
             <div class={styles.grid}>
+              {/* Saturday and Sunday: a plain reminder that today is for rest. */}
+              <Show when={isWeekend(d().date)}>
+                <div class={styles.dayOff} role="status">
+                  <Coffee size={18} />
+                  <div class={styles.dayOffText}>
+                    <strong>{t('Today is your day off!')}</strong>
+                    <span>{t('Rest and recharge - the work will still be here on Monday.')}</span>
+                  </div>
+                </div>
+              </Show>
+
               {/* Main column: the Working projects board, the same as on its own page */}
               <section class={styles.col}>
                 <WorkingBoard />
@@ -43,6 +62,7 @@ export default function Dashboard(): JSX.Element {
               <section class={cx(styles.col, styles.side)}>
                 <div class={cx(styles.sideGroup, styles.sideTop)}>
                 <CycleCard />
+                <WeekCard />
 
                 <div class={styles.stats}>
                   <Stat label={t('Done')} value={String(d().metrics.tasks_completed)} />

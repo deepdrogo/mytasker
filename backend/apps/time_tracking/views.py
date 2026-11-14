@@ -49,6 +49,47 @@ def cycle(request):
     return Response(services.cycle(request.user))
 
 
+@api_view(["POST", "DELETE"])
+def cycle_reset(request):
+    """POST: the ring counts from now. DELETE: undo, back to the full 24 hours. Entries are never touched."""
+    if request.method == "DELETE":
+        services.clear_cycle_reset(request.user)
+    else:
+        services.reset_cycle(request.user)
+    return Response(services.cycle(request.user))
+
+
+@api_view(["GET"])
+def cycle_snapshots(request):
+    try:
+        page = int(request.query_params.get("page") or 1)
+    except ValueError:
+        return Response({"detail": "page must be a whole number."}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(services.cycle_snapshots(request.user, page=page))
+
+
+@api_view(["DELETE"])
+def cycle_snapshot_detail(request, pk: int):
+    services.delete_cycle_snapshot(request.user, pk)
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(["GET"])
+def week(request):
+    return Response(services.week_summary(request.user))
+
+
+@api_view(["GET"])
+def history(request):
+    raw_before = request.query_params.get("before")
+    try:
+        before = date.fromisoformat(raw_before) if raw_before else None
+        days = int(request.query_params.get("days") or services.HISTORY_PAGE_DAYS)
+    except ValueError:
+        return Response({"detail": "Use before=YYYY-MM-DD and a whole number of days."}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(services.history(request.user, before=before, days=days))
+
+
 @api_view(["POST"])
 def start_timer(request):
     serializer = StartTimerSerializer(data=request.data)

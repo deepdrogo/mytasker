@@ -36,6 +36,55 @@ export interface CycleData {
   free_seconds: number;
   running: { kind: CycleKind; started_at: ISODateTime } | null;
   segments: CycleSegment[];
+  /** Set while a reset is newer than 24 hours: the ring counts from here instead of a day back. */
+  reset_at: ISODateTime | null;
+}
+
+export interface DayTimeTally {
+  date: ISODate;
+  seconds: Record<CycleKind, number>;
+  total: number;
+}
+
+export interface WeekTimeSummary {
+  start: ISODate;
+  end: ISODate;
+  today: ISODate;
+  seconds: Record<CycleKind, number>;
+  total: number;
+  days: DayTimeTally[];
+}
+
+export interface TimeHistoryItem {
+  kind: CycleKind;
+  start: ISODateTime;
+  /** Null while it is still running. */
+  end: ISODateTime | null;
+  label: string;
+}
+
+/** What the 24-hour ring held when it was reset, kept for adding cycles up later. */
+export interface CycleSnapshot {
+  id: ID;
+  started_at: ISODateTime;
+  ended_at: ISODateTime;
+  seconds: Record<CycleKind, number>;
+  total: number;
+  free_seconds: number;
+}
+
+export interface CycleSnapshotPage {
+  count: number;
+  results: CycleSnapshot[];
+  next_page: number | null;
+  /** Across every saved cycle, not only this page. */
+  totals: { seconds: Record<CycleKind, number>; total: number };
+}
+
+export interface TimeHistoryPage {
+  days: Array<DayTimeTally & { items: TimeHistoryItem[] }>;
+  /** Pass as `before` for the next (older) page; null when there is nothing older. */
+  next_before: ISODate | null;
 }
 export type Source =
   | 'web'

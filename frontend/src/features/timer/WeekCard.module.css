@@ -1,0 +1,173 @@
+/* This week's time — same monochrome shades as the 24-hour cycle. */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-5) var(--s-6);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
+  background: var(--g-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.kSleep {
+  --k: var(--grey-ff);
+}
+.kWork {
+  --k: var(--grey-c9);
+}
+.kFun {
+  --k: var(--grey-a3);
+}
+.kExercise {
+  --k: var(--grey-57);
+}
+.kOther {
+  --k: var(--grey-3d);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+}
+
+.title {
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-text);
+}
+
+.range {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--c-text-faint);
+}
+
+.total {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: var(--fw-semibold);
+  color: var(--c-text);
+}
+
+.placeholder {
+  height: 150px;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 8px 64px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: 12.5px;
+}
+
+.key {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--k);
+}
+
+.name {
+  color: var(--c-text-dim);
+}
+
+.bar {
+  height: 4px;
+  border-radius: var(--r-full);
+  background: var(--white-060);
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--k);
+  transition: width var(--t-slow);
+}
+
+.value {
+  min-width: 52px;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--c-text);
+}
+
+.days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  padding-top: var(--s-2);
+}
+
+.day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column-reverse;
+  width: 100%;
+  max-width: 22px;
+  height: 64px;
+  border-radius: 5px;
+  background: var(--white-040);
+  overflow: hidden;
+}
+
+.piece {
+  display: block;
+  width: 100%;
+  background: var(--k);
+}
+
+.today .stack {
+  box-shadow: 0 0 0 1px var(--white-450);
+}
+
+.ahead .stack {
+  background: var(--white-020);
+}
+
+.dayLabel {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  color: var(--c-text-faint);
+}
+
+.today .dayLabel {
+  color: var(--c-text);
+}
+
+.link {
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--c-text-faint);
+  text-decoration: none;
+}
+
+.link:hover {
+  color: var(--c-text);
+}

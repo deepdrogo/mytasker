@@ -115,3 +115,35 @@ class SleepSession(TimeStampedModel):
     def current_seconds(self) -> int:
         end = self.ended_at or timezone.now()
         return max(0, int((end - self.started_at).total_seconds()))
+
+
+class CycleSnapshot(TimeStampedModel):
+    """
+    What the 24-hour ring held at the moment it was reset: the window it covered and the seconds per kind.
+    Kept for good, so cycles can be added up later; undoing the reset removes only its own snapshot.
+    """
+
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="cycle_snapshots")
+    started_at = models.DateTimeField()
+    ended_at = models.DateTimeField()
+    sleep_seconds = models.PositiveIntegerField(default=0)
+    business_seconds = models.PositiveIntegerField(default=0)
+    fun_seconds = models.PositiveIntegerField(default=0)
+    exercise_seconds = models.PositiveIntegerField(default=0)
+    personal_seconds = models.PositiveIntegerField(default=0)
+    free_seconds = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "time_tracking_cycle_snapshot"
+        ordering = ["-ended_at"]
+        indexes = [models.Index(fields=["owner", "-ended_at"], name="cycle_snap_owner_ended")]
+
+    KINDS = ("sleep", "business", "fun", "exercise", "personal")
+
+    @property
+    def seconds(self) -> dict[str, int]:
+        return {kind: getattr(self, f"{kind}_seconds") for kind in self.KINDS}
+
+    @property
+    def total_seconds(self) -> int:
+        return sum(self.seconds.values())
