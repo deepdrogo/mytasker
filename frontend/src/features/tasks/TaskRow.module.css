@@ -79,6 +79,54 @@
     var(--rim-top);
 }
 
+/* Critical priority: red. Wins over the client edge. */
+.urgent,
+.urgent.client {
+  background:
+    linear-gradient(90deg, var(--c-urgent-soft), transparent 65%),
+    var(--g-glass);
+  border-color: var(--c-urgent-line);
+  box-shadow: inset 2px 0 0 var(--c-urgent);
+}
+
+.urgent:hover,
+.urgent.client:hover {
+  border-color: var(--c-urgent);
+  box-shadow:
+    inset 2px 0 0 var(--c-urgent),
+    var(--rim-top);
+}
+
+.urgent .title {
+  color: var(--c-text);
+}
+
+.urgent .titleLine > span:first-child {
+  color: var(--c-urgent);
+}
+
+/* High priority: yellow, one step below red. */
+.warn,
+.warn.client {
+  background:
+    linear-gradient(90deg, var(--c-warn-soft), transparent 65%),
+    var(--g-glass);
+  border-color: var(--c-warn-line);
+  box-shadow: inset 2px 0 0 var(--c-warn);
+}
+
+.warn:hover,
+.warn.client:hover {
+  border-color: var(--c-warn);
+  box-shadow:
+    inset 2px 0 0 var(--c-warn),
+    var(--rim-top);
+}
+
+.warn .titleLine > span:first-child {
+  color: var(--c-warn);
+}
+
 .clientMark {
   display: inline-flex;
   align-items: center;
@@ -351,6 +399,13 @@
   background: var(--white-050);
 }
 
+.quick {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
 .actions {
   flex: none;
   display: flex;
@@ -479,6 +534,10 @@
     display: none;
   }
   .actions {
+    gap: 0;
+    margin-top: -5px;
+  }
+  .quick {
     gap: 0;
     margin-top: -5px;
   }

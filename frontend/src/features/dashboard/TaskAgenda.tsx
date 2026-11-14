@@ -1,11 +1,15 @@
-// MyTasker — the Dashboard's task strip: Today, Tomorrow and Later stacked in tight blocks, each row tagged
-// Client, Personal or Business. Tick to complete, click the title to open the task.
+// MyTasker — the Dashboard's task strip: Today, Tomorrow and Later stacked in tight blocks, each cut by project,
+// each row tagged Client, Personal or Business. Tick to complete, yellow / red dots for priority, folder to file it.
 
 import { A } from '@solidjs/router';
-import { Check } from 'lucide-solid';
+import { Briefcase, Check, FolderKanban, Handshake, User } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { createMemo, createSignal, For, Show } from 'solid-js';
 import { tasksApi, taskListKey, type TaskListParams } from '~/features/tasks/api';
+import { priorityTone } from '~/features/tasks/priority';
+import { PriorityDots } from '~/features/tasks/PriorityDots';
+import { groupByProject, LOOSE_LABEL, type TaskGroup } from '~/features/tasks/projectGroups';
+import { QuickProjectPicker } from '~/features/tasks/QuickProjectPicker';
 import { TaskEditor } from '~/features/tasks/TaskEditor';
 import { createQuery } from '~/hooks/createQuery';
 import { t } from '~/i18n';
@@ -15,9 +19,6 @@ import { toast } from '~/stores/ui';
 import type { ID, Task } from '~/types';
 import { formatDate, formatDueDate } from '~/utils/format';
 import styles from './TaskAgenda.module.css';
-
-/** Rows shown per column before the rest folds into "+N more". */
-const VISIBLE = 8;
 
 const BASE: TaskListParams = { top_level: true, exclude_kind: 'crypto', is_ongoing: false, page_size: 100 };
 const TODAY: TaskListParams = { ...BASE, view: 'today' };
@@ -75,6 +76,11 @@ export function TaskAgenda(): JSX.Element {
   };
 
   const loaded = () => today.data() && tomorrow.data() && upcoming.data();
+  const refreshAll = () => {
+    today.refetch();
+    tomorrow.refetch();
+    upcoming.refetch();
+  };
 
   return (
     <section class={styles.agenda} aria-label={t('Tasks')}>
@@ -88,9 +94,9 @@ export function TaskAgenda(): JSX.Element {
         </A>
       </div>
       <div class={styles.columns}>
-        <Column title={t('Today')} href="/today" tasks={todayTasks()} loading={!today.data()} when="today" onDone={complete} onOpen={setActive} />
-        <Column title={t('Tomorrow')} href="/tomorrow" tasks={tomorrowTasks()} loading={!tomorrow.data()} when="tomorrow" onDone={complete} onOpen={setActive} />
-        <Column title={t('Later')} href="/tasks/upcoming" tasks={laterTasks()} loading={!upcoming.data()} when="later" onDone={complete} onOpen={setActive} />
+        <Column title={t('Today')} href="/today" tasks={todayTasks()} loading={!today.data()} when="today" onDone={complete} onOpen={setActive} onChanged={refreshAll} />
+        <Column title={t('Tomorrow')} href="/tomorrow" tasks={tomorrowTasks()} loading={!tomorrow.data()} when="tomorrow" onDone={complete} onOpen={setActive} onChanged={refreshAll} />
+        <Column title={t('Later')} href="/tasks/upcoming" tasks={laterTasks()} loading={!upcoming.data()} when="later" onDone={complete} onOpen={setActive} onChanged={refreshAll} />
       </div>
       <TaskEditor
         task={active()}
@@ -102,6 +108,13 @@ export function TaskAgenda(): JSX.Element {
   );
 }
 
+const GROUP_ICON: Record<TaskGroup['kind'], () => JSX.Element> = {
+  project: () => <FolderKanban size={11} />,
+  client: () => <Handshake size={11} />,
+  business: () => <Briefcase size={11} />,
+  personal: () => <User size={11} />,
+};
+
 function Column(props: {
   title: string;
   href: string;
@@ -110,8 +123,13 @@ function Column(props: {
   when: 'today' | 'tomorrow' | 'later';
   onDone: (task: Task) => void;
   onOpen: (task: Task) => void;
+  onChanged: () => void;
 }): JSX.Element {
-  const rest = () => Math.max(0, props.tasks.length - VISIBLE);
+  const groups = createMemo(() => groupByProject(props.tasks));
+  const groupLabel = (group: TaskGroup) =>
+    group.projectId !== null
+      ? tx('project', group.projectId, 'name', group.name)
+      : t(LOOSE_LABEL[group.kind as Exclude<TaskGroup['kind'], 'project'>]);
   return (
     <div class={styles.column}>
       <A href={props.href} class={styles.columnHead}>
@@ -121,19 +139,49 @@ function Column(props: {
       <Show when={!props.loading && props.tasks.length === 0}>
         <p class={styles.empty}>{t('Nothing due.')}</p>
       </Show>
-      <ul class={styles.list}>
-        <For each={props.tasks.slice(0, VISIBLE)}>{(task) => <Row task={task} when={props.when} onDone={props.onDone} onOpen={props.onOpen} />}</For>
-      </ul>
-      <Show when={rest() > 0}>
-        <A href={props.href} class={styles.more}>
-          {t('+{count} more', { count: rest() })}
-        </A>
-      </Show>
+      {/* Every task is here; a long day scrolls inside its own block, not the page. */}
+      <div class={styles.scroll}>
+      <For each={groups()}>
+        {(group) => (
+          <div class={styles.group}>
+            <Show
+              when={group.projectId}
+              fallback={
+                <span class={styles.groupHead}>
+                  {GROUP_ICON[group.kind]()}
+                  <span class={styles.groupName}>{groupLabel(group)}</span>
+                </span>
+              }
+            >
+              {(id) => (
+                <A href={`/projects/${id()}/tasks`} class={styles.groupHead}>
+                  {GROUP_ICON[group.kind]()}
+                  <span class={styles.groupName}>{groupLabel(group)}</span>
+                </A>
+              )}
+            </Show>
+            <ul class={styles.list}>
+              <For each={group.tasks}>
+                {(task) => (
+                  <Row task={task} when={props.when} onDone={props.onDone} onOpen={props.onOpen} onChanged={props.onChanged} />
+                )}
+              </For>
+            </ul>
+          </div>
+        )}
+      </For>
+      </div>
     </div>
   );
 }
 
-function Row(props: { task: Task; when: 'today' | 'tomorrow' | 'later'; onDone: (task: Task) => void; onOpen: (task: Task) => void }): JSX.Element {
+function Row(props: {
+  task: Task;
+  when: 'today' | 'tomorrow' | 'later';
+  onDone: (task: Task) => void;
+  onOpen: (task: Task) => void;
+  onChanged: () => void;
+}): JSX.Element {
   const tag = () => tagFor(props.task);
   const use12h = () => authStore.user()?.preferences.time_format === '12h';
   const title = () => tx('task', props.task.id, 'title', props.task.title);
@@ -145,7 +193,16 @@ function Row(props: { task: Task; when: 'today' | 'tomorrow' | 'later'; onDone: 
     return task.due_has_time ? (formatDueDate(task.due_at, true, use12h()).split(' ').pop() ?? '') : '';
   };
   return (
-    <li class={[styles.row, props.task.is_overdue ? styles.overdue : ''].filter(Boolean).join(' ')}>
+    <li
+      class={[
+        styles.row,
+        props.task.is_overdue ? styles.overdue : '',
+        priorityTone(props.task.priority) === 'red' ? styles.urgent : '',
+        priorityTone(props.task.priority) === 'yellow' ? styles.warn : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <button type="button" class={styles.check} onClick={() => props.onDone(props.task)} aria-label={t('Mark done')} title={t('Mark done')}>
         <Check size={11} />
       </button>
@@ -158,6 +215,12 @@ function Row(props: { task: Task; when: 'today' | 'tomorrow' | 'later'; onDone: 
           {meta()}
         </span>
       </Show>
+      <span class={styles.quick}>
+        <PriorityDots task={props.task} size="sm" onChanged={props.onChanged} />
+        <Show when={props.task.can_edit && props.task.parent === null}>
+          <QuickProjectPicker task={props.task} size="sm" onChanged={props.onChanged} />
+        </Show>
+      </span>
     </li>
   );
 }

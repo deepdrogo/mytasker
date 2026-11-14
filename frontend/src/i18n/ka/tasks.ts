@@ -1,5 +1,20 @@
 // Georgian UI strings — tasks feature (editor, list page). Keys are the English source strings.
 export const tasks: Record<string, string> = {
+  // Quick row buttons: file into a project, raise priority
+  'Change project': 'პროექტის შეცვლა',
+  'Put into a project': 'პროექტში ჩასმა',
+  'Find a project…': 'პროექტის ძებნა…',
+  'No matching project.': 'ასეთი პროექტი ვერ მოიძებნა.',
+  'Out of the project → Business': 'პროექტიდან ამოღება → ბიზნესი',
+  'Out of the project → Personal': 'პროექტიდან ამოღება → პირადი',
+  'Moved to {name}': 'გადავიდა: {name}',
+  'Back to normal priority': 'ჩვეულებრივ პრიორიტეტზე დაბრუნება',
+  'Priority colour': 'პრიორიტეტის ფერი',
+  'Mark yellow - high priority': 'გაყვითლება — მაღალი პრიორიტეტი',
+  'Mark red - critical': 'გაწითლება — კრიტიკული',
+  'Marked yellow': 'გაყვითლდა',
+  'Marked red': 'გაწითლდა',
+
   // Archive section
   'Tasks you have put away. Nothing is deleted — restore anything, anytime.':
     'დავალებები, რომლებიც გადადე. არაფერი იშლება — ნებისმიერ დროს აღადგენ.',

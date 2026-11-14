@@ -1,0 +1,87 @@
+.dots {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* The hit area is the button; the dot is drawn inside it. */
+.dot {
+  --tone: var(--c-urgent);
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  cursor: pointer;
+}
+
+.dot::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--white-300);
+  background: transparent;
+  transition:
+    border-color var(--t-fast),
+    background var(--t-fast),
+    box-shadow var(--t-fast),
+    transform var(--t-fast);
+}
+
+.yellow {
+  --tone: var(--c-warn);
+}
+
+.red {
+  --tone: var(--c-urgent);
+}
+
+.dot:hover:not(:disabled)::before {
+  border-color: var(--tone);
+  transform: scale(1.15);
+}
+
+.on::before {
+  border-color: var(--tone);
+  background: var(--tone);
+  box-shadow: 0 0 8px var(--tone);
+}
+
+.dot:disabled {
+  cursor: default;
+}
+
+.dot:focus-visible {
+  outline: 1px solid var(--c-focus);
+  outline-offset: -2px;
+}
+
+.sm .dot {
+  width: 18px;
+  height: 20px;
+}
+
+.sm .dot::before {
+  width: 9px;
+  height: 9px;
+}
+
+@media (hover: none) {
+  .dot {
+    width: 30px;
+    height: 32px;
+  }
+  .dot::before {
+    width: 13px;
+    height: 13px;
+  }
+  .sm .dot {
+    width: 26px;
+    height: 28px;
+  }
+}

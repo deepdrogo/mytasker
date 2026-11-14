@@ -96,6 +96,55 @@
   color: var(--c-text-faint);
 }
 
+/* Each day block scrolls on its own once it holds more than ~10 rows. */
+.scroll {
+  max-height: 340px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--white-200) transparent;
+  margin-right: calc(-1 * var(--s-2));
+  padding-right: var(--s-2);
+}
+
+.scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scroll::-webkit-scrollbar-thumb {
+  border-radius: var(--r-full);
+  background: var(--white-200);
+}
+
+/* One project (or Clients / Business / Personal) inside a day block. */
+.group + .group {
+  margin-top: var(--s-2);
+}
+
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 2px var(--s-2) 1px 5px;
+  font-size: 10.5px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-text-faint);
+  text-decoration: none;
+}
+
+a.groupHead:hover {
+  color: var(--c-text);
+}
+
+.groupName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .list {
   display: flex;
   flex-direction: column;
@@ -206,16 +255,30 @@
   text-underline-offset: 2px;
 }
 
-.more {
-  padding: 2px var(--s-2) 0;
-  font-family: var(--font-mono);
-  font-size: 11.5px;
-  color: var(--c-text-faint);
-  text-decoration: none;
+/* Priority colours: red = Critical, yellow = High. */
+.urgent {
+  background: linear-gradient(90deg, var(--c-urgent-soft), transparent 70%);
+  box-shadow: inset 2px 0 0 var(--c-urgent);
 }
 
-.more:hover {
-  color: var(--c-text);
+.urgent:hover {
+  background: linear-gradient(90deg, var(--c-urgent-soft), var(--white-040) 70%);
+}
+
+.warn {
+  background: linear-gradient(90deg, var(--c-warn-soft), transparent 70%);
+  box-shadow: inset 2px 0 0 var(--c-warn);
+}
+
+.warn:hover {
+  background: linear-gradient(90deg, var(--c-warn-soft), var(--white-040) 70%);
+}
+
+.quick {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 1px;
 }
 
 @media (max-width: 1100px) {

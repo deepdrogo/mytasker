@@ -35,6 +35,9 @@ import { polishTasks } from '~/features/ai/polish';
 import { tasksApi } from '~/features/tasks/api';
 import { HandOverDialog } from '~/features/tasks/HandOverDialog';
 import { MoveTaskDialog } from '~/features/tasks/MoveTaskDialog';
+import { priorityTone } from '~/features/tasks/priority';
+import { PriorityDots } from '~/features/tasks/PriorityDots';
+import { QuickProjectPicker } from '~/features/tasks/QuickProjectPicker';
 import { t, tn } from '~/i18n';
 import { authStore } from '~/stores/auth';
 import { tx } from '~/stores/translations';
@@ -357,6 +360,8 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
         styles.row,
         done() ? styles.done : '',
         props.task.is_client ? styles.client : '',
+        !done() && priorityTone(props.task.priority) === 'red' ? styles.urgent : '',
+        !done() && priorityTone(props.task.priority) === 'yellow' ? styles.warn : '',
         ongoing() && props.task.today_skipped ? styles.skippedToday : '',
         props.compact ? styles.compact : '',
         props.dense ? styles.dense : '',
@@ -565,6 +570,16 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
           </Meta>
         </Show>
       </div>
+
+      {/* Always on screen, not behind hover: yellow / red priority everywhere, file into a project where there is room. */}
+      <Show when={props.task.status !== 'done'}>
+        <div class={styles.quick}>
+          <PriorityDots task={props.task} onChanged={props.onChanged} size={props.dense ? 'sm' : undefined} />
+          <Show when={!props.dense && props.task.can_edit && props.task.parent === null && isOwner()}>
+            <QuickProjectPicker task={props.task} onChanged={props.onChanged} />
+          </Show>
+        </div>
+      </Show>
 
       <div class={styles.actions}>
         <Show when={isRunning()}>

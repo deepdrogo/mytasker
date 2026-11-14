@@ -72,6 +72,7 @@ export function DayTaskListPage(props: { day: DayView }): JSX.Element {
       composerPlaceholder={t(copy().placeholder)}
       showProject
       showKind
+      groupByProject
       defaultOrdering="priority"
       tabs={TABS.map((tab) => ({ ...tab, label: t(tab.label) }))}
       emptyTitle={t(copy().emptyTitle)}

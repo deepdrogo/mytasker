@@ -1,5 +1,6 @@
 import type { JSX } from 'solid-js';
 import { createSignal, Show } from 'solid-js';
+import { Dynamic } from 'solid-js/web';
 import { Page } from '~/components/shared/Page';
 import { Button } from '~/components/ui/Button';
 import { Select } from '~/components/ui/Input';
@@ -8,6 +9,7 @@ import { ShareDialog } from '~/features/sharing/ShareDialog';
 import { tasksApi, taskListKey, type TaskInput, type TaskListParams } from '~/features/tasks/api';
 import { TaskComposer } from '~/features/tasks/TaskComposer';
 import { TaskEditor } from '~/features/tasks/TaskEditor';
+import { GroupedTaskList } from '~/features/tasks/GroupedTaskList';
 import { TaskList } from '~/features/tasks/TaskList';
 import { TaskSelectionBar } from '~/features/tasks/TaskSelectionBar';
 import { createQuery } from '~/hooks/createQuery';
@@ -36,6 +38,8 @@ interface TaskListPageProps {
   pageSize?: number;
   /** Extra block rendered between the composer and the list (e.g. Today's daily check-ins). */
   beforeList?: (ctx: { openTask: (task: Task) => void; shareTask: (task: Task) => void }) => JSX.Element;
+  /** Cut the list into one block per project, then loose Clients / Business / Personal. */
+  groupByProject?: boolean;
 }
 
 const SORTS = [
@@ -130,7 +134,8 @@ export function TaskListPage(props: TaskListPageProps): JSX.Element {
             onShare={setShareTasks}
           />
 
-          <TaskList
+          <Dynamic
+            component={props.groupByProject ? GroupedTaskList : TaskList}
             tasks={query.data()?.results}
             loading={query.loading()}
             error={query.error()}

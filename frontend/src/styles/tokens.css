@@ -69,6 +69,14 @@
   --black-800: rgba(0, 0, 0, 0.8);
   --black-900: rgba(0, 0, 0, 0.9);
 
+  /* ---- Semantic: task priority — the only hues in the system: red = Critical, yellow = High -- */
+  --c-urgent: #ff5a52;
+  --c-urgent-soft: rgba(255, 90, 82, 0.12);
+  --c-urgent-line: rgba(255, 90, 82, 0.55);
+  --c-warn: #f5c451;
+  --c-warn-soft: rgba(245, 196, 81, 0.1);
+  --c-warn-line: rgba(245, 196, 81, 0.5);
+
   /* ---- Semantic: surfaces ------------------------------------------------------------------- */
   --bg-app: var(--grey-00);
   --bg-card: rgba(255, 255, 255, 0.034);
