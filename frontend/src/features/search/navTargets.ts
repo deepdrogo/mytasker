@@ -11,6 +11,7 @@ export const NAV_TARGETS: NavTarget[] = [
   { id: 'dashboard', label: 'Dashboard', href: '/dashboard', keywords: 'home overview დეშბორდი' },
   { id: 'today', label: 'Today', href: '/today', keywords: 'due today დღეს' },
   { id: 'tomorrow', label: 'Tomorrow', href: '/tomorrow', keywords: 'ხვალ' },
+  { id: 'day', label: 'Day', href: '/day', keywords: 'pick a day date future weekday დღე თარიღი ორშაბათი' },
   { id: 'clients', label: 'Clients', href: '/tasks/clients', keywords: 'client customer კლიენტი კლიენტები' },
   { id: 'people', label: 'People', href: '/people', keywords: 'delegate assign ხალხი ასისტენტი', adminOnly: true },
   { id: 'all-tasks', label: 'All tasks', href: '/tasks/all', keywords: 'canvas ყველა დავალება' },

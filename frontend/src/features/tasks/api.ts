@@ -8,6 +8,11 @@ export interface TaskListParams extends QueryParams {
   exclude_kind?: TaskKind;
   origin?: TaskOrigin;
   view?: 'today' | 'tomorrow' | 'week' | 'upcoming' | 'overdue' | 'no_date' | 'completed';
+  /** One chosen day (`YYYY-MM-DD`, the Day page): open tasks due on it. */
+  due_on?: string;
+  /** ISO datetimes: due at or after / strictly before. */
+  due_after?: string;
+  due_before?: string;
   /** Inclusive dates for the task calendar. A start date through the due date matches every day inside. */
   span_from?: string;
   span_to?: string;

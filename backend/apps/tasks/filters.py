@@ -42,6 +42,8 @@ class TaskFilter(filters.FilterSet):
     completed = filters.BooleanFilter(method="filter_completed")
     overdue = filters.BooleanFilter(method="filter_overdue")
     view = filters.CharFilter(method="filter_view")
+    # One chosen calendar day (the Day page): what is due on it, open only. Bounds in the user's timezone.
+    due_on = filters.DateFilter(method="filter_due_on")
     # Inclusive window for the task calendar only. Does not change Today / Tomorrow.
     span_from = filters.DateFilter(method="filter_span_from")
     span_to = filters.DateFilter(method="filter_span_to")
@@ -123,6 +125,12 @@ class TaskFilter(filters.FilterSet):
             span_start=Coalesce("start_at", "due_at"),
             span_end=Coalesce("due_at", "start_at"),
         ).filter(span_start__lt=window_end, span_end__gte=window_start)
+
+    def filter_due_on(self, queryset, name, value):
+        start, end = day_bounds(self.request.user, value)
+        return queryset.filter(due_at__gte=start, due_at__lt=end).exclude(
+            status__in=[Task.Status.DONE, Task.Status.CANCELLED]
+        )
 
     def filter_view(self, queryset, name, value):
         """Named date views resolved in the user's timezone."""

@@ -224,4 +224,17 @@ export const tasks: Record<string, string> = {
   'Add a task for tomorrow…': 'დაამატე დავალება ხვალისთვის…',
   'Nothing due tomorrow.': 'ხვალ ვადიანი არაფერია.',
   'Add a task above and it lands on tomorrow’s list.': 'დაამატე დავალება ზემოთ და ხვალინდელ სიაში მოხვდება.',
+
+  // Day page: any picked date
+  'Only what is due on this day.': 'მხოლოდ ის, რასაც ამ დღეს აქვს ვადა.',
+  'Add a task for this day…': 'დაამატე დავალება ამ დღისთვის…',
+  'Nothing due on this day.': 'ამ დღეს ვადიანი არაფერია.',
+  'Add a task above and it lands on this day’s list.': 'დაამატე დავალება ზემოთ და ამ დღის სიაში მოხვდება.',
+  'Pick a day': 'აირჩიე დღე',
+  'Next two weeks': 'მომდევნო ორი კვირა',
+  today: 'დღეს',
+  tomorrow: 'ხვალ',
+  'in {n} days': '{n} დღეში',
+  '{n} days ago': '{n} დღის წინ',
+  'Go to a day': 'გადადი დღეზე',
 };

@@ -3,6 +3,7 @@ import {
   Archive,
   Bitcoin,
   BookText,
+  CalendarDays,
   Briefcase,
   CalendarClock,
   History,
@@ -71,6 +72,7 @@ const SECTIONS: NavSection[] = [
       { label: 'Dashboard', href: '/dashboard', icon: () => <LayoutDashboard size={15} /> },
       { label: 'Today', href: '/today', icon: () => <Sun size={15} /> },
       { label: 'Tomorrow', href: '/tomorrow', icon: () => <Sunrise size={15} /> },
+      { label: 'Day', href: '/day', icon: () => <CalendarDays size={15} /> },
     ],
   },
   {
@@ -172,6 +174,7 @@ const PROJECT_SECTION: NavSection = {
 const DAY_LINKS: NavLink[] = [
   { label: 'Today', href: '/today', icon: () => <Sun size={15} /> },
   { label: 'Tomorrow', href: '/tomorrow', icon: () => <Sunrise size={15} /> },
+  { label: 'Day', href: '/day', icon: () => <CalendarDays size={15} /> },
 ];
 
 const TASK_LINKS: NavLink[] = [

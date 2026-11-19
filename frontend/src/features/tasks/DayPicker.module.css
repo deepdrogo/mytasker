@@ -1,0 +1,242 @@
+/* Day page picker: chosen day, a two-week strip, and a fold-out month. Same frosted framing as the check-ins. */
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  background: var(--white-020);
+}
+
+.current {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--r-md);
+  background: var(--c-surface);
+  color: var(--c-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.current:hover {
+  background: var(--c-hover);
+}
+
+.currentLabel {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  text-transform: capitalize;
+}
+
+.currentRel {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--c-text-faint);
+}
+
+.chevron {
+  margin-left: auto;
+  color: var(--c-text-dim);
+  transition: transform 0.15s ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+/* ---- two-week strip ---- */
+.strip {
+  display: flex;
+  gap: var(--s-1);
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+
+.chip {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-width: 3rem;
+  padding: 6px 4px 4px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  background: none;
+  color: var(--c-text-dim);
+  font: inherit;
+  cursor: pointer;
+}
+
+.chip:hover {
+  background: var(--c-hover);
+  color: var(--c-text);
+}
+
+.chipDow {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.chipNum {
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text);
+}
+
+.chipCount {
+  min-height: 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--c-text-faint);
+}
+
+.weekend .chipDow {
+  color: var(--c-text-faint);
+}
+
+.chipOn,
+.chipOn:hover {
+  border-color: var(--c-invert-bg);
+  background: var(--c-invert-bg);
+  color: var(--c-invert-text);
+}
+
+.chipOn .chipNum,
+.chipOn .chipDow,
+.chipOn .chipCount {
+  color: var(--c-invert-text);
+}
+
+/* ---- month ---- */
+.month {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding-top: var(--s-2);
+  border-top: 1px solid var(--c-border);
+}
+
+.monthHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.monthTitle {
+  font-size: var(--fs-md);
+  font-weight: 560;
+  text-transform: capitalize;
+}
+
+.nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  background: none;
+  color: var(--c-text-dim);
+  cursor: pointer;
+}
+
+.nav:hover:not(:disabled) {
+  background: var(--c-hover);
+  color: var(--c-text);
+}
+
+.nav:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.weekdays,
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.weekdays span {
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-text-faint);
+}
+
+.cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  height: 2.6rem;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  background: var(--white-020);
+  color: var(--c-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.cell:hover:not(:disabled) {
+  background: var(--c-hover);
+  border-color: var(--c-border-strong);
+}
+
+.cellNum {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+
+.cellCount {
+  padding: 0 5px;
+  border-radius: var(--r-full);
+  background: var(--white-080);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  line-height: 14px;
+  color: var(--c-text-dim);
+}
+
+.outside {
+  background: none;
+  color: var(--c-text-faint);
+}
+
+.isToday {
+  border-color: var(--c-border-strong);
+}
+
+.isToday .cellNum {
+  font-weight: var(--fw-bold);
+}
+
+.past {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.cellOn,
+.cellOn:hover:not(:disabled) {
+  border-color: var(--c-invert-bg);
+  background: var(--c-invert-bg);
+  color: var(--c-invert-text);
+}
+
+.cellOn .cellCount {
+  background: rgba(0, 0, 0, 0.12);
+  color: var(--c-invert-text);
+}

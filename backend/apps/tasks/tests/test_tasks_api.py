@@ -152,6 +152,29 @@ def test_today_and_tomorrow_views(client_for, user):
     assert tomorrow == [tmr["id"]]
 
 
+def test_due_on_lists_one_chosen_day(client_for, user):
+    """The Day page: any picked date shows what is due on it - open work only, nothing from the days around it."""
+    from common.tz import today_for
+
+    client = client_for(user)
+    day = today_for(user) + timezone.timedelta(days=5)
+    noon = timezone.make_aware(timezone.datetime.combine(day, timezone.datetime.min.time())) + timezone.timedelta(
+        hours=12
+    )
+
+    def add(title: str, due) -> dict:
+        return client.post("/api/v1/tasks/", {"title": title, "due_at": due.isoformat()}, format="json").data
+
+    picked = add("Picked day", noon)
+    done = add("Picked but done", noon)
+    client.post(f"/api/v1/tasks/{done['id']}/complete/")
+    add("Day before", noon - timezone.timedelta(days=1))
+    add("Day after", noon + timezone.timedelta(days=1))
+
+    rows = client.get("/api/v1/tasks/", {"due_on": day.isoformat()}).data["results"]
+    assert [row["id"] for row in rows] == [picked["id"]]
+
+
 def test_start_through_due_spans_the_calendar_and_leaves_today_alone(auth_client):
     """Wednesday through Friday is three calendar days. Today still lists only the due day."""
     auth_client.post(

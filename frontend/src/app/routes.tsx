@@ -9,6 +9,7 @@ import { ProtectedLayout } from '~/app/ProtectedLayout';
 const Dashboard = lazy(() => import('~/routes/Dashboard'));
 const TasksToday = lazy(() => import('~/routes/tasks/Today'));
 const TasksTomorrow = lazy(() => import('~/routes/tasks/Tomorrow'));
+const TasksDay = lazy(() => import('~/routes/tasks/Day'));
 const TasksPersonal = lazy(() => import('~/routes/tasks/Personal'));
 const TasksBusiness = lazy(() => import('~/routes/tasks/Business'));
 const TasksCrypto = lazy(() => import('~/routes/tasks/Crypto'));
@@ -66,6 +67,7 @@ export const routes: RouteDefinition[] = [
       // Today / Tomorrow are plain task lists: only what is due on that day (Today also carries overdue work).
       { path: '/today', component: TasksToday },
       { path: '/tomorrow', component: TasksTomorrow },
+      { path: '/day/:date?', component: TasksDay },
       { path: '/tasks', component: () => <Navigate href="/tasks/all" /> },
       { path: '/tasks/clients', component: TasksClients },
       // People: administrators hand work to other accounts; each receiver gets a "From <name>" page.
