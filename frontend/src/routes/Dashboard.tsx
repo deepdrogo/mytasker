@@ -1,5 +1,5 @@
-// MyTasker — the Dashboard. Tasks first, then the Working projects board (with Advertising work) beside the
-// timers and numbers, and the routine and rules at the bottom.
+// MyTasker — the Dashboard. The Working projects board (with Advertising work) beside the timers and numbers,
+// then the tasks, and the routine and rules at the bottom.
 // Built by drogoz · https://github.com/deepdrogo/mytasker
 
 import { A } from '@solidjs/router';
@@ -54,13 +54,14 @@ export default function Dashboard(): JSX.Element {
                 </div>
               </Show>
 
-              {/* Top, full width: what is due - Today / Tomorrow / Later. Tasks matter most, so they lead. */}
-              <TaskAgenda />
-
-              {/* Main column: the Working projects board (same as its own page), then the advertising candidates */}
+              {/* Main column: the Working projects board (same as its own page), the advertising candidates, and
+                  right under them what is due - Today / Tomorrow / Later */}
               <section class={styles.col}>
                 <WorkingBoard />
                 <AdWorkStrip />
+                <div class={styles.tasks}>
+                  <TaskAgenda />
+                </div>
               </section>
 
               {/* Side column: timers and the day's numbers */}

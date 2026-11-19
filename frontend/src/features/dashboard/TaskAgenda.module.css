@@ -1,4 +1,4 @@
-/* Dashboard task strip — three dense columns at the very top of the page. */
+/* Dashboard task strip — three dense columns right under the projects. */
 
 .agenda {
   grid-column: 1 / -1;

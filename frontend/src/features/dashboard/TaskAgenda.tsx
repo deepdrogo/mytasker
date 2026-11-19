@@ -1,4 +1,4 @@
-// MyTasker — the Dashboard's task strip (at the very top): Today, Tomorrow and Later stacked in tight blocks, each cut by project,
+// MyTasker — the Dashboard's task strip (under the projects): Today, Tomorrow and Later stacked in tight blocks, each cut by project,
 // each row tagged Client, Personal or Business. Tick to complete, yellow / red dots for priority, folder to file it.
 
 import { A } from '@solidjs/router';

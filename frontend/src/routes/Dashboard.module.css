@@ -50,7 +50,14 @@
   gap: var(--s-5);
 }
 
-/* Routine and rules: full width under the board, as many columns as fit. */
+/* Tasks: right under the projects, in the main column. */
+.tasks {
+  min-width: 0;
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--c-border);
+}
+
+/* Routine and rules: full width under the tasks, as many columns as fit. */
 .bottom {
   grid-column: 1 / -1;
   display: grid;
@@ -514,8 +521,8 @@
   font-weight: var(--fw-semibold);
 }
 
-/* Single column (phone / small tablet): tasks, then the board and ad work, then timers + numbers, then
-   routine + rules - plain document order. */
+/* Single column (phone / small tablet): the board, ad work and tasks, then timers + numbers, then routine + rules
+   - plain document order. */
 @media (max-width: 1100px) {
   .grid {
     grid-template-columns: 1fr;
