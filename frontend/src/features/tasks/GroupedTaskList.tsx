@@ -2,7 +2,7 @@
 // Built by drogoz · https://github.com/deepdrogo/mytasker
 
 import { A } from '@solidjs/router';
-import { Briefcase, FolderKanban, Handshake, User } from 'lucide-solid';
+import { Briefcase, FolderKanban, Handshake, Megaphone, User } from 'lucide-solid';
 import type { ComponentProps, JSX } from 'solid-js';
 import { createMemo, For, Show, splitProps } from 'solid-js';
 import { priorityTone, type PriorityTone } from '~/features/tasks/priority';
@@ -18,6 +18,7 @@ type TaskListProps = ComponentProps<typeof TaskList>;
 const ICON: Record<TaskGroup['kind'], () => JSX.Element> = {
   project: () => <FolderKanban size={13} />,
   client: () => <Handshake size={13} />,
+  ad: () => <Megaphone size={13} />,
   business: () => <Briefcase size={13} />,
   personal: () => <User size={13} />,
 };

@@ -9,6 +9,7 @@ import { Dropdown, type MenuItem } from '~/components/ui/Dropdown';
 import { ConfirmDialog, EmptyState, ErrorNote, Skeleton } from '~/components/ui/Feedback';
 import { projectsApi, workGroupsApi, type WorkGroup } from '~/features/projects/api';
 import { ProjectAvatar } from '~/features/projects/ProjectAvatar';
+import { AdDot, saveAd, saveWorkState, STATE_LABEL, StateDot } from '~/features/projects/ProjectDots';
 import { createQuery } from '~/hooks/createQuery';
 import { createSortable, type Sortable } from '~/hooks/createSortable';
 import { t } from '~/i18n';
@@ -18,19 +19,10 @@ import type { ID, Project, WorkState } from '~/types';
 import { cx } from '~/utils/cx';
 import styles from './WorkingBoard.module.css';
 
-/** Tapping the dot walks the cycle: waiting (yellow) → active (blue) → working (green) → waiting. */
-const NEXT_STATE: Record<WorkState, WorkState> = { waiting: 'active', active: 'working', working: 'waiting' };
-const STATE_ORDER: WorkState[] = ['working', 'active', 'waiting'];
-const STATE_LABEL: Record<WorkState, string> = { working: 'Working', active: 'Active', waiting: 'Waiting' };
+export const STATE_ORDER: WorkState[] = ['working', 'active', 'waiting'];
 const STATE_COUNT: Record<WorkState, string> = { working: '{count} working', active: '{count} active', waiting: '{count} waiting' };
 const STATE_KEY: Record<WorkState, string> = { working: styles.keyWorking!, active: styles.keyActive!, waiting: '' };
 const STATE_CHIP: Record<WorkState, string> = { working: styles.chipWorking!, active: styles.chipActive!, waiting: styles.chipWaiting! };
-const STATE_DOT: Record<WorkState, string> = { working: styles.dotWorking!, active: styles.dotActive!, waiting: '' };
-const STATE_TITLE: Record<WorkState, string> = {
-  waiting: 'Waiting — click for Active',
-  active: 'Active — click for Working',
-  working: 'Working — click for Waiting',
-};
 
 const countIn = (projects: Project[], state: WorkState) => projects.filter((project) => project.work_state === state).length;
 
@@ -69,17 +61,17 @@ export function WorkingBoard(props: {
     );
   };
 
-  const cycleState = async (project: Project) => {
+  const cycleState = async (project: Project, next: WorkState) => {
     if (!project.capabilities.manage_project) return;
     const previous = project.work_state;
-    const next = NEXT_STATE[previous];
     patch(project.id, { work_state: next, is_working: next === 'working' });
-    try {
-      await projectsApi.setWorkState(project.id, next);
-    } catch {
-      patch(project.id, { work_state: previous, is_working: previous === 'working' });
-      toast(t('Could not update the project.'));
-    }
+    if (!(await saveWorkState(project, next))) patch(project.id, { work_state: previous, is_working: previous === 'working' });
+  };
+
+  const toggleAd = async (project: Project, on: boolean) => {
+    if (!project.capabilities.manage_project) return;
+    patch(project.id, { is_ad: on });
+    if (!(await saveAd(project, on))) patch(project.id, { is_ad: !on });
   };
 
   const moveTo = async (project: Project, groupId: ID | null) => {
@@ -201,6 +193,7 @@ export function WorkingBoard(props: {
                         groups={groups()}
                         onReorder={saveOrder}
                         onCycleState={cycleState}
+                onToggleAd={toggleAd}
                         onMove={moveTo}
                       />
                     )}
@@ -218,6 +211,7 @@ export function WorkingBoard(props: {
                       sortable={groupSortable}
                       onReorder={saveOrder}
                       onCycleState={cycleState}
+                onToggleAd={toggleAd}
                       onMove={moveTo}
                       onRenamed={() => groupsQuery.refetch()}
                       onDeleted={() => {
@@ -237,6 +231,7 @@ export function WorkingBoard(props: {
                 groups={groups()}
                 onReorder={saveOrder}
                 onCycleState={cycleState}
+                onToggleAd={toggleAd}
                 onMove={moveTo}
               />
             </Show>
@@ -253,7 +248,8 @@ function GroupShelf(props: {
   groups: WorkGroup[];
   sortable: Sortable<WorkGroup>;
   onReorder: (projects: Project[]) => void;
-  onCycleState: (project: Project) => void;
+  onCycleState: (project: Project, next: WorkState) => void;
+  onToggleAd: (project: Project, on: boolean) => void;
   onMove: (project: Project, groupId: ID | null) => void;
   onRenamed: () => void;
   onDeleted: () => void;
@@ -347,6 +343,7 @@ function GroupShelf(props: {
         groups={props.groups}
         onReorder={props.onReorder}
         onCycleState={props.onCycleState}
+        onToggleAd={props.onToggleAd}
         onMove={props.onMove}
       />
       <ConfirmDialog
@@ -367,7 +364,8 @@ function ProjectGrid(props: {
   projects: Project[];
   groups: WorkGroup[];
   onReorder: (projects: Project[]) => void;
-  onCycleState: (project: Project) => void;
+  onCycleState: (project: Project, next: WorkState) => void;
+  onToggleAd: (project: Project, on: boolean) => void;
   onMove: (project: Project, groupId: ID | null) => void;
 }): JSX.Element {
   // Projects in work (green) lead their group on a lit shelf of their own; the rest follow. Automatic:
@@ -405,7 +403,8 @@ function ChipList(props: {
   projects: Project[];
   groups: WorkGroup[];
   onReorder: (projects: Project[]) => void;
-  onCycleState: (project: Project) => void;
+  onCycleState: (project: Project, next: WorkState) => void;
+  onToggleAd: (project: Project, on: boolean) => void;
   onMove: (project: Project, groupId: ID | null) => void;
 }): JSX.Element {
   const sortable = createSortable<Project>({
@@ -423,7 +422,8 @@ function ChipList(props: {
               project={project}
               groups={props.groups}
               sortable={sortable}
-              onCycleState={() => props.onCycleState(project)}
+              onCycleState={(next) => props.onCycleState(project, next)}
+              onToggleAd={(on) => props.onToggleAd(project, on)}
               onMove={(groupId) => props.onMove(project, groupId)}
             />
           )}
@@ -433,7 +433,7 @@ function ChipList(props: {
 }
 
 /** Green working, blue active, yellow waiting. Zero counts are left out. */
-function Tally(props: { projects: Project[] }): JSX.Element {
+export function Tally(props: { projects: Project[] }): JSX.Element {
   return (
     <span class={styles.tally}>
       <For each={STATE_ORDER}>
@@ -454,7 +454,8 @@ function ProjectChip(props: {
   project: Project;
   groups: WorkGroup[];
   sortable: Sortable<Project>;
-  onCycleState: () => void;
+  onCycleState: (next: WorkState) => void;
+  onToggleAd: (on: boolean) => void;
   onMove: (groupId: ID | null) => void;
 }): JSX.Element {
   const name = () => tx('project', props.project.id, 'name', props.project.name);
@@ -521,18 +522,8 @@ function ProjectChip(props: {
           )}
         />
       </Show>
-      <button
-        type="button"
-        class={[styles.dot, STATE_DOT[props.project.work_state]].filter(Boolean).join(' ')}
-        disabled={!canManage()}
-        onClick={() => props.onCycleState()}
-        aria-label={t('{name}: {state}. Click to switch to {next}.', {
-          name: name(),
-          state: t(STATE_LABEL[props.project.work_state]),
-          next: t(STATE_LABEL[NEXT_STATE[props.project.work_state]]),
-        })}
-        title={t(STATE_TITLE[props.project.work_state])}
-      />
+      <AdDot project={props.project} onToggle={props.onToggleAd} class={styles.adDot} />
+      <StateDot project={props.project} onCycle={props.onCycleState} />
     </li>
   );
 }

@@ -88,6 +88,7 @@ class TaskSerializer(serializers.ModelSerializer):
             "estimated_minutes",
             "is_ongoing",
             "is_client",
+            "is_ad",
             "today_checked",
             "today_skipped",
             "checkin_done_count",
@@ -214,6 +215,7 @@ class TaskCreateSerializer(serializers.Serializer):
     estimated_minutes = serializers.IntegerField(required=False, allow_null=True, min_value=1, max_value=100000)
     is_ongoing = serializers.BooleanField(required=False, default=False)
     is_client = serializers.BooleanField(required=False, default=False)
+    is_ad = serializers.BooleanField(required=False, default=False)
     tags = serializers.ListField(child=serializers.CharField(max_length=40), required=False, default=list)
     recurrence = RecurrenceInputSerializer(required=False, allow_null=True)
 
@@ -236,6 +238,7 @@ class TaskUpdateSerializer(serializers.Serializer):
     estimated_minutes = serializers.IntegerField(required=False, allow_null=True, min_value=1, max_value=100000)
     is_ongoing = serializers.BooleanField(required=False)
     is_client = serializers.BooleanField(required=False)
+    is_ad = serializers.BooleanField(required=False)
     tags = serializers.ListField(child=serializers.CharField(max_length=40), required=False)
     sort_order = serializers.IntegerField(required=False)
     recurrence = RecurrenceInputSerializer(required=False, allow_null=True)

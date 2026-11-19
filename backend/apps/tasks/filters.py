@@ -31,6 +31,8 @@ class TaskFilter(filters.FilterSet):
     is_ongoing = filters.BooleanFilter(field_name="is_ongoing")
     # Client work; `is_client=true` is the Clients page, `false` hides it from a list.
     is_client = filters.BooleanFilter(field_name="is_client")
+    # Advertising work: `is_ad=true` is the Ads page.
+    is_ad = filters.BooleanFilter(field_name="is_ad")
     # Only tasks I own (`mine=true`), e.g. the People page listing what I handed to someone.
     mine = filters.BooleanFilter(method="filter_mine")
     # Work handed to me by someone else: `delegated=true` only that, `false` keeps it out of my own lists.

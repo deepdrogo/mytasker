@@ -109,6 +109,7 @@ export function DayTaskListPage(props: {
         due_has_time: false,
       }}
       composerPlaceholder={t(copy().placeholder)}
+      composerTargetPicker
       showProject
       showKind
       groupByProject

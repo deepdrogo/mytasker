@@ -79,6 +79,22 @@
     var(--rim-top);
 }
 
+/* Advertising work: a violet edge. Priority colours still win over it. */
+.ad {
+  background:
+    linear-gradient(90deg, var(--state-ad-soft), transparent 55%),
+    var(--g-glass);
+  border-color: var(--c-border);
+  box-shadow: inset 2px 0 0 var(--state-ad);
+}
+
+.ad:hover {
+  border-color: var(--state-ad-line);
+  box-shadow:
+    inset 2px 0 0 var(--state-ad),
+    var(--rim-top);
+}
+
 /* Critical priority: red. Wins over the client edge. */
 .urgent,
 .urgent.client {
@@ -144,7 +160,26 @@
   flex: none;
 }
 
-.dense .clientMark {
+.adMark {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 17px;
+  padding: 0 7px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--state-ad-line);
+  background: var(--state-ad-soft);
+  color: var(--state-ad-light);
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex: none;
+}
+
+.dense .clientMark,
+.dense .adMark {
   padding: 0 5px;
 }
 
@@ -525,7 +560,8 @@
   .title {
     flex: 1 1 70%;
   }
-  .clientMark {
+  .clientMark,
+  .adMark {
     padding: 0 5px;
   }
   .clientMarkText,

@@ -1,4 +1,5 @@
-import { Plus } from 'lucide-solid';
+import { A } from '@solidjs/router';
+import { Maximize2, Plus } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { createSignal, Show } from 'solid-js';
 import { ApiError } from '~/api/client';
@@ -7,6 +8,7 @@ import { Input } from '~/components/ui/Input';
 import { PeoplePicker } from '~/features/people/PeoplePicker';
 import { ProjectSelector } from '~/features/projects/ProjectSelector';
 import { tasksApi, type TaskInput } from '~/features/tasks/api';
+import { TargetSelect, targetPayload, TypeToggles, type TaskTarget, type TaskType } from '~/features/tasks/TaskTarget';
 import { t } from '~/i18n';
 import { toast } from '~/stores/ui';
 import type { ID, Task } from '~/types';
@@ -22,6 +24,12 @@ interface TaskComposerProps {
   projectPicker?: boolean;
   /** Administrators: hand the new task to someone on the People list (sticks between entries). */
   personPicker?: boolean;
+  /** Where the task goes: Personal / Business / a project (sticks between entries). Replaces projectPicker. */
+  targetPicker?: boolean;
+  /** Client / advertising toggles (stick between entries). */
+  typePicker?: boolean;
+  /** Link to the full Add task page. */
+  moreHref?: string;
 }
 
 /**
@@ -33,11 +41,17 @@ export function TaskComposer(props: TaskComposerProps): JSX.Element {
   const [error, setError] = createSignal('');
   const [projectId, setProjectId] = createSignal<ID | null>(null);
   const [personIds, setPersonIds] = createSignal<ID[]>([]);
+  // eslint-disable-next-line solid/reactivity -- initial value only
+  const [target, setTarget] = createSignal<TaskTarget>({ kind: props.defaults?.kind === 'personal' ? 'personal' : 'business' });
+  // eslint-disable-next-line solid/reactivity -- initial value only
+  const [type, setType] = createSignal<TaskType>({ client: !!props.defaults?.is_client, ad: !!props.defaults?.is_ad });
   let input: HTMLInputElement | undefined;
 
   const payload = (value: string): TaskInput => {
     const base: TaskInput = { ...props.defaults, title: value };
-    if (props.projectPicker && projectId() !== null) base.project_id = projectId();
+    if (props.targetPicker) Object.assign(base, targetPayload(target(), type()));
+    else if (props.typePicker) Object.assign(base, { is_client: type().client, is_ad: type().ad });
+    if (props.projectPicker && !props.targetPicker && projectId() !== null) base.project_id = projectId();
     if (props.personPicker && personIds().length > 0) base.assignee_ids = personIds();
     return base;
   };
@@ -86,7 +100,15 @@ export function TaskComposer(props: TaskComposerProps): JSX.Element {
         invalid={!!error()}
         maxLength={300}
       />
-      <Show when={props.projectPicker}>
+      <Show when={props.targetPicker}>
+        <div class={styles.project}>
+          <TargetSelect value={target()} onChange={setTarget} />
+        </div>
+      </Show>
+      <Show when={props.typePicker || props.targetPicker}>
+        <TypeToggles value={type()} onChange={setType} />
+      </Show>
+      <Show when={props.projectPicker && !props.targetPicker}>
         <div class={styles.project} title={t('Also file this task under a project')}>
           <ProjectSelector value={projectId()} onChange={setProjectId} />
         </div>
@@ -100,6 +122,11 @@ export function TaskComposer(props: TaskComposerProps): JSX.Element {
         <Button type="submit" variant="primary" size="sm" loading={busy()}>
           {t('Add')}
         </Button>
+      </Show>
+      <Show when={props.moreHref && !title().trim()}>
+        <A href={props.moreHref ?? '/tasks/new'} class={styles.more} title={t('Open the full Add task page')} aria-label={t('Open the full Add task page')}>
+          <Maximize2 size={13} />
+        </A>
       </Show>
     </form>
   );

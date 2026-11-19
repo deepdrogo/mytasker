@@ -95,3 +95,19 @@
   display: flex;
   align-items: center;
 }
+
+/* Link to the full Add task page, at the end of the line while it is empty. */
+.more {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-md);
+  color: var(--c-text-faint);
+}
+
+.more:hover {
+  background: var(--c-hover);
+  color: var(--c-text);
+}

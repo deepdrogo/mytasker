@@ -151,3 +151,37 @@
   fill: currentColor;
   filter: drop-shadow(0 0 6px var(--white-450));
 }
+
+/* Work-state and advertising dots, top-right of the name line: the same dots as on the Dashboard board. */
+.dots {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  flex: none;
+}
+
+/* Advertising candidate: a violet pill and a violet hairline along the top. */
+.adBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 18px;
+  padding: 0 7px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--state-ad-line);
+  background: var(--state-ad-soft);
+  color: var(--state-ad-light);
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.adCard {
+  border-color: color-mix(in srgb, var(--state-ad) 35%, var(--c-border));
+}
+
+.adCard::before {
+  height: 2px;
+  background: linear-gradient(90deg, var(--state-ad), transparent 70%);
+}

@@ -50,12 +50,19 @@
   gap: var(--s-5);
 }
 
-/* Two halves of the side column: timers + stats, then routine + rules. Split so narrow layouts can place them apart. */
-.sideGroup {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-5);
-  min-width: 0;
+/* Routine and rules: full width under the board, as many columns as fit. */
+.bottom {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--s-5) var(--s-7);
+  align-items: start;
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--c-border);
+}
+
+.bottomWide {
+  grid-column: 1 / -1;
 }
 
 .weekendNote {
@@ -507,28 +514,14 @@
   font-weight: var(--fw-semibold);
 }
 
-/* Single column (phone / small tablet). The side column dissolves into the grid so its halves can be placed apart:
-   timers + stats first, then the Working projects board, and routine + rules at the very bottom. */
+/* Single column (phone / small tablet): tasks, then the board and ad work, then timers + numbers, then
+   routine + rules - plain document order. */
 @media (max-width: 1100px) {
   .grid {
     grid-template-columns: 1fr;
   }
   .dayOff {
     order: -1;
-  }
-  .side {
-    display: contents;
-  }
-  .sideTop {
-    order: 0;
-  }
-  .col:nth-child(1) {
-    order: 1;
-  }
-  .sideBottom {
-    order: 3;
-    padding-top: var(--s-4);
-    border-top: 1px solid var(--c-border);
   }
   .stats {
     gap: var(--s-3);

@@ -30,6 +30,7 @@ export interface TaskListParams extends QueryParams {
   is_ongoing?: boolean;
   /** Client work: `true` only client tasks (the Clients page), `false` everything else. */
   is_client?: boolean;
+  is_ad?: boolean;
   /** Clients page: also list what I handed to People (other lists keep only my own plate). */
   handed_out?: boolean;
   /** `'0'` turns off the default "client work first" pinning. */
@@ -74,6 +75,7 @@ export interface TaskInput {
   estimated_minutes?: number | null;
   is_ongoing?: boolean;
   is_client?: boolean;
+  is_ad?: boolean;
   tags?: string[];
   sort_order?: number;
   recurrence?: Omit<RecurrenceRule, 'id'> | null;

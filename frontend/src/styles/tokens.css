@@ -126,6 +126,12 @@
   --state-waiting-light: #f8d26a;
   --state-waiting-deep: #d99a1e;
   --state-waiting-glow: rgba(245, 196, 81, 0.45);
+  /* Advertising work: the violet dot on ad-candidate projects and the edge of ad tasks. */
+  --state-ad: #b388ff;
+  --state-ad-light: #cfb3ff;
+  --state-ad-deep: #7c4dff;
+  --state-ad-soft: rgba(179, 136, 255, 0.12);
+  --state-ad-line: rgba(179, 136, 255, 0.55);
 
   /* ---- Component-facing names (kept so every module follows the semantic layer) -------------- */
   --c-bg: var(--bg-app);

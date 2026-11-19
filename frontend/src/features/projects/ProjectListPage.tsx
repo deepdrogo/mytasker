@@ -5,11 +5,13 @@ import { Page } from '~/components/shared/Page';
 import { Button } from '~/components/ui/Button';
 import { EmptyState, ErrorNote, Skeleton } from '~/components/ui/Feedback';
 import { Input, Select } from '~/components/ui/Input';
-import { projectListKey, projectsApi, type ProjectListParams } from '~/features/projects/api';
+import { projectListKey, projectsApi, workGroupsApi, type ProjectListParams } from '~/features/projects/api';
 import { ProjectCard } from '~/features/projects/ProjectCard';
 import { ProjectEditor } from '~/features/projects/ProjectEditor';
 import { GROUP_LABEL, groupProjects, type ProjectGroupKey } from '~/features/projects/groups';
 import { ProjectTimeline } from '~/features/projects/ProjectTimeline';
+import { shelveByWorkGroup } from '~/features/projects/workGroups';
+import { Tally } from '~/features/projects/WorkingBoard';
 import { createQuery } from '~/hooks/createQuery';
 import { t } from '~/i18n';
 import type { ProjectCategory, ProjectKind } from '~/types';
@@ -57,6 +59,8 @@ interface ProjectListPageProps {
   emptyHint?: string;
   showStatusFilter?: boolean;
   showTimeline?: boolean;
+  /** Cut the list into the Working-board groups (same groups, order and colours as the Dashboard). */
+  groupByWork?: boolean;
 }
 
 export function ProjectListPage(props: ProjectListPageProps): JSX.Element {
@@ -76,6 +80,11 @@ export function ProjectListPage(props: ProjectListPageProps): JSX.Element {
   const query = createQuery(
     () => projectListKey(props.queryName, params()),
     () => projectsApi.list(params()),
+  );
+  // Same cache key as the board, so renaming or reordering a group there shows here at once (and back).
+  const groupsQuery = createQuery(
+    () => (props.groupByWork ? 'work-groups' : null),
+    () => workGroupsApi.list(),
   );
 
   return (
@@ -138,6 +147,28 @@ export function ProjectListPage(props: ProjectListPageProps): JSX.Element {
                     />
                   }
                 >
+                  <Show
+                    when={!props.groupByWork}
+                    fallback={
+                      <div class={styles.groups}>
+                        <For each={shelveByWorkGroup(data().results, groupsQuery.data() ?? [])}>
+                          {(shelf) => (
+                            <section class={styles.group}>
+                              <h3 class={styles.groupHead}>
+                                <FolderKanban size={12} />
+                                <span>{shelf.groupId === null ? t('No group') : shelf.name}</span>
+                                <span class={styles.groupCount}>{shelf.projects.length}</span>
+                                <Tally projects={shelf.projects} />
+                              </h3>
+                              <div class={styles.grid}>
+                                <For each={shelf.projects}>{(project) => <ProjectCard project={project} />}</For>
+                              </div>
+                            </section>
+                          )}
+                        </For>
+                      </div>
+                    }
+                  >
                   {/* Important / Not important / Startups, each keeping the chosen sort inside it. */}
                   <div class={styles.groups}>
                     <For each={groupProjects(data().results, props.defaultCategory !== 'startup')}>
@@ -155,6 +186,7 @@ export function ProjectListPage(props: ProjectListPageProps): JSX.Element {
                       )}
                     </For>
                   </div>
+                  </Show>
                 </Show>
               </>
             )}

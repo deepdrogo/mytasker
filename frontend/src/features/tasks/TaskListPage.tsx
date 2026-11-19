@@ -27,6 +27,8 @@ interface TaskListPageProps {
   hideComposer?: boolean;
   /** Let the composer attach the new task to a project (Business list). */
   composerProjectPicker?: boolean;
+  /** Composer chooses Personal / Business / a project, plus client / ad toggles, and links to the full form. */
+  composerTargetPicker?: boolean;
   showProject?: boolean;
   /** Tag each row with its list (Personal / Business / Crypto) - for views that mix them. */
   showKind?: boolean;
@@ -117,6 +119,9 @@ export function TaskListPage(props: TaskListPageProps): JSX.Element {
               defaults={props.composerDefaults}
               placeholder={props.composerPlaceholder}
               projectPicker={props.composerProjectPicker}
+              targetPicker={props.composerTargetPicker}
+              typePicker={props.composerTargetPicker}
+              moreHref={props.composerTargetPicker ? '/tasks/new' : undefined}
               onCreated={() => query.refetch()}
             />
           </Show>

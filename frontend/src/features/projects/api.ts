@@ -23,6 +23,8 @@ export interface ProjectListParams extends QueryParams {
   view?: 'active' | 'open' | 'archived' | 'team';
   q?: string;
   owned?: boolean;
+  /** Advertising candidates only (the violet dot). */
+  is_ad?: boolean;
   ordering?: string;
   page?: number;
   page_size?: number;
@@ -42,6 +44,7 @@ export interface ProjectInput {
   work_state?: WorkState;
   /** Shelf on the Working projects board. `null` takes the project out of every group. */
   work_group_id?: number | null;
+  is_ad?: boolean;
   start_date?: string | null;
   deadline?: string | null;
   notes?: string;

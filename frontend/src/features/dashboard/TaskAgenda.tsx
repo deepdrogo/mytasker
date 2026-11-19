@@ -1,8 +1,8 @@
-// MyTasker — the Dashboard's task strip: Today, Tomorrow and Later stacked in tight blocks, each cut by project,
+// MyTasker — the Dashboard's task strip (at the very top): Today, Tomorrow and Later stacked in tight blocks, each cut by project,
 // each row tagged Client, Personal or Business. Tick to complete, yellow / red dots for priority, folder to file it.
 
 import { A } from '@solidjs/router';
-import { Briefcase, Check, FolderKanban, Handshake, User } from 'lucide-solid';
+import { Briefcase, Check, FolderKanban, Handshake, Megaphone, User } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { createMemo, createSignal, For, Show } from 'solid-js';
 import { tasksApi, taskListKey, type TaskListParams } from '~/features/tasks/api';
@@ -25,10 +25,11 @@ const TODAY: TaskListParams = { ...BASE, view: 'today' };
 const TOMORROW: TaskListParams = { ...BASE, view: 'tomorrow' };
 const UPCOMING: TaskListParams = { ...BASE, view: 'upcoming', ordering: 'due' };
 
-type Tag = { label: string; tone: 'client' | 'personal' | 'business' };
+type Tag = { label: string; tone: 'client' | 'ad' | 'personal' | 'business' };
 
 function tagFor(task: Task): Tag {
   if (task.is_client) return { label: 'Client', tone: 'client' };
+  if (task.is_ad) return { label: 'Ad', tone: 'ad' };
   if (task.kind === 'personal') return { label: 'Personal', tone: 'personal' };
   return { label: 'Business', tone: 'business' };
 }
@@ -111,6 +112,7 @@ export function TaskAgenda(): JSX.Element {
 const GROUP_ICON: Record<TaskGroup['kind'], () => JSX.Element> = {
   project: () => <FolderKanban size={11} />,
   client: () => <Handshake size={11} />,
+  ad: () => <Megaphone size={11} />,
   business: () => <Briefcase size={11} />,
   personal: () => <User size={11} />,
 };

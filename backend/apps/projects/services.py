@@ -30,6 +30,7 @@ PROJECT_FIELDS = {
     "is_working",
     "work_state",
     "work_group_id",
+    "is_ad",
     "start_date",
     "deadline",
     "notes",

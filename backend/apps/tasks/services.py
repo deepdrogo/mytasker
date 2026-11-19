@@ -38,6 +38,7 @@ EDITABLE_FIELDS = {
     "estimated_minutes",
     "is_ongoing",
     "is_client",
+    "is_ad",
     "tags",
     "sort_order",
     "visibility",
@@ -191,6 +192,7 @@ def _payload(task: Task, **extra) -> dict[str, Any]:
         "status": task.status,
         "project_name": task.project.name if task.project_id else "",
         "is_client": task.is_client,
+        "is_ad": task.is_ad,
         "assignee_id": task.assignee_id,
         "assignee_ids": sorted(task.assignee_ids()),
         "is_subtask": task.is_subtask,
@@ -290,6 +292,7 @@ def create_task(
         resolved_origin = parent.origin
         # A subtask is part of the same promise as its parent.
         fields["is_client"] = parent.is_client
+        fields["is_ad"] = parent.is_ad
     else:
         project = _resolve_project(project_id, user)
         if owner is not None:
@@ -534,7 +537,7 @@ def update_task(actor: Actor, task_id: int, *, expected_version: int | None = No
 
 
 # Subtasks carry a copy of these so list / project filters work without joins; they must follow the parent.
-INHERITED_FROM_PARENT = ("project", "kind", "origin", "visibility", "is_client")
+INHERITED_FROM_PARENT = ("project", "kind", "origin", "visibility", "is_client", "is_ad")
 
 
 def _sync_subtasks_with_parent(task: Task, changed: list[str]) -> None:

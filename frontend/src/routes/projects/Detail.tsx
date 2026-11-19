@@ -337,6 +337,7 @@ function TasksTab(props: { project: Project }): JSX.Element {
         <TaskComposer
           defaults={{ project_id: props.project.id, kind: 'business', origin: 'project' }}
           placeholder={t('Add a task to {project}…', { project: tx('project', props.project.id, 'name', props.project.name) })}
+          typePicker
           onCreated={() => query.refetch()}
         />
       </Show>

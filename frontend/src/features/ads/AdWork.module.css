@@ -1,0 +1,180 @@
+/* Advertising work: everything here is monochrome glass with the one violet accent. */
+.strip,
+.companies {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border: 1px solid color-mix(in srgb, var(--state-ad) 28%, var(--c-border));
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(120% 160% at 0% 0%, var(--state-ad-soft), transparent 55%),
+    var(--white-020);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-3);
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-text-dim);
+}
+
+.key {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--state-ad);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--state-ad) 55%, transparent);
+}
+
+.title {
+  color: var(--c-text);
+}
+
+.count {
+  padding: 1px 7px;
+  border-radius: var(--r-full);
+  background: var(--white-060);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0;
+}
+
+.hint {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-normal);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--c-text-faint);
+}
+
+.link {
+  margin-left: auto;
+  font-size: var(--fs-xs);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--state-ad-light);
+}
+
+.link:hover {
+  color: var(--c-text);
+}
+
+.empty,
+.loose {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--c-text-faint);
+}
+
+/* ---- Dashboard strip ---- */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 34px;
+  padding: 0 4px 0 6px;
+  border: 1px solid var(--state-ad-line);
+  border-radius: var(--r-full);
+  background: var(--g-surface);
+}
+
+.chipLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: var(--c-text);
+}
+
+.chipName {
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-sm);
+  font-weight: 560;
+}
+
+.chipCount {
+  padding: 0 6px;
+  border-radius: var(--r-full);
+  background: var(--state-ad-soft);
+  color: var(--state-ad-light);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 16px;
+}
+
+/* ---- Ads page cards ---- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--s-3);
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  background: var(--g-surface);
+  box-shadow: inset 2px 0 0 var(--state-ad);
+  color: inherit;
+  transition:
+    transform var(--t-base),
+    border-color var(--t-base);
+}
+
+.card:hover {
+  transform: translateY(-1px);
+  border-color: var(--state-ad-line);
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.cardName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--fw-semibold);
+}
+
+.cardMeta {
+  font-size: var(--fs-xs);
+  color: var(--c-text-faint);
+}
+
+.cardOpen {
+  color: var(--state-ad-light);
+}
+
+.cardDots {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}

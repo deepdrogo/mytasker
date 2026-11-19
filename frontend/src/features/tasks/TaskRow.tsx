@@ -14,6 +14,7 @@ import {
   FolderInput,
   Handshake,
   Infinity as InfinityIcon,
+  Megaphone,
   MessageSquare,
   MoreHorizontal,
   Play,
@@ -231,6 +232,20 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
     }
   };
 
+  const toggleAd = async () => {
+    if (busy() || !props.task.can_edit) return;
+    setBusy(true);
+    try {
+      await tasksApi.update(props.task.id, { is_ad: !props.task.is_ad });
+      toast(props.task.is_ad ? t('No longer an advertising task') : t('Marked as advertising task'));
+      props.onChanged?.();
+    } catch {
+      toast(t('Could not update the task.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const toggleTimer = async (event: MouseEvent) => {
     event.stopPropagation();
     try {
@@ -309,6 +324,13 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
       onSelect: () => void toggleClient(),
     },
     {
+      label: props.task.is_ad ? t('Not an advertising task') : t('Advertising task'),
+      icon: <Megaphone size={14} />,
+      checked: props.task.is_ad,
+      disabled: !props.task.can_edit || !isOwner(),
+      onSelect: () => void toggleAd(),
+    },
+    {
       label: t('Polish with AI'),
       icon: <Sparkles size={14} />,
       disabled: !canPolish(),
@@ -360,6 +382,7 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
         styles.row,
         done() ? styles.done : '',
         props.task.is_client ? styles.client : '',
+        props.task.is_ad ? styles.ad : '',
         !done() && priorityTone(props.task.priority) === 'red' ? styles.urgent : '',
         !done() && priorityTone(props.task.priority) === 'yellow' ? styles.warn : '',
         ongoing() && props.task.today_skipped ? styles.skippedToday : '',
@@ -416,6 +439,12 @@ export function TaskRow(props: TaskRowProps): JSX.Element {
             <span class={styles.clientMark} title={t('Client task - pinned to the top')}>
               <Handshake size={10} />
               <span class={styles.clientMarkText}>{t('Client')}</span>
+            </span>
+          </Show>
+          <Show when={props.task.is_ad}>
+            <span class={styles.adMark} title={t('Advertising task - also on the Ads page')}>
+              <Megaphone size={10} />
+              <span class={styles.clientMarkText}>{t('Ad')}</span>
             </span>
           </Show>
           <span class={styles.title}>{title()}</span>

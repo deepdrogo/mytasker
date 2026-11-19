@@ -1,0 +1,72 @@
+/* The project dots. Waiting is the base look; .active / .working / .ad recolour it. */
+.dot {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin: 0 4px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--state-waiting) 75%, transparent);
+  background: linear-gradient(180deg, var(--state-waiting-light) 0%, var(--state-waiting-deep) 100%);
+  box-shadow: 0 0 7px color-mix(in srgb, var(--state-waiting) 40%, transparent);
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    background 0.12s ease;
+}
+
+.dot:not(:disabled):hover {
+  transform: scale(1.18);
+}
+
+.dot:disabled {
+  cursor: default;
+}
+
+.active {
+  border-color: color-mix(in srgb, var(--state-active) 75%, transparent);
+  background: linear-gradient(180deg, var(--state-active-light) 0%, var(--state-active-deep) 100%);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--state-active) 45%, transparent);
+}
+
+.working {
+  border-color: color-mix(in srgb, var(--state-working) 70%, transparent);
+  background: linear-gradient(180deg, var(--state-working) 0%, var(--state-working-deep) 100%);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--state-working) 45%, transparent);
+}
+
+/* Advertising switch: an empty violet ring until it is lit. */
+.ad {
+  width: 12px;
+  height: 12px;
+  border: 1.5px dashed color-mix(in srgb, var(--state-ad) 55%, transparent);
+  background: transparent;
+  box-shadow: none;
+}
+
+.ad:not(:disabled):hover {
+  border-style: solid;
+  border-color: var(--state-ad);
+}
+
+.ad:disabled:not(.adOn) {
+  display: none;
+}
+
+.adOn {
+  border: 1.5px solid color-mix(in srgb, var(--state-ad) 75%, transparent);
+  background: linear-gradient(180deg, var(--state-ad-light) 0%, var(--state-ad-deep) 100%);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--state-ad) 50%, transparent);
+}
+
+@media (hover: none) {
+  .dot {
+    width: 18px;
+    height: 18px;
+  }
+  .ad {
+    width: 16px;
+    height: 16px;
+  }
+}

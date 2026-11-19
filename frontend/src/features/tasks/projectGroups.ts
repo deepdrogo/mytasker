@@ -1,9 +1,9 @@
-// MyTasker — split a task list into themes: one group per project, then loose client / business / personal work.
+// MyTasker — split a task list into themes: one group per project, then loose client / ad / business / personal work.
 // Built by drogoz · https://github.com/deepdrogo/mytasker
 
 import type { ID, Task } from '~/types';
 
-export type TaskGroupKind = 'project' | 'client' | 'business' | 'personal';
+export type TaskGroupKind = 'project' | 'client' | 'ad' | 'business' | 'personal';
 
 export interface TaskGroup {
   /** Stable key for keyed rendering: `p<id>` for projects, the kind otherwise. */
@@ -15,17 +15,18 @@ export interface TaskGroup {
   tasks: Task[];
 }
 
-const LOOSE_ORDER: TaskGroupKind[] = ['client', 'business', 'personal'];
+const LOOSE_ORDER: TaskGroupKind[] = ['client', 'ad', 'business', 'personal'];
 
 function looseKind(task: Task): TaskGroupKind {
   if (task.is_client) return 'client';
+  if (task.is_ad) return 'ad';
   return task.kind === 'personal' ? 'personal' : 'business';
 }
 
 /**
  * Projects first, in the order their first task appears (the list is already sorted, so the group holding
  * the most pressing task leads); then tasks without a project: Clients, Business, Personal. Tasks keep the
- * list's order inside every group.
+ * list's order inside every group. Advertising work without a project gets its own group after Clients.
  */
 export function groupByProject(tasks: Task[]): TaskGroup[] {
   const projects = new Map<ID, TaskGroup>();
@@ -49,6 +50,7 @@ export function groupByProject(tasks: Task[]): TaskGroup[] {
 
 export const LOOSE_LABEL: Record<Exclude<TaskGroupKind, 'project'>, string> = {
   client: 'Clients',
+  ad: 'Advertising',
   business: 'Business',
   personal: 'Personal',
 };

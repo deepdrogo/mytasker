@@ -83,6 +83,8 @@ export function CommandPalette(): JSX.Element {
     { id: 'today', label: 'Go to Today', icon: <Calendar size={15} />, keywords: 'due today დღეს', run: go('/today') },
     { id: 'tomorrow', label: 'Go to Tomorrow', icon: <Calendar size={15} />, keywords: 'due tomorrow ხვალ', run: go('/tomorrow') },
     { id: 'day', label: 'Go to a day', icon: <Calendar size={15} />, keywords: 'pick date future დღე თარიღი', run: go('/day') },
+    { id: 'add-task-page', label: 'Open Add task', icon: <Calendar size={15} />, keywords: 'new create task დამატება', run: go('/tasks/new') },
+    { id: 'ads', label: 'Go to Advertising work', icon: <Calendar size={15} />, keywords: 'ads advertising რეკლამა', run: go('/ads') },
     { id: 'clients', label: 'Clients', icon: <Handshake size={15} />, keywords: 'client customer კლიენტი კლიენტები', run: go('/tasks/clients') },
     ...(authStore.isAdmin()
       ? [{ id: 'people', label: 'People', icon: <Users size={15} />, keywords: 'delegate assign ხალხი ასისტენტი', run: go('/people') }]

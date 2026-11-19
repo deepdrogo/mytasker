@@ -1,15 +1,16 @@
 import { A } from '@solidjs/router';
-import { Clock, Globe, Star, Users } from 'lucide-solid';
+import { Clock, Globe, Megaphone, Star, Users } from 'lucide-solid';
 import type { JSX } from 'solid-js';
-import { createSignal, Show } from 'solid-js';
+import { createEffect, createSignal, on, Show } from 'solid-js';
 import { Badge, Meta, PriorityMark, ProgressBar, VisibilityMark } from '~/components/shared/Indicators';
 import { projectsApi } from '~/features/projects/api';
 import { isImportant, toggledPriority } from '~/features/projects/groups';
 import { ProjectAvatar } from '~/features/projects/ProjectAvatar';
+import { AdDot, saveAd, saveWorkState, StateDot } from '~/features/projects/ProjectDots';
 import { t } from '~/i18n';
 import { tx } from '~/stores/translations';
 import { toast } from '~/stores/ui';
-import type { Project, Role } from '~/types';
+import type { Project, Role, WorkState } from '~/types';
 import { cx } from '~/utils/cx';
 import { formatDate, formatDuration, formatRelative } from '~/utils/format';
 import styles from './ProjectCard.module.css';
@@ -35,7 +36,31 @@ export function websiteHost(website: string | undefined): string {
 }
 
 export function ProjectCard(props: { project: Project }): JSX.Element {
-  const p = () => props.project;
+  // A tapped dot changes colour at once; the refetch that follows (every view shares `projects`) confirms it.
+  const [localState, setLocalState] = createSignal<WorkState | null>(null);
+  const [localAd, setLocalAd] = createSignal<boolean | null>(null);
+  createEffect(
+    on(
+      () => [props.project.work_state, props.project.is_ad],
+      () => {
+        setLocalState(null);
+        setLocalAd(null);
+      },
+    ),
+  );
+  const p = (): Project => ({
+    ...props.project,
+    work_state: localState() ?? props.project.work_state,
+    is_ad: localAd() ?? props.project.is_ad,
+  });
+  const cycle = async (next: WorkState) => {
+    setLocalState(next);
+    if (!(await saveWorkState(props.project, next))) setLocalState(null);
+  };
+  const toggleAd = async (value: boolean) => {
+    setLocalAd(value);
+    if (!(await saveAd(props.project, value))) setLocalAd(null);
+  };
   const deadlineSoon = () => {
     if (!p().deadline) return false;
     const diff = (new Date(p().deadline as string).getTime() - Date.now()) / 86400000;
@@ -60,7 +85,7 @@ export function ProjectCard(props: { project: Project }): JSX.Element {
 
   const host = () => websiteHost(p().website);
   return (
-    <A href={`/projects/${p().id}/tasks`} class={styles.card}>
+    <A href={`/projects/${p().id}/tasks`} class={cx(styles.card, p().is_ad && styles.adCard)}>
       <div class={styles.head}>
         <div class={styles.titleRow}>
           <ProjectAvatar project={p()} size={40} />
@@ -80,6 +105,10 @@ export function ProjectCard(props: { project: Project }): JSX.Element {
                   <Star size={13} />
                 </button>
               </Show>
+              <span class={styles.dots}>
+                <AdDot project={p()} onToggle={(value) => void toggleAd(value)} />
+                <StateDot project={p()} onCycle={(next) => void cycle(next)} />
+              </span>
             </div>
             <span class={styles.site}>
               <Show when={host()} fallback={t('Updated {when}', { when: formatRelative(p().updated_at) })}>
@@ -89,6 +118,11 @@ export function ProjectCard(props: { project: Project }): JSX.Element {
           </div>
         </div>
         <div class={styles.badges}>
+          <Show when={p().is_ad}>
+            <span class={styles.adBadge}>
+              <Megaphone size={10} /> {t('Ad')}
+            </span>
+          </Show>
           <Show when={p().kind === 'active'}>
             <Badge variant="solid">{t('Active')}</Badge>
           </Show>

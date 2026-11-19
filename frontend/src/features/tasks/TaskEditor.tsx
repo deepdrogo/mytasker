@@ -76,6 +76,7 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
   const [estimate, setEstimate] = createSignal('');
   const [ongoing, setOngoing] = createSignal(false);
   const [isClient, setIsClient] = createSignal(false);
+  const [isAd, setIsAd] = createSignal(false);
   const [moveOpen, setMoveOpen] = createSignal(false);
   const [projectId, setProjectId] = createSignal<number | null>(null);
   const [assigneeIds, setAssigneeIds] = createSignal<number[]>([]);
@@ -104,6 +105,7 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
       setEstimate(task.estimated_minutes ? String(task.estimated_minutes) : '');
       setOngoing(task.is_ongoing);
       setIsClient(task.is_client);
+      setIsAd(task.is_ad);
       setProjectId(task.project?.id ?? null);
       setAssigneeIds(task.assignees?.length ? task.assignees.map((user) => user.id) : task.assignee ? [task.assignee.id] : []);
       setVisibility(task.visibility);
@@ -228,6 +230,7 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
     // Where the task lives and whose it is: the owner's call only.
     if (isOwner()) {
       payload.is_client = isClient();
+      payload.is_ad = isAd();
       payload.project_id = projectId();
       payload.visibility = visibility();
       const before = task.assignees?.length ? task.assignees.map((user) => user.id) : task.assignee ? [task.assignee.id] : [];
@@ -478,6 +481,12 @@ export function TaskEditor(props: TaskEditorProps): JSX.Element {
                     <span>{t('Shows up first in every list and on the Dashboard, grouped by project on the Clients page.')}</span>
                   </p>
                 </Show>
+                <Checkbox
+                  label={t('Advertising task - violet, listed on the Ads page')}
+                  checked={isAd()}
+                  onChange={(e) => mark(setIsAd)(e.currentTarget.checked)}
+                  disabled={!task().can_edit || task().parent !== null || !isOwner()}
+                />
                 <Checkbox
                   label={t('Due at a specific time')}
                   checked={hasTime()}

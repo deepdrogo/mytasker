@@ -41,6 +41,7 @@ class ProjectFilter(filters.FilterSet):
     view = filters.CharFilter(method="filter_view")
     q = filters.CharFilter(method="filter_q")
     owned = filters.BooleanFilter(method="filter_owned")
+    is_ad = filters.BooleanFilter(field_name="is_ad")
 
     class Meta:
         model = Project

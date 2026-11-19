@@ -1,4 +1,5 @@
 // Georgian dictionary, assembled from per-feature fragments. Later fragments win on duplicate keys.
+import { ads } from './ka/ads';
 import { ai } from './ka/ai';
 import { assistants } from './ka/assistants';
 import { auth } from './ka/auth';
@@ -33,4 +34,5 @@ export const ka: Record<string, string> = {
   ...settings,
   ...assistants,
   ...clients,
+  ...ads,
 };

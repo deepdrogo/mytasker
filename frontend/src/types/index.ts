@@ -231,6 +231,8 @@ export interface Task {
   is_ongoing: boolean;
   /** Client work: promised to a customer. Pinned to the top of lists and collected on the Clients page. */
   is_client: boolean;
+  /** Advertising work (violet): also listed on the Ads page. */
+  is_ad: boolean;
   today_checked: boolean;
   /** Deliberately skipped today (recorded, breaks the streak). */
   today_skipped: boolean;
@@ -289,6 +291,8 @@ export interface Project {
   is_working: boolean;
   /** Shelf on the Working projects board. Null means the project is not in a group yet. */
   work_group_id: number | null;
+  /** Advertising candidate (violet dot): also listed under Advertising work. */
+  is_ad: boolean;
   start_date: ISODate | null;
   deadline: ISODate | null;
   notes: string;

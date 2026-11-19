@@ -1,0 +1,187 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+  max-width: 880px;
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--s-6);
+}
+
+.label {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  margin: 0;
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-text-dim);
+}
+
+.summary {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-normal);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--c-text-faint);
+}
+
+.lists {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.list {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-full);
+  background: var(--white-020);
+  color: var(--c-text-dim);
+  font: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  transition:
+    border-color var(--t-fast),
+    background var(--t-fast),
+    color var(--t-fast);
+}
+
+.list:hover {
+  border-color: var(--c-border-strong);
+  color: var(--c-text);
+}
+
+.on,
+.on:hover {
+  border-color: var(--c-invert-bg);
+  background: var(--c-invert-bg);
+  color: var(--c-invert-text);
+}
+
+.adOn,
+.adOn:hover {
+  border-color: var(--state-ad-line);
+  background: var(--state-ad-soft);
+  color: var(--state-ad-light);
+}
+
+.warn.on {
+  border-color: var(--c-warn);
+  background: var(--c-warn-soft);
+  color: var(--c-warn);
+}
+
+.urgent.on {
+  border-color: var(--c-urgent);
+  background: var(--c-urgent-soft);
+  color: var(--c-urgent);
+}
+
+.date {
+  width: auto;
+}
+
+/* Projects: avatar chips, the chosen one lit. Ad candidates carry a violet edge, as everywhere. */
+.projects {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 6px;
+}
+
+.project {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 40px;
+  padding: 0 10px 0 8px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--g-surface);
+  color: var(--c-text);
+  font: inherit;
+  font-size: var(--fs-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.project:hover {
+  border-color: var(--c-border-strong);
+}
+
+.project.on {
+  border-color: var(--c-invert-bg);
+  background: var(--white-100);
+  color: var(--c-text);
+}
+
+.adProject {
+  box-shadow: inset 2px 0 0 var(--state-ad);
+}
+
+.projectName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tick {
+  flex: none;
+}
+
+.title {
+  height: 48px;
+  font-size: var(--fs-md);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-4);
+}
+
+.hint {
+  font-size: var(--fs-xs);
+  color: var(--c-text-faint);
+}
+
+.added {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  max-width: 880px;
+  margin-top: var(--s-7);
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--c-border);
+}
+
+.count {
+  padding: 1px 7px;
+  border-radius: var(--r-full);
+  background: var(--white-060);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0;
+}

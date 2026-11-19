@@ -50,6 +50,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             "is_working",
             "work_state",
             "work_group_id",
+            "is_ad",
             "start_date",
             "deadline",
             "notes",
@@ -127,6 +128,7 @@ class ProjectUpdateSerializer(serializers.Serializer):
     is_working = serializers.BooleanField(required=False)
     work_state = serializers.ChoiceField(choices=Project.WorkState.choices, required=False)
     work_group_id = serializers.IntegerField(required=False, allow_null=True)
+    is_ad = serializers.BooleanField(required=False)
     start_date = serializers.DateField(required=False, allow_null=True)
     deadline = serializers.DateField(required=False, allow_null=True)
     notes = serializers.CharField(required=False, allow_blank=True)

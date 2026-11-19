@@ -1,4 +1,5 @@
-// MyTasker — the Dashboard. The Working projects board next to the day's timers, numbers, routine and rules.
+// MyTasker — the Dashboard. Tasks first, then the Working projects board (with Advertising work) beside the
+// timers and numbers, and the routine and rules at the bottom.
 // Built by drogoz · https://github.com/deepdrogo/mytasker
 
 import { A } from '@solidjs/router';
@@ -7,6 +8,7 @@ import type { JSX } from 'solid-js';
 import { For, Show, createSignal } from 'solid-js';
 import { Page } from '~/components/shared/Page';
 import { ErrorNote, Skeleton } from '~/components/ui/Feedback';
+import { AdWorkStrip } from '~/features/ads/AdWork';
 import { dashboardApi } from '~/features/dashboard/api';
 import { TaskAgenda } from '~/features/dashboard/TaskAgenda';
 import { WorkingBoard } from '~/features/projects/WorkingBoard';
@@ -52,15 +54,17 @@ export default function Dashboard(): JSX.Element {
                 </div>
               </Show>
 
-              {/* Main column: the Working projects board, the same as on its own page */}
+              {/* Top, full width: what is due - Today / Tomorrow / Later. Tasks matter most, so they lead. */}
+              <TaskAgenda />
+
+              {/* Main column: the Working projects board (same as its own page), then the advertising candidates */}
               <section class={styles.col}>
                 <WorkingBoard />
+                <AdWorkStrip />
               </section>
 
-              {/* Side column: timers, numbers, routine, rules - compact. On narrow screens the column dissolves
-                  (display: contents): timers + stats jump to the top, routine + rules sink to the very bottom. */}
+              {/* Side column: timers and the day's numbers */}
               <section class={cx(styles.col, styles.side)}>
-                <div class={cx(styles.sideGroup, styles.sideTop)}>
                 <CycleCard />
                 <WeekCard />
 
@@ -72,11 +76,12 @@ export default function Dashboard(): JSX.Element {
                   <Stat label={t('Streak')} value={<><Flame size={12} /> {d().streak}</>} />
                   <Stat label={t('Personal')} value={formatMinutes(d().metrics.personal_minutes)} />
                 </div>
-                </div>
+              </section>
 
-                <div class={cx(styles.sideGroup, styles.sideBottom)}>
+              {/* Bottom, full width: routine and rules side by side */}
+              <section class={styles.bottom}>
                 <Show when={d().routine.paused}>
-                  <p class={styles.weekendNote}>
+                  <p class={cx(styles.weekendNote, styles.bottomWide)}>
                     <CalendarOff size={13} />
                     <span>
                       {t('Weekend - the routine takes the day off. Rules still count.')}{' '}
@@ -90,17 +95,13 @@ export default function Dashboard(): JSX.Element {
                 <RoutineBlock title={t('Personal routine')} items={d().routine.personal} currentId={d().routine.current_item_id} onChanged={refresh} />
                 <RulesBlock rules={d().rules} onChanged={refresh} />
 
-                <p class={styles.dim}>
+                <p class={cx(styles.dim, styles.bottomWide)}>
                   {t('{tasks} done · {rate}% of plan', { tasks: tn(d().metrics.tasks_completed, 'task'), rate: d().metrics.completion_rate })} ·{' '}
                   <A href="/insights" class={styles.link}>
                     {t('Insights')}
                   </A>
                 </p>
-                </div>
               </section>
-
-              {/* Very bottom, full width: Today / Tomorrow / Later in three compact columns */}
-              <TaskAgenda />
             </div>
           )}
         </Show>

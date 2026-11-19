@@ -6,13 +6,14 @@ export default function ProjectsAll(): JSX.Element {
   return (
     <ProjectListPage
       title={t('Projects')}
-      subtitle={t('Everything you own or collaborate on')}
+      subtitle={t('Everything you own or collaborate on - in the same groups and colours as the Dashboard')}
       queryName="all"
       params={{}}
       emptyTitle={t('No projects yet')}
       emptyHint={t('Projects group tasks, prompts, time and people.')}
       showStatusFilter
       showTimeline
+      groupByWork
     />
   );
 }

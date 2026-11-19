@@ -29,6 +29,16 @@ describe('tasks grouped by theme', () => {
     expect(groups.map((group) => group.key)).toEqual(['p7']);
   });
 
+  it('puts loose advertising work in its own group right after clients', () => {
+    const groups = groupByProject([
+      task(1),
+      task(2, { is_ad: true }),
+      task(3, { is_client: true }),
+      task(4, { is_ad: true, project: site } as Partial<Task>),
+    ]);
+    expect(groups.map((group) => group.key)).toEqual(['p7', 'client', 'ad', 'business']);
+  });
+
   it('returns nothing for an empty list', () => {
     expect(groupByProject([])).toEqual([]);
   });

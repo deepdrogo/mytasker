@@ -10,6 +10,8 @@ const Dashboard = lazy(() => import('~/routes/Dashboard'));
 const TasksToday = lazy(() => import('~/routes/tasks/Today'));
 const TasksTomorrow = lazy(() => import('~/routes/tasks/Tomorrow'));
 const TasksDay = lazy(() => import('~/routes/tasks/Day'));
+const TasksNew = lazy(() => import('~/routes/tasks/New'));
+const Ads = lazy(() => import('~/routes/Ads'));
 const TasksPersonal = lazy(() => import('~/routes/tasks/Personal'));
 const TasksBusiness = lazy(() => import('~/routes/tasks/Business'));
 const TasksCrypto = lazy(() => import('~/routes/tasks/Crypto'));
@@ -69,7 +71,10 @@ export const routes: RouteDefinition[] = [
       { path: '/tomorrow', component: TasksTomorrow },
       { path: '/day/:date?', component: TasksDay },
       { path: '/tasks', component: () => <Navigate href="/tasks/all" /> },
+      { path: '/tasks/new', component: TasksNew },
       { path: '/tasks/clients', component: TasksClients },
+      // Advertising work: ad-candidate companies (the violet dot) and every ad task.
+      { path: '/ads', component: Ads },
       // People: administrators hand work to other accounts; each receiver gets a "From <name>" page.
       { path: '/people', component: People },
       { path: '/from/:ownerId', component: From },

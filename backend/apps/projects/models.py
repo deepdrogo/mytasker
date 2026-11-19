@@ -136,6 +136,9 @@ class Project(TimeStampedModel, SoftDeleteModel):
     work_group = models.ForeignKey(
         WorkGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name="projects"
     )
+    # Advertising candidate (the violet dot): the company gets ad work. The project stays where it is and is
+    # also listed under "Advertising work" on the Dashboard and the Ads page.
+    is_ad = models.BooleanField(default=False, db_index=True)
     sort_order = models.IntegerField(default=0)
     version = models.PositiveIntegerField(default=1)
 

@@ -172,6 +172,8 @@ class Task(TimeStampedModel, ArchivableModel):
     # Client work: something promised to a customer. Pinned to the top of every list and the dashboard,
     # and collected on the Clients page grouped by project (a client task may also have no project).
     is_client = models.BooleanField(default=False, db_index=True)
+    # Advertising work: its own kind of task (violet). Collected on the Ads page with the ad-candidate projects.
+    is_ad = models.BooleanField(default=False, db_index=True)
 
     recurrence = models.ForeignKey(
         RecurrenceRule, on_delete=models.SET_NULL, null=True, blank=True, related_name="tasks"
