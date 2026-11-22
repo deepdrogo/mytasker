@@ -5,6 +5,16 @@
   align-items: start;
 }
 
+/* Top row, full width: the 24-hour cycle (wide enough for dial and rows side by side) and this week. */
+.top {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr);
+  gap: var(--s-5);
+  align-items: stretch;
+  min-width: 0;
+}
+
 /* Weekend banner: full width above both columns. */
 .dayOff {
   grid-column: 1 / -1;
@@ -521,14 +531,14 @@
   font-weight: var(--fw-semibold);
 }
 
-/* Single column (phone / small tablet): the board, ad work and tasks, then timers + numbers, then routine + rules
-   - plain document order. */
+/* Single column (phone / small tablet): cycle and week first, then the board, ad work and tasks, the numbers,
+   then routine + rules - plain document order. */
 @media (max-width: 1100px) {
   .grid {
     grid-template-columns: 1fr;
   }
-  .dayOff {
-    order: -1;
+  .top {
+    grid-template-columns: 1fr;
   }
   .stats {
     gap: var(--s-3);

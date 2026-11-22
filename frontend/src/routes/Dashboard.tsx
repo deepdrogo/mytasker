@@ -43,6 +43,12 @@ export default function Dashboard(): JSX.Element {
         <Show when={data()} fallback={<Skeleton rows={8} height={40} />}>
           {(d) => (
             <div class={styles.grid}>
+              {/* First thing on the page: the 24-hour cycle and this week's time, side by side. */}
+              <div class={styles.top}>
+                <CycleCard />
+                <WeekCard />
+              </div>
+
               {/* Saturday and Sunday: a plain reminder that today is for rest. */}
               <Show when={isWeekend(d().date)}>
                 <div class={styles.dayOff} role="status">
@@ -64,11 +70,8 @@ export default function Dashboard(): JSX.Element {
                 </div>
               </section>
 
-              {/* Side column: timers and the day's numbers */}
+              {/* Side column: the day's numbers */}
               <section class={cx(styles.col, styles.side)}>
-                <CycleCard />
-                <WeekCard />
-
                 <div class={styles.stats}>
                   <Stat label={t('Done')} value={String(d().metrics.tasks_completed)} />
                   <Stat label={t('Planned')} value={String(d().metrics.tasks_planned)} />
